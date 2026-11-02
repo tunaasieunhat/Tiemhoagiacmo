@@ -8,6 +8,7 @@ Tiemhoagiacmo/
 ├─ data/                   ⭐ SỐ LIỆU CÂN BẰNG — chỉnh ở đây, không cần biết code
 │  ├─ flowers.js           Các loài hoa: thời gian lớn, nước, phân, giá, mùa, màu...
 │  ├─ config.js            Thời gian ngày/đêm, chăm sóc, đồ khởi đầu, camera...
+│  ├─ shop.js, wrapping.js, customers.js   Cửa hàng, giấy gói/ruy băng, khách
 │  ├─ online.js            Địa chỉ + khóa công khai Supabase
 │  └─ badwords.js          Từ cấm (bản phụ, bản chính ở máy chủ)
 ├─ src/
@@ -17,6 +18,7 @@ Tiemhoagiacmo/
 │  ├─ core/                Tiện ích chung (sự kiện)
 │  ├─ systems/             LOGIC THUẦN (không đồ họa) → dùng lại được trên server
 │  │  ├─ farming.js        Xới, gieo, tưới, bón, thu hoạch, héo, chất lượng
+│  │  ├─ shop.js           Khách, yêu cầu, chấm điểm bó hoa, giá, tiền bo, uy tín
 │  │  └─ time.js           Đồng hồ game
 │  ├─ save/                LƯU GAME
 │  │  ├─ schema.js         Cấu trúc save + số phiên bản + chuyển đổi save cũ
@@ -49,12 +51,13 @@ cùng công thức để kiểm tra gian lận.
 
 ```js
 {
-  version: 1,                     // số phiên bản cấu trúc → tự chuyển đổi khi game cập nhật
+  version: 3,                     // số phiên bản cấu trúc → tự chuyển đổi khi game cập nhật
   meta: { saveId, ownerId, rev, syncedRev, createdAt, updatedAt },
   player: { name, avatar, level, xp, coins, reputation },
   time: { gameMinutes, lastRealTs },
   tools, inventory: { seeds, items, flowers },
   farm: { plots: [{ id, cols, rows, tiles: [...] }] },
+  shop: { open, customers: [{ id, npc, spot, request, arrivedAt, patience }], nextSpawnAt },  // v3
   stats, tutorial, settings
 }
 ```

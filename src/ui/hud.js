@@ -6,6 +6,10 @@ import * as farming from '../systems/farming.js';
 import { formatClock, periodName, isNight, formatDuration } from '../systems/time.js';
 import { avatarSVG } from './avatar.js';
 import { TUTORIAL } from '../game.js';
+import { ShopPanel } from './shopPanel.js';
+import { PAPERS, RIBBONS } from '../../data/wrapping.js';
+import { wholesalePrice, tierInfo } from '../systems/shop.js';
+import { ZONES, PLOT_SLOTS } from '../render/world.js';
 import { GAME_VERSION, GAME_STAGE } from '../version.js';
 
 const TOOLS = [
@@ -32,11 +36,13 @@ export class Hud {
     em.on('clock', (c) => this.updateClock(c));
     em.on('tool', () => this.updateToolbar());
     em.on('select', (p) => this.showTile(p));
-    em.on('refresh', () => { this.updateTilePanel(); });
+    em.on('refresh', () => { this.updateTilePanel(); if (this.modal === 'shop') this.shopPanel.refresh(); });
     em.on('inventory', () => { this.updateToolbar(); this.updateProfile(); if (this.modal === 'inventory') this.openInventory(); });
     em.on('toast', (t) => this.toast(t.text, t.type));
     em.on('float', (f) => this.floatText(f));
     em.on('tutorial', () => this.updateTutorial());
+    em.on('shop', () => { this.updateWallet(); if (this.modal === 'shop') this.shopPanel.refresh(); });
+    em.on('open-shop', ({ customerId }) => this.openShop(customerId));
     em.on('saved', (s) => this.flashSaved(s));
     em.on('sync', (s) => this.updateSync(s));
     this.updateClock(game.clock);
@@ -44,6 +50,8 @@ export class Hud {
     this.updateProfile();
     this.updateTutorial();
     this.updateSync({ status: game.account?.cloud?.status });
+    this.shopPanel = new ShopPanel(this);
+    this.updateWallet();
   }
 
   render() {
@@ -61,6 +69,14 @@ export class Hud {
           <button class="round" data-act="inventory" aria-label="Kho đồ">🎒</button>
           <button class="round" data-act="settings" aria-label="Cài đặt">⚙️</button>
         </div>
+      </div>
+      <div class="wallet">
+        <span class="wchip" title="Tiền">💰 <b class="w-coins">0</b></span>
+        <span class="wchip" title="Uy tín">💗 <b class="w-rep">0</b><small class="w-tier"></small></span>
+      </div>
+      <div class="nav-btns">
+        <button class="round" data-act="go-farm" aria-label="Về nông trại">🌱</button>
+        <button class="round" data-act="go-shop" aria-label="Tiệm hoa">🏪<span class="badge hidden nav-badge"></span></button>
       </div>
       <div class="saved-badge">💾 Đã lưu</div>
       <div class="zoom-btns">
@@ -84,6 +100,8 @@ export class Hud {
   }
 
   onClick(e) {
+    const sp = e.target.closest('[data-sp]');
+    if (sp) { if (!sp.classList.contains('disabled') || sp.dataset.sp === 'deliver') this.shopPanel.onAction(sp.dataset.sp, sp); return; }
     const b = e.target.closest('[data-act],[data-tool],[data-seed],[data-do]');
     if (!b) {
       if (e.target.classList.contains('modal-wrap')) this.closeModal();
@@ -111,6 +129,18 @@ export class Hud {
         break;
       case 'tut-skip': g.save.tutorial.done = true; this.updateTutorial(); break;
       case 'login': this.login(); break;
+      case 'go-farm': g.controls.focusOn(PLOT_SLOTS[0].clone().add({ x: 1.2, y: 0, z: -0.6 })); this.closeModal(); break;
+      case 'go-shop': this.openShop(); break;
+      case 'sell': {
+        if (!b.dataset.armed) {
+          b.dataset.armed = '1';
+          b.textContent = `Bán ${b.dataset.n} cành = ${b.dataset.total}💰?`;
+          setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = 'Bán sỉ'; } }, 3000);
+          break;
+        }
+        g.sellWholesale(b.dataset.k);
+        break;
+      }
       case 'logout': this.logout(b); break;
       case 'edit-profile': this.editProfile(); break;
       case 'sync-now': g.saveMgr.saveNow('manual'); break;
@@ -143,7 +173,27 @@ export class Hud {
     const p = this.game.save.player;
     $('.avatar', this.root).innerHTML = avatarSVG(p.avatar, 40);
     $('.pname', this.root).textContent = p.name;
-    $('.plevel', this.root).textContent = `Lv ${p.level} · 💰 ${p.coins}`;
+    $('.plevel', this.root).textContent = `Lv ${p.level}`;
+    this.updateWallet();
+  }
+
+  updateWallet() {
+    const p = this.game.save.player;
+    $('.w-coins', this.root).textContent = p.coins;
+    $('.w-rep', this.root).textContent = p.reputation;
+    const t = tierInfo(p.reputation);
+    $('.w-tier', this.root).textContent = t.icon;
+    $('.w-tier', this.root).title = t.name;
+    const n = this.game.save.shop.customers.length;
+    const badge = $('.nav-badge', this.root);
+    badge.classList.toggle('hidden', !n);
+    badge.textContent = n;
+  }
+
+  openShop(customerId = null) {
+    this.game.controls.focusOn(ZONES.shop.center.clone().add({ x: 0, y: 0, z: 3 }));
+    this.game.select(null);
+    this.shopPanel.open(customerId);
   }
 
   updateClock(c) {
@@ -268,19 +318,25 @@ export class Hud {
     const seeds = FLOWER_IDS.map((id) => `<div class="cell"><span>${FLOWERS[id].icon}</span><small>Hạt ${FLOWERS[id].name}</small><b>×${s.inventory.seeds[id] || 0}</b></div>`).join('');
     const flowers = Object.entries(s.inventory.flowers).filter(([, n]) => n > 0).map(([k, n]) => {
       const [id, q] = k.split('|');
-      return `<div class="cell"><span>${FLOWERS[id]?.icon ?? '🌼'}</span><small>${FLOWERS[id]?.name ?? id} <i class="stars">${'★'.repeat(+q)}</i></small><b>×${n}</b></div>`;
+      return `<div class="cell"><span>${FLOWERS[id]?.icon ?? '🌼'}</span><small>${FLOWERS[id]?.name ?? id} <i class="stars">${'★'.repeat(+q)}</i></small><b>×${n}</b>
+        <button class="mini" data-act="sell" data-k="${k}" data-n="${n}" data-total="${wholesalePrice(id, +q) * n}">Bán sỉ</button></div>`;
     }).join('') || '<p class="muted">Chưa có hoa nào. Hãy trồng và thu hoạch nhé!</p>';
     this.openModal('inventory', `
       <h2>🎒 Kho đồ</h2>
       <h3>Hoa đã thu hoạch</h3><div class="grid">${flowers}</div>
+      <p class="muted small">Bán sỉ nhanh nhưng chỉ được khoảng một nửa giá. Bán cho khách ở 🏪 Tiệm Hoa lời hơn và có uy tín.</p>
       <h3>Hạt giống</h3><div class="grid">${seeds}</div>
+      <h3>Giấy gói & ruy băng</h3><div class="grid">${[
+        ...Object.entries(PAPERS).map(([id, w]) => `<div class="cell"><span class="swatch-dot" style="--c:${w.color}"></span><small>${w.name}</small><b>${w.free ? '∞' : '×' + (s.inventory.papers[id] || 0)}</b></div>`),
+        ...Object.entries(RIBBONS).map(([id, w]) => `<div class="cell"><span class="swatch-dot ribbon" style="--c:${w.color}"></span><small>${w.name}</small><b>${w.free ? '∞' : '×' + (s.inventory.ribbons[id] || 0)}</b></div>`),
+      ].join('')}</div>
       <h3>Vật phẩm & dụng cụ</h3><div class="grid">
         <div class="cell"><span>🧪</span><small>Phân bón</small><b>×${s.inventory.items.fertilizer || 0}</b></div>
         <div class="cell"><span>🪏</span><small>Xẻng</small><b>${s.tools.shovel ? '✔' : '—'}</b></div>
         <div class="cell"><span>🚿</span><small>Bình tưới</small><b>${s.tools.wateringCan ? '✔' : '—'}</b></div>
       </div>
       ${DEV_TOOLS ? '<button class="btn primary wide" data-act="free-seeds">🎁 Nhận gói hạt giống miễn phí (1 lần/ngày game)</button>' : ''}
-      <p class="muted small">Cửa hàng hạt giống sẽ mở ở Giai đoạn 4. Bán hoa ở Tiệm Hoa từ Giai đoạn 3.</p>
+      <p class="muted small">Hạt giống, giấy gói và ruy băng sẽ mua được ở Khu Chợ (Giai đoạn 4).</p>
     `);
   }
 
@@ -388,9 +444,10 @@ export class Hud {
     this.toast('✨ Đã cập nhật nhân vật', 'good');
   }
 
-  openModal(name, html) {
+  openModal(name, html, size = '') {
     this.modal = name;
     const wrap = $('.modal-wrap', this.root);
+    $('.modal', wrap).className = `modal ${size}`;
     $('.modal', wrap).innerHTML = `<button class="round sm close" data-act="close-modal" aria-label="Đóng">✕</button>${html}`;
     wrap.classList.remove('hidden');
   }

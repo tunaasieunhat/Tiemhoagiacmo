@@ -8,8 +8,10 @@
 // =============================================================
 import { STARTER, TIME, FARM } from '../../data/config.js';
 import { createTile } from '../systems/farming.js';
+import { createShopState } from '../systems/shop.js';
+import { STARTER_WRAPS } from '../../data/wrapping.js';
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 export function newId() {
   if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
@@ -56,11 +58,14 @@ export function createNewSave() {
       seeds: { ...STARTER.seeds },
       items: { ...STARTER.items },
       flowers: {},          // "rose|3": số lượng  (loài|số sao)
+      papers: { ...STARTER_WRAPS.papers },
+      ribbons: { ...STARTER_WRAPS.ribbons },
     },
+    shop: createShopState(),
     farm: {
       plots: [createPlot('plot-1')],
     },
-    stats: { harvested: 0, playMinutes: 0, lastFreePackDay: 0 },
+    stats: { harvested: 0, playMinutes: 0, lastFreePackDay: 0, served: 0, sold: 0, coinsEarned: 0, tips: 0, bouquets: 0 },
     tutorial: { step: 0, done: false },
     settings: { sound: true, shadows: true },
   };
@@ -75,6 +80,14 @@ export const MIGRATIONS = {
     s.meta.cloudRev = s.meta.cloudRev ?? 0;
     s.meta.device = s.meta.device ?? '';
     s.meta.syncedRev = s.meta.syncedRev ?? 0;
+    return s;
+  },
+  // v2 -> v3 (Giai đoạn 3): cửa hàng, giấy gói, ruy băng; mở thêm bước hướng dẫn "bán hoa"
+  2: (s) => {
+    s.shop = s.shop || createShopState();
+    s.inventory.papers = s.inventory.papers || { ...STARTER_WRAPS.papers };
+    s.inventory.ribbons = s.inventory.ribbons || { ...STARTER_WRAPS.ribbons };
+    if (s.tutorial?.done && s.tutorial.step >= 5) { s.tutorial.done = false; s.tutorial.step = 5; }
     return s;
   },
 };

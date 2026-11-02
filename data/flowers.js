@@ -11,6 +11,7 @@
 //  seedPrice        : giá hạt giống (dùng từ GĐ4)
 //  unlockLevel      : level mở khóa (dùng từ GĐ4)
 //  meaning          : ý nghĩa loài hoa (GĐ6 sẽ cho khám phá dần)
+//  tones            : tông màu của hoa (ấm/mát/pastel/mộc mạc) — dùng chấm điểm bó hoa
 //  colors           : màu mô hình 3D (mã màu HEX)
 // =============================================================
 
@@ -28,6 +29,7 @@ export const FLOWERS = {
     seedPrice: 12,
     unlockLevel: 1,
     meaning: 'Tình yêu, sự trân trọng',
+    tones: ['warm'],
     colors: { petal: '#f47a93', petalDark: '#d9506f', stem: '#5fae63', leaf: '#76c27a' },
   },
   tulip: {
@@ -43,6 +45,7 @@ export const FLOWERS = {
     seedPrice: 6,
     unlockLevel: 1,
     meaning: 'Tình cảm chân thành',
+    tones: ['cool', 'pastel'],
     colors: { petal: '#c79cf2', petalDark: '#a674dc', stem: '#63b06a', leaf: '#86cc84' },
   },
   sunflower: {
@@ -58,6 +61,7 @@ export const FLOWERS = {
     seedPrice: 14,
     unlockLevel: 1,
     meaning: 'Niềm tin, hướng về tương lai',
+    tones: ['warm', 'natural'],
     colors: { petal: '#ffd34e', petalDark: '#f4b42a', center: '#8a5a3b', stem: '#5aa55e', leaf: '#6dbd6f' },
   },
 };

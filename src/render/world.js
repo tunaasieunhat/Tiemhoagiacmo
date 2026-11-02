@@ -108,7 +108,7 @@ export function buildWorld(scene) {
   // ----- tiệm hoa -----
   const shop = flowerShop();
   shop.position.copy(ZONES.shop.center);
-  shop.rotation.y = 0.3;
+  shop.rotation.y = 0.3; // khớp SHOP_ROT trong customers.js
   shop.userData.pick = { kind: 'zone', zone: 'shop' };
   world.add(shop);
 
@@ -137,6 +137,8 @@ export function buildWorld(scene) {
     [junction, new THREE.Vector3(ZONES.shop.center.x - 1.5, 0, ZONES.shop.center.z + 3.6)],
     [junction, new THREE.Vector3(ZONES.market.center.x + 1.5, 0, ZONES.market.center.z + 3.4)],
     [new THREE.Vector3(fc.x - fx - 0.4, 0, fc.z + 1), new THREE.Vector3(-11, 0, 4)],
+    // lối khách đi vào tiệm từ phía đông
+    [new THREE.Vector3(ZONES.shop.center.x + 2.2, 0, ZONES.shop.center.z + 4.4), new THREE.Vector3(21, 0, -0.5)],
   ];
   for (const [a, b] of paths) {
     const len = a.distanceTo(b);
@@ -227,7 +229,7 @@ export function buildWorld(scene) {
   // ----- biển tên khu vực -----
   const labels = [
     { text: 'Nông Trại', sub: '', pos: new THREE.Vector3(fc.x - fx, 2.6, fc.z - fz) },
-    { text: 'Tiệm Hoa Giấc Mơ', sub: 'Sắp khai trương', pos: ZONES.shop.center.clone().setY(5.6) },
+    { text: 'Tiệm Hoa Giấc Mơ', sub: 'Chạm để mở quầy bán hoa', pos: ZONES.shop.center.clone().setY(5.6) },
     { text: 'Khu Chợ', sub: 'Dụng cụ · Hạt giống · Nâng cấp', pos: ZONES.market.center.clone().setY(4.4) },
   ];
   for (const l of labels) {

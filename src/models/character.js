@@ -46,12 +46,18 @@ export function buildCharacter(avatar) {
     const c = at(sphere(0.06, '#ffab9c', 8), x * 1.55, -0.12, 0.33); c.scale.set(1, 0.6, 0.4); head.add(c);
   }
   head.add(at(sphere(0.025, '#c96a5a', 6), 0, -0.14, 0.4));
-  // mũ rơm
-  const hatG = new THREE.Group(); hatG.position.y = 0.3; hatG.rotation.x = -0.12;
-  hatG.add(cyl(0.62, 0.62, 0.05, hat, 20));
-  hatG.add(at(cyl(0.3, 0.36, 0.26, hat, 16), 0, 0.14, 0));
-  hatG.add(at(cyl(0.365, 0.37, 0.07, '#f28da0', 16), 0, 0.06, 0));
-  head.add(hatG);
+  // búi tóc (tùy chọn)
+  if (avatar.bun) {
+    head.add(at(sphere(0.17, hair, 12), 0, 0.42, -0.18));
+  }
+  // mũ rơm (hat = null => không đội mũ)
+  if (hat) {
+    const hatG = new THREE.Group(); hatG.position.y = 0.3; hatG.rotation.x = -0.12;
+    hatG.add(cyl(0.62, 0.62, 0.05, hat, 20));
+    hatG.add(at(cyl(0.3, 0.36, 0.26, hat, 16), 0, 0.14, 0));
+    hatG.add(at(cyl(0.365, 0.37, 0.07, '#f28da0', 16), 0, 0.06, 0));
+    head.add(hatG);
+  }
 
   root.traverse((o) => { if (o.isMesh) o.castShadow = true; });
   return { root, body, head, armL, armR, legL, legR, hand };

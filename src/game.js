@@ -3,7 +3,10 @@
 // =============================================================
 import * as THREE from 'three';
 import { TIME, STARTER } from '../data/config.js';
-import { FLOWERS } from '../data/flowers.js';
+import { FLOWERS, FLOWER_IDS } from '../data/flowers.js';
+import { PAPERS, RIBBONS } from '../data/wrapping.js';
+import * as shop from './systems/shop.js';
+import { CustomersView } from './render/customers.js';
 import * as farming from './systems/farming.js';
 import { clockOf } from './systems/time.js';
 import { FarmView } from './render/farmView.js';
@@ -28,6 +31,7 @@ export const TUTORIAL = [
   { text: 'Chọn 💧 Tưới để tưới nước cho cây. Cây khát sẽ hiện giọt nước 💧.', done: (a) => a === 'water' },
   { text: 'Chọn 🧪 Bón phân để hoa đẹp hơn (mỗi giai đoạn bón 1 lần).', done: (a) => a === 'fertilize' },
   { text: 'Chờ hoa nở ⭐ rồi dùng 🧺 Thu hoạch. Mẹo: ⚙️ Cài đặt có nút tua nhanh thời gian.', done: (a) => a === 'harvest' },
+  { text: 'Khách sẽ ghé 🏪 Tiệm Hoa! Bấm nút 🏪 bên trái (hoặc chạm vào tiệm) để bán hoa cho khách.', done: (a) => a === 'sell' },
 ];
 
 export class Game {
@@ -49,6 +53,8 @@ export class Game {
     const start = PLOT_SLOTS[0].clone().add(new THREE.Vector3(2.6, 0, 1.2));
     this.player = new Player(stage.scene, this.save.player.avatar, start);
     this.particles = new Particles(stage.scene);
+    this.customers = new CustomersView(stage.scene);
+    this.customers.sync(this.save, true);
     this.fireflies = new Fireflies(stage.scene, world.fireflyAnchors);
     this.dayNight = new DayNight(stage, world.lampLights);
     this.controls = new CameraControls(stage.camera, stage.renderer.domElement, {
@@ -60,7 +66,7 @@ export class Game {
     this.controls.target.copy(PLOT_SLOTS[0]).add(portrait ? new THREE.Vector3(0.7, 0, 0.7) : new THREE.Vector3(1.5, 0, -1));
     if (portrait) this.controls.zoom = 1.75;
     this.controls.apply();
-    this.pickRoots = [this.farmView.root, world.shop, world.market, ...world.lockedSlots];
+    this.pickRoots = [this.farmView.root, this.customers.root, world.shop, world.market, ...world.lockedSlots];
     this.setShadows(this.save.settings.shadows !== false);
   }
 
@@ -91,6 +97,21 @@ export class Game {
         if (e === 'ready') this.particles.spawn('sparkle', this.farmView.tileWorldPos(pi, ti));
       }
     }));
+    // cửa hàng: khách đến / khách bỏ đi
+    const shopEv = shop.shopTick(this.save, { offline: !!opts.offline, hourFloat: this.clock.hourFloat, flowerIds: this.unlockedFlowers() });
+    for (const e of shopEv) {
+      const npc = shop.npcOf(e.customer.npc);
+      if (e.type === 'arrive') {
+        this.toast(`🔔 ${npc.name} vừa đến tiệm hoa!`, 'info');
+        this.customers.sync(this.save);
+      } else if (e.type === 'timeout') {
+        this.customers.leave(e.customer.id, 'angry');
+        if (!e.silent) this.toast(`😤 ${npc.name} chờ lâu quá nên đã bỏ đi (${shop.reactionText('timeout', e.customer.npc)})`, 'bad');
+        ev.left = (ev.left || 0) + 1;
+      }
+      this.emitter.emit('shop');
+      this.saveMgr.markDirty();
+    }
     if (ev.ready || ev.dead) this.saveMgr.markDirty();
     return ev;
   }
@@ -117,6 +138,7 @@ export class Game {
     if (this.clockT > 0.25) {
       this.clockT = 0;
       this.farmView.sync(this.save);
+      this.customers.sync(this.save);
       this.emitter.emit('refresh');
     }
 
@@ -124,6 +146,7 @@ export class Game {
     this.player.update(dt);
     this.farmView.update(dt);
     this.particles.update(dt);
+    this.customers.update(dt);
     this.dayNight.update(c.hourFloat, this.controls.target);
     this.fireflies.update(performance.now() / 1000, this.dayNight.night);
   }
@@ -158,11 +181,14 @@ export class Game {
         this.farmView.setSelected(pick);
         this.requestAction(pick, this.tool, { seed: this.seed });
       }
+    } else if (pick.kind === 'customer') {
+      this.select(null);
+      this.emitter.emit('open-shop', { customerId: pick.id });
     } else if (pick.kind === 'zone') {
       this.select(null);
       const z = ZONES[pick.zone];
       this.controls.focusOn(z.center);
-      if (pick.zone === 'shop') this.toast('🌷 Tiệm Hoa sẽ khai trương ở Giai đoạn 3 — nơi bán hoa và gói bó hoa!', 'info');
+      if (pick.zone === 'shop') this.emitter.emit('open-shop', {});
       else this.toast('🧺 Khu Chợ (dụng cụ, hạt giống, nâng cấp) sẽ mở ở Giai đoạn 4.', 'info');
     } else if (pick.kind === 'lockedPlot') {
       this.select(null);
@@ -237,6 +263,89 @@ export class Game {
       }
       this.emitter.emit('tutorial');
     }
+  }
+
+  // ---------------- cửa hàng ----------------
+  unlockedFlowers() {
+    return FLOWER_IDS.filter((id) => FLOWERS[id].unlockLevel <= this.save.player.level);
+  }
+
+  /** Giao hoa cho khách. sel = { items: {"rose|3": 2}, paper, ribbon } */
+  deliverToCustomer(customerId, sel) {
+    const s = this.save;
+    const c = s.shop.customers.find((x) => x.id === customerId);
+    if (!c) return { ok: false, msg: 'Khách đã rời đi' };
+    const ev = shop.evaluateDelivery(c.request, sel);
+    if (!ev.ok) return { ok: false, msg: 'Chưa đúng yêu cầu của khách' };
+    // kiểm tra kho
+    for (const [k, n] of Object.entries(sel.items)) if (n > 0 && !((s.inventory.flowers[k] || 0) >= n)) return { ok: false, msg: 'Không đủ hoa trong kho' };
+    const bouquet = c.request.type === 'bouquet';
+    if (bouquet) {
+      if (!PAPERS[sel.paper].free && !(s.inventory.papers[sel.paper] > 0)) return { ok: false, msg: 'Hết giấy gói này' };
+      if (!RIBBONS[sel.ribbon].free && !(s.inventory.ribbons[sel.ribbon] > 0)) return { ok: false, msg: 'Hết ruy băng này' };
+    }
+    // trừ kho
+    let count = 0;
+    for (const [k, n] of Object.entries(sel.items)) { if (n > 0) { s.inventory.flowers[k] -= n; count += n; if (!s.inventory.flowers[k]) delete s.inventory.flowers[k]; } }
+    if (bouquet) {
+      if (!PAPERS[sel.paper].free) s.inventory.papers[sel.paper] -= 1;
+      if (!RIBBONS[sel.ribbon].free) s.inventory.ribbons[sel.ribbon] -= 1;
+    }
+    const tier = shop.tierOf(s.player.reputation);
+    const tip = shop.tipAmount(Math.random, tier, ev);
+    s.player.coins += ev.price + tip;
+    const oldTier = tier;
+    s.player.reputation = Math.max(0, s.player.reputation + ev.repDelta);
+    s.shop.customers.splice(s.shop.customers.indexOf(c), 1);
+    Object.assign(s.stats, {
+      served: s.stats.served + 1, sold: s.stats.sold + count, coinsEarned: s.stats.coinsEarned + ev.price + tip,
+      tips: s.stats.tips + tip, bouquets: s.stats.bouquets + (bouquet ? 1 : 0),
+    });
+
+    const npc = shop.npcOf(c.npc);
+    const pos = this.customers.positionOf(c.id).setY(2.2);
+    this.customers.leave(c.id, ev.mood === 'bad' ? 'sad' : 'happy');
+    this.particles.spawn(ev.mood === 'bad' ? 'leaf' : 'sparkle', pos.clone().setY(0.5));
+    this.emitter.emit('float', { pos, text: `+${ev.price + tip} 💰  ${ev.repDelta >= 0 ? '+' : ''}${ev.repDelta} 💗` });
+    this.toast(`${npc.name}: “${shop.reactionText(ev.mood, c.npc)}”`, ev.mood === 'bad' ? 'warn' : 'good');
+    if (tip) setTimeout(() => this.toast(`💝 ${npc.name} cho thêm ${tip} 💰 tiền bo!`, 'good'), 900);
+    const newTier = shop.tierOf(s.player.reputation);
+    if (newTier > oldTier) setTimeout(() => this.toast(`🎉 Tiệm lên bậc "${shop.tierInfo(s.player.reputation).name}"! Khách sẽ đến đông hơn.`, 'good'), 1800);
+    this.advanceTutorial('sell');
+    this.saveMgr.markDirty();
+    this.emitter.emit('inventory');
+    this.emitter.emit('shop');
+    return { ok: true, ev, tip };
+  }
+
+  declineCustomer(customerId) {
+    const s = this.save;
+    const c = s.shop.customers.find((x) => x.id === customerId);
+    if (!c) return;
+    s.shop.customers.splice(s.shop.customers.indexOf(c), 1);
+    s.player.reputation = Math.max(0, s.player.reputation + shop.SHOP_REP.decline);
+    this.customers.leave(c.id, 'sad');
+    this.toast(`${shop.npcOf(c.npc).name}: “${shop.reactionText('decline', c.npc)}”`, 'info');
+    this.saveMgr.markDirty();
+    this.emitter.emit('inventory');
+    this.emitter.emit('shop');
+  }
+
+  /** Bán sỉ cả chồng hoa (không cần khách, giá thấp) */
+  sellWholesale(key) {
+    const s = this.save;
+    const n = s.inventory.flowers[key] || 0;
+    if (!n) return 0;
+    const [flower, q] = key.split('|');
+    const total = shop.wholesalePrice(flower, +q) * n;
+    delete s.inventory.flowers[key];
+    s.player.coins += total;
+    s.stats.sold += n;
+    s.stats.coinsEarned += total;
+    this.toast(`📦 Đã bán sỉ ${n} cành ${FLOWERS[flower].name} được ${total} 💰`, 'good');
+    this.saveMgr.markDirty();
+    this.emitter.emit('inventory');
+    return total;
   }
 
   // ---------------- tiện ích ----------------
