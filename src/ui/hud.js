@@ -102,7 +102,9 @@ export class Hud {
       case 'ff6': g.fastForward(6); break;
       case 'save-now': g.saveMgr.saveNow('manual'); break;
       case 'reset':
-        if (confirm('Xóa toàn bộ tiến độ và chơi lại từ đầu?')) g.saveMgr.reset().then(() => location.reload());
+        // bấm 2 lần để xác nhận (không dùng confirm() vì một số trình duyệt nhúng chặn hộp thoại)
+        if (b.dataset.armed) { g.saveMgr.reset().then(() => location.reload()); }
+        else { b.dataset.armed = '1'; b.textContent = '⚠️ Bấm lần nữa để xóa hết'; setTimeout(() => { delete b.dataset.armed; b.textContent = '🗑️ Chơi lại từ đầu'; }, 3000); }
         break;
       case 'tut-skip': g.save.tutorial.done = true; this.updateTutorial(); break;
       default:
