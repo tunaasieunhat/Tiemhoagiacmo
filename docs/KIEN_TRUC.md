@@ -7,7 +7,9 @@ Tiemhoagiacmo/
 ├─ index.html              Trang chính
 ├─ data/                   ⭐ SỐ LIỆU CÂN BẰNG — chỉnh ở đây, không cần biết code
 │  ├─ flowers.js           Các loài hoa: thời gian lớn, nước, phân, giá, mùa, màu...
-│  └─ config.js            Thời gian ngày/đêm, chăm sóc, đồ khởi đầu, camera...
+│  ├─ config.js            Thời gian ngày/đêm, chăm sóc, đồ khởi đầu, camera...
+│  ├─ online.js            Địa chỉ + khóa công khai Supabase
+│  └─ badwords.js          Từ cấm (bản phụ, bản chính ở máy chủ)
 ├─ src/
 │  ├─ main.js              Khởi động game
 │  ├─ game.js              Bộ điều khiển: nối dữ liệu ↔ logic ↔ đồ họa ↔ giao diện
@@ -20,6 +22,12 @@ Tiemhoagiacmo/
 │  │  ├─ schema.js         Cấu trúc save + số phiên bản + chuyển đổi save cũ
 │  │  ├─ localStore.js     Lưu trên máy (IndexedDB)
 │  │  └─ saveManager.js    Tự lưu định kỳ / khi thoát; chỗ gắn đồng bộ cloud (GĐ2)
+│  ├─ online/              KẾT NỐI SUPABASE (GĐ2)
+│  │  ├─ supabase.js       Tạo kết nối (chặn nhầm khóa bí mật), giới hạn thời gian chờ
+│  │  ├─ auth.js           Đăng nhập, đăng ký, quên mật khẩu, Google, hồ sơ
+│  │  ├─ cloudSync.js      Đồng bộ save: mất mạng, xung đột 2 máy
+│  │  ├─ names.js          Kiểm tra tên phía trình duyệt
+│  │  └─ errors.js         Lỗi tiếng Việt
 │  ├─ render/              ĐỒ HỌA 3D (Three.js)
 │  │  ├─ stage.js          Renderer, camera isometric, ánh sáng
 │  │  ├─ cameraControls.js Kéo, zoom (chuột / 2 ngón), chạm
@@ -51,9 +59,14 @@ cùng công thức để kiểm tra gian lận.
 }
 ```
 - `rev` tăng mỗi lần lưu; `syncedRev` = bản đã lên cloud. `rev > syncedRev` ⇒ còn thay đổi chưa đồng bộ (khi mất mạng).
+- Đồng bộ (GĐ2): máy chủ đánh số `rev` cho mỗi lần ghi (`push_save`). Trình duyệt gửi kèm `cloudRev` đã biết;
+  nếu khác => máy khác đã ghi => hỏi người chơi giữ bản nào (bản kia được sao lưu trên máy).
 - Đổi cấu trúc: tăng `SAVE_VERSION` + thêm hàm vào `MIGRATIONS` trong `src/save/schema.js`. Save cũ được sao lưu trước khi chuyển.
 
-## 3. Bảng dữ liệu Supabase (đề xuất — làm ở GĐ2, GĐ7, GĐ8)
+## 3. Bảng dữ liệu Supabase
+
+Đã làm (GĐ2, file `supabase/migrations/20261102000001_gd2_profiles_saves.sql`): `profiles`, `saves`, `banned_words`, hàm `push_save`.
+Các bảng còn lại làm ở GĐ7, GĐ8.
 
 | Bảng | Nội dung | Ai được đọc / ghi (RLS) |
 |---|---|---|

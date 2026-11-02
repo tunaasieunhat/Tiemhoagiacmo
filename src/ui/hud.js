@@ -1,6 +1,7 @@
 // Giao diện HTML phủ lên trên 3D: thanh trên, thanh công cụ, bảng ô đất, kho đồ, cài đặt, thông báo.
 import { FLOWERS, FLOWER_IDS } from '../../data/flowers.js';
-import { CARE } from '../../data/config.js';
+import { CARE, DEV_TOOLS } from '../../data/config.js';
+import * as auth from '../online/auth.js';
 import * as farming from '../systems/farming.js';
 import { formatClock, periodName, isNight, formatDuration } from '../systems/time.js';
 import { avatarSVG } from './avatar.js';
@@ -37,17 +38,19 @@ export class Hud {
     em.on('float', (f) => this.floatText(f));
     em.on('tutorial', () => this.updateTutorial());
     em.on('saved', (s) => this.flashSaved(s));
+    em.on('sync', (s) => this.updateSync(s));
     this.updateClock(game.clock);
     this.updateToolbar();
     this.updateProfile();
     this.updateTutorial();
+    this.updateSync({ status: game.account?.cloud?.status });
   }
 
   render() {
     this.root.innerHTML = `
       <div class="topbar">
         <button class="chip profile" data-act="settings" aria-label="Hồ sơ">
-          <span class="avatar"></span>
+          <span class="avatar"></span><span class="sync-dot hidden" title=""></span>
           <span class="pinfo"><b class="pname"></b><small class="plevel"></small></span>
         </button>
         <div class="chip clock">
@@ -107,13 +110,22 @@ export class Hud {
         else { b.dataset.armed = '1'; b.textContent = '⚠️ Bấm lần nữa để xóa hết'; setTimeout(() => { delete b.dataset.armed; b.textContent = '🗑️ Chơi lại từ đầu'; }, 3000); }
         break;
       case 'tut-skip': g.save.tutorial.done = true; this.updateTutorial(); break;
+      case 'login': this.login(); break;
+      case 'logout': this.logout(b); break;
+      case 'edit-profile': this.editProfile(); break;
+      case 'sync-now': g.saveMgr.saveNow('manual'); break;
+      case 'copy-code': {
+        const code = g.account?.profile?.friend_code || '';
+        navigator.clipboard?.writeText(code).then(() => this.toast('📋 Đã chép mã kết bạn', 'good'), () => this.toast(`Mã kết bạn: ${code}`, 'info'));
+        break;
+      }
       default:
     }
   }
 
   onChange(e) {
     const g = this.game;
-    if (e.target.name === 'pname') {
+    if (e.target.name === 'pname' && !g.account?.session) {
       const name = e.target.value.replace(/\s+/g, ' ').trim().slice(0, 20);
       if (name.length >= 2) { g.save.player.name = name; g.saveMgr.markDirty(); this.updateProfile(); }
     }
@@ -267,32 +279,113 @@ export class Hud {
         <div class="cell"><span>🪏</span><small>Xẻng</small><b>${s.tools.shovel ? '✔' : '—'}</b></div>
         <div class="cell"><span>🚿</span><small>Bình tưới</small><b>${s.tools.wateringCan ? '✔' : '—'}</b></div>
       </div>
-      <button class="btn primary wide" data-act="free-seeds">🎁 Nhận gói hạt giống miễn phí (1 lần/ngày game)</button>
+      ${DEV_TOOLS ? '<button class="btn primary wide" data-act="free-seeds">🎁 Nhận gói hạt giống miễn phí (1 lần/ngày game)</button>' : ''}
       <p class="muted small">Cửa hàng hạt giống sẽ mở ở Giai đoạn 4. Bán hoa ở Tiệm Hoa từ Giai đoạn 3.</p>
     `);
   }
 
   openSettings() {
-    const s = this.game.save;
+    const g = this.game;
+    const s = g.save;
+    const acc = g.account || {};
     const last = new Date(s.meta.updatedAt).toLocaleTimeString('vi-VN');
-    this.openModal('settings', `
-      <h2>⚙️ Cài đặt</h2>
+    let account;
+    if (acc.session && acc.profile) {
+      account = `
+      <div class="profile-edit">${avatarSVG(s.player.avatar, 64)}
+        <div class="acc-info"><b>${esc(acc.profile.display_name)}</b><small>${esc(acc.session.user.email || '')}</small>
+          <small>Mã kết bạn: <b class="code">${esc(acc.profile.friend_code)}</b> <button class="link" data-act="copy-code">Chép</button></small></div></div>
+      <p class="sync-line">${this.syncText()}</p>
+      <div class="row-btns">
+        <button class="btn" data-act="edit-profile">✏️ Đổi tên & avatar</button>
+        <button class="btn" data-act="sync-now">☁️ Đồng bộ ngay</button>
+        <button class="btn" data-act="logout">🚪 Đăng xuất</button>
+      </div>`;
+    } else {
+      account = `
       <div class="profile-edit">${avatarSVG(s.player.avatar, 64)}
         <label>Tên hiển thị<input name="pname" maxlength="20" value="${esc(s.player.name)}"></label></div>
+      ${acc.configured
+        ? '<p class="muted small">Bạn đang chơi khách — tiến độ chỉ lưu trên máy này.</p><button class="btn primary wide" data-act="login">🔐 Đăng nhập / Đăng ký để lưu lên mạng</button>'
+        : '<p class="muted small">Chế độ ngoại tuyến: game chưa được kết nối máy chủ (Supabase), tiến độ lưu trên máy này.</p>'}`;
+    }
+    this.openModal('settings', `
+      <h2>⚙️ Cài đặt</h2>
+      ${account}
       <label class="row"><input type="checkbox" name="shadows" ${s.settings.shadows !== false ? 'checked' : ''}> Đổ bóng (tắt nếu máy chậm)</label>
-      <div class="row-btns">
-        <button class="btn" data-act="save-now">💾 Lưu ngay</button>
-      </div>
-      <p class="muted small">Lưu trên máy này lúc ${last}. Đăng nhập & lưu lên mạng sẽ có ở Giai đoạn 2.</p>
-      <h3>🧪 Công cụ thử nghiệm</h3>
+      <p class="muted small">Đã lưu trên máy lúc ${last}.</p>
+      ${DEV_TOOLS ? `<h3>🧪 Công cụ thử nghiệm</h3>
       <div class="row-btns">
         <button class="btn" data-act="ff1">⏩ Tua 1 giờ</button>
         <button class="btn" data-act="ff6">⏩ Tua 6 giờ</button>
         <button class="btn danger" data-act="reset">🗑️ Chơi lại từ đầu</button>
-      </div>
+      </div>` : ''}
       <p class="muted small">Điều khiển: kéo để di chuyển bản đồ · cuộn chuột hoặc chụm 2 ngón để phóng to/thu nhỏ · máy tính có thể dùng phím W A S D.</p>
       <p class="muted small">Tiệm Hoa Giấc Mơ · phiên bản ${GAME_VERSION} (${GAME_STAGE})</p>
     `);
+  }
+
+  // ---------- tài khoản ----------
+  syncText() {
+    const c = this.game.account?.cloud;
+    if (!c) return '';
+    const at = c.lastSyncAt ? ` lúc ${new Date(c.lastSyncAt).toLocaleTimeString('vi-VN')}` : '';
+    return {
+      synced: `☁️ Đã đồng bộ lên mạng${at}`,
+      pending: '🕒 Có thay đổi chờ đồng bộ',
+      syncing: '🔄 Đang đồng bộ...',
+      offline: '📴 Đang ngoại tuyến — sẽ tự đồng bộ khi có mạng',
+      error: '⚠️ Đồng bộ lỗi, sẽ thử lại',
+      conflict: '🔀 Có xung đột giữa 2 máy, hãy chọn bản muốn giữ',
+    }[c.status] || '';
+  }
+
+  updateSync(s) {
+    const dot = $('.sync-dot', this.root);
+    if (!this.game.account?.cloud) { dot.classList.add('hidden'); return; }
+    dot.className = `sync-dot ${s?.status || ''}`;
+    dot.title = this.syncText();
+    const line = $('.sync-line', this.root);
+    if (line) line.textContent = this.syncText();
+  }
+
+  async login() {
+    const ui = this.game.account.authUI;
+    this.closeModal();
+    await this.game.saveMgr.saveNow('manual');
+    const r = await ui.run();
+    if (r.session) location.reload();
+  }
+
+  async logout(btn) {
+    const g = this.game;
+    if (!btn.dataset.armed) {
+      btn.dataset.armed = '1';
+      btn.textContent = g.account.cloud?.hasPending ? '⚠️ Chưa đồng bộ xong! Bấm lần nữa để vẫn đăng xuất' : 'Bấm lần nữa để đăng xuất';
+      setTimeout(() => { delete btn.dataset.armed; btn.textContent = '🚪 Đăng xuất'; }, 3500);
+      return;
+    }
+    btn.disabled = true;
+    await g.saveMgr.saveNow('manual');
+    await g.account.cloud?.push().catch(() => {});
+    await auth.signOut();
+    auth.setPreferredMode(null);
+    location.reload();
+  }
+
+  async editProfile() {
+    const g = this.game;
+    const acc = g.account;
+    this.closeModal();
+    const p = await acc.authUI.profileEditor(acc.profile, acc.session.user.id, 'edit');
+    if (!p) return;
+    acc.profile = p;
+    g.save.player.name = p.display_name;
+    g.save.player.avatar = { ...g.save.player.avatar, ...p.avatar };
+    g.player.setAvatar(g.save.player.avatar);
+    g.saveMgr.markDirty?.();
+    this.updateProfile();
+    this.toast('✨ Đã cập nhật nhân vật', 'good');
   }
 
   openModal(name, html) {

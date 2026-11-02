@@ -9,7 +9,7 @@
 import { STARTER, TIME, FARM } from '../../data/config.js';
 import { createTile } from '../systems/farming.js';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 export function newId() {
   if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
@@ -32,8 +32,10 @@ export function createNewSave() {
     meta: {
       saveId: newId(),
       ownerId: null,       // id tài khoản Supabase (GĐ2)
-      rev: 0,              // tăng mỗi lần lưu => dùng để so sánh khi đồng bộ cloud
-      syncedRev: 0,        // rev đã đẩy lên cloud thành công
+      rev: 0,              // tăng mỗi lần lưu trên máy
+      syncedRev: 0,        // rev (trên máy) đã đẩy lên cloud thành công
+      cloudRev: 0,         // số phiên bản trên cloud lần đồng bộ gần nhất (phát hiện xung đột giữa 2 máy)
+      device: '',          // thiết bị lưu gần nhất
       createdAt: now,
       updatedAt: now,
     },
@@ -67,6 +69,14 @@ export function createNewSave() {
 // Hàm chuyển đổi: key = phiên bản CŨ.  Ví dụ khi lên phiên bản 2:
 //   1: (s) => { s.player.reputation ??= 0; return s; },
 export const MIGRATIONS = {
+  // v1 -> v2 (Giai đoạn 2): thêm thông tin đồng bộ cloud
+  1: (s) => {
+    s.meta = s.meta || {};
+    s.meta.cloudRev = s.meta.cloudRev ?? 0;
+    s.meta.device = s.meta.device ?? '';
+    s.meta.syncedRev = s.meta.syncedRev ?? 0;
+    return s;
+  },
 };
 
 /** Đưa save về phiên bản mới nhất + bổ sung các trường còn thiếu. */

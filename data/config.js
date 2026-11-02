@@ -39,6 +39,9 @@ export const STARTER = {
   freeSeedsPack: { rose: 2, tulip: 3, sunflower: 2 }, // nút "nhận hạt thử nghiệm" (chỉ GĐ1, GĐ4 sẽ thay bằng cửa hàng)
 };
 
+// ---- Công cụ thử nghiệm (nút tua nhanh, nhận hạt miễn phí) — đặt false khi phát hành ----
+export const DEV_TOOLS = true;
+
 // ---- Lưu game ----
 export const SAVE = {
   autosaveSeconds: 15, // tự lưu trên máy mỗi bao nhiêu giây

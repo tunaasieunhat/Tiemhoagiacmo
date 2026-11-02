@@ -3,7 +3,11 @@
 Game 3D chibi trồng hoa & bán hoa, chạy trên trình duyệt (điện thoại + máy tính).
 Công nghệ: Three.js + Vite, sau này dùng Supabase cho tài khoản online.
 
-**Tiến độ:** ✅ Giai đoạn 1 — bản đồ, camera, 1 lô đất, 3 loài hoa, trồng → thu hoạch, ngày đêm, lưu trên máy.
+**Tiến độ:**
+- ✅ Giai đoạn 1 — bản đồ, camera, 1 lô đất, 3 loài hoa, trồng → thu hoạch, ngày đêm, lưu trên máy.
+- ✅ Giai đoạn 2 — tài khoản (email, quên mật khẩu, Google), hồ sơ + avatar chibi, lưu game lên mạng, chơi khi mất mạng rồi tự đồng bộ, bảo mật RLS.
+
+**Cài đặt online:** xem [Hướng dẫn Supabase](docs/HUONG_DAN_SUPABASE.md). Chưa cài thì game vẫn chạy ở chế độ khách (lưu trên máy).
 
 ## Chạy thử trên máy tính
 
@@ -35,10 +39,13 @@ Thanh công cụ dưới: ✋ Xem · 🪏 Xới · 🌱 Gieo · 💧 Tưới · 
 ## Chỉnh số liệu cân bằng
 
 - `data/flowers.js` — từng loài hoa (thời gian lớn, số lần tưới/ngày, phân bón, giá...)
-- `data/config.js` — tốc độ ngày đêm, mức héo, đồ khởi đầu, camera...
+- `data/config.js` — tốc độ ngày đêm, mức héo, đồ khởi đầu, camera, bật/tắt công cụ thử nghiệm (`DEV_TOOLS`)
+- `data/online.js` — địa chỉ & khóa công khai Supabase, tần suất đồng bộ
+- `data/badwords.js` — từ cấm (bản chính nằm trong bảng `banned_words` trên Supabase)
 
 Sửa số → lưu file → trình duyệt tự cập nhật.
 
 ## Tài liệu
 
 - [Kiến trúc & bảng dữ liệu Supabase](docs/KIEN_TRUC.md)
+- [Hướng dẫn cài đặt Supabase](docs/HUONG_DAN_SUPABASE.md)
