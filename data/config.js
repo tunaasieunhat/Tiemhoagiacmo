@@ -56,6 +56,17 @@ export const CAMERA = {
   panLimit: 20,        // giới hạn kéo bản đồ
 };
 
+// ---- Nhìn xuyên mái che (bạt che & nhà kính) để thấy hoa bên dưới ----
+export const SEE_THROUGH = {
+  zoomFar: 1.0,     // thu nhỏ tới mức này (hoặc nhỏ hơn): mái che hiện đậm nhất
+  zoomNear: 1.9,    // phóng to tới mức này (hoặc lớn hơn): mái che mờ nhất
+  coverFar: 0.85,   // độ đậm của bạt che khi thu nhỏ (0 = trong suốt, 1 = che kín)
+  coverNear: 0.15,  // độ đậm của bạt che khi phóng to
+  glassFar: 0.3,    // độ đậm kính nhà kính khi thu nhỏ
+  glassNear: 0.08,  // độ đậm kính nhà kính khi phóng to
+  whenSelected: true, // chạm vào ô đất trong lô có mái che => mái che lô đó mờ hẳn
+};
+
 // ---- Nhân vật ----
 export const PLAYER = {
   walkSpeed: 4.2,      // đơn vị 3D / giây

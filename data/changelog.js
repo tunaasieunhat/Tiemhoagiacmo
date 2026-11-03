@@ -4,6 +4,13 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.9.6',
+    notes: [
+      'Bạt che và kính nhà kính trong mờ: phóng to để nhìn rõ hoa bên dưới',
+      'Chạm vào ô đất trong lô có bạt che thì bạt mờ đi để xem cây',
+    ],
+  },
+  {
     version: '0.9.5',
     notes: [
       'App Android chơi toàn màn hình: ẩn thanh trạng thái và thanh điều hướng (vuốt từ mép màn hình để hiện tạm)',

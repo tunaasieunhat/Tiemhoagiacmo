@@ -291,6 +291,8 @@ export class Game {
     this.controls.update(dt);
     this.player.update(dt);
     this.farmView.update(dt);
+    // bạt che / nhà kính mờ dần khi phóng to hoặc khi chọn ô trong lô đó
+    this.farmView.updateSeeThrough(dt, this.controls.zoom, !this.visit && this.selected?.kind === 'tile' ? this.selected.plot : -1);
     this.particles.update(dt);
     this.customers.update(dt);
     this.dayNight.update(c.hourFloat, this.controls.target, dt);

@@ -1,6 +1,6 @@
 // Hiển thị các lô đất + cây hoa, đồng bộ theo dữ liệu save.
 import * as THREE from 'three';
-import { FARM } from '../../data/config.js';
+import { FARM, SEE_THROUGH } from '../../data/config.js';
 import { rbox, mesh } from '../models/primitives.js';
 import { mat } from '../models/materials.js';
 import { grassTuft } from '../models/environment.js';
@@ -123,6 +123,32 @@ export class FarmView {
     this.sync(save, true);
   }
 
+  /**
+   * Mái che (bạt / kính nhà kính) mờ dần khi phóng to, và mờ hẳn ở lô đang chọn ô — để thấy hoa bên dưới.
+   * Gọi mỗi khung hình với mức zoom hiện tại của camera.
+   */
+  updateSeeThrough(dt, zoom, selectedPlot = -1) {
+    const S = SEE_THROUGH;
+    const t = THREE.MathUtils.smoothstep(zoom, S.zoomFar, S.zoomNear);
+    const k = Math.min(1, dt * 6);
+    this.plots.forEach((pv, pi) => {
+      const near = S.whenSelected && pi === selectedPlot;
+      for (const obj of [pv.cover, pv.greenhouse]) {
+        if (!obj.visible) continue;
+        const glass = obj.userData.seeKind === 'glass';
+        const far = glass ? S.glassFar : S.coverFar;
+        const nearOp = glass ? S.glassNear : S.coverNear;
+        const target = near ? nearOp : far + (nearOp - far) * t;
+        const cur = obj.userData.seeOp ?? far;
+        const op = cur + (target - cur) * k;
+        obj.userData.seeOp = op;
+        for (const m of obj.userData.seeMats) m.opacity = op;
+        // bạt mờ thì không đổ bóng đen lên hoa
+        if (obj.userData.strips) for (const st of obj.userData.strips) st.castShadow = op > 0.55;
+      }
+    });
+  }
+
   /** Cập nhật hình ảnh theo dữ liệu (gọi thường xuyên, chỉ vẽ lại khi có thay đổi) */
   sync(save, instant = false) {
     const now = save.time.gameMinutes;
@@ -203,9 +229,12 @@ export class FarmView {
   }
 }
 
-const GLASS = uniqueMat('#dff4ff', { transparent: true, opacity: 0.28, depthWrite: false });
 function makeGreenhouse(w, d) {
   const g = new THREE.Group();
+  // kính riêng từng lô để mờ đi khi phóng to / chọn ô (xem SEE_THROUGH)
+  const GLASS = uniqueMat('#dff4ff', { transparent: true, opacity: SEE_THROUGH.glassFar, depthWrite: false });
+  g.userData.seeMats = [GLASS];
+  g.userData.seeKind = 'glass';
   const H = 2.3;
   const frame = '#ffffff';
   for (const [x, z] of [[-w / 2, -d / 2], [w / 2, -d / 2], [-w / 2, d / 2], [w / 2, d / 2]]) {
@@ -245,8 +274,15 @@ function makeCover(w, d) {
     g.add(post);
   }
   const n = 6;
+  // bạt bán trong suốt, vật liệu riêng từng lô để mờ đi khi phóng to / chọn ô (xem SEE_THROUGH)
+  const tarp = [uniqueMat('#ffffff', { transparent: true, opacity: SEE_THROUGH.coverFar, depthWrite: false }),
+    uniqueMat('#9fd6f0', { transparent: true, opacity: SEE_THROUGH.coverFar, depthWrite: false })];
+  g.userData.seeMats = tarp;
+  g.userData.seeKind = 'cover';
+  g.userData.strips = [];
   for (let i = 0; i < n; i++) {
-    const strip = rbox(w / n + 0.01, 0.05, d + 0.2, i % 2 ? '#9fd6f0' : '#ffffff', 0.02, { cast: true });
+    const strip = rbox(w / n + 0.01, 0.05, d + 0.2, tarp[i % 2], 0.02, { cast: true });
+    g.userData.strips.push(strip);
     strip.position.set(-w / 2 + (i + 0.5) * (w / n), H + Math.sin(((i + 0.5) / n) * Math.PI) * 0.35, 0);
     g.add(strip);
   }
