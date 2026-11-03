@@ -7,6 +7,7 @@ import { CARE } from '../../data/config.js';
 import { upgradeValue } from './progression.js';
 import { SEASON_EFFECT, DISEASE, DISEASES } from '../../data/seasons.js';
 import { protectUntil } from './weather.js';
+import { parseVkey, flowerKey, variantName } from './variants.js';
 
 export const TILE_STATES = ['untilled', 'tilled', 'growing', 'ready', 'dead'];
 export const STAGE_NAMES = ['Hạt giống', 'Nảy mầm', 'Ra nụ', 'Nở hoa'];
@@ -16,6 +17,7 @@ export function createTile() {
   return {
     state: 'untilled',
     flower: null,
+    variant: null,    // màu hoa (GĐ6)
     growth: 0,      // số phút "lớn" đã tích lũy
     water: 0,       // 0..1
     health: 100,    // 0..100, chỉ giảm (ghi nhận việc chăm sóc)
@@ -153,16 +155,19 @@ export function till(tile, save) {
   return fail('Ô này không cần xới');
 }
 
-export function plant(tile, flowerId, save, nowMin) {
+/** seedKey: mã hạt có màu, vd "rose:red" (hoặc "rose" = màu mặc định) */
+export function plant(tile, seedKey, save, nowMin) {
   if (tile.state !== 'tilled') return fail(tile.state === 'untilled' ? 'Hãy xới đất trước khi gieo hạt' : 'Ô này đã có cây');
-  const def = FLOWERS[flowerId];
+  const { species, variant, vkey } = parseVkey(seedKey);
+  const def = FLOWERS[species];
   if (!def) return fail('Không rõ loại hạt');
-  if (!(save.inventory.seeds[flowerId] > 0)) return fail(`Hết hạt ${def.name}!`);
-  save.inventory.seeds[flowerId] -= 1;
+  const name = variantName(species, variant);
+  if (!(save.inventory.seeds[vkey] > 0)) return fail(`Hết hạt ${name}!`);
+  save.inventory.seeds[vkey] -= 1;
   Object.assign(tile, {
-    state: 'growing', flower: flowerId, growth: 0, health: 100, fert: 0, lastFertStage: -1, plantedAt: nowMin,
+    state: 'growing', flower: species, variant, growth: 0, health: 100, fert: 0, lastFertStage: -1, plantedAt: nowMin,
   });
-  return { ok: true, msg: `Đã gieo ${def.name}` };
+  return { ok: true, msg: `Đã gieo ${name}` };
 }
 
 /** Lượng nước sau 1 lần tưới (nâng cấp bình tưới thì nhiều hơn 1) */
@@ -194,12 +199,13 @@ export function fertilize(tile, save) {
 export function harvest(tile, save) {
   if (tile.state !== 'ready') return fail(tile.state === 'growing' ? 'Hoa chưa nở' : 'Không có gì để thu hoạch');
   const flower = tile.flower;
+  const variant = tile.variant;
   const quality = qualityOf(tile);
-  const key = `${flower}|${quality}`;
+  const key = flowerKey(flower, variant, quality);
   save.inventory.flowers[key] = (save.inventory.flowers[key] || 0) + 1;
   save.stats.harvested = (save.stats.harvested || 0) + 1;
   Object.assign(tile, createTile());
-  return { ok: true, msg: `Thu hoạch ${FLOWERS[flower].name} ${'★'.repeat(quality)}`, flower, quality };
+  return { ok: true, msg: `Thu hoạch ${variantName(flower, variant)} ${'★'.repeat(quality)}`, flower, variant: parseVkey(key.split('|')[0]).variant, quality };
 }
 
 /** Phun thuốc: chữa bệnh, hoặc phòng bệnh đến hết ngày mai */

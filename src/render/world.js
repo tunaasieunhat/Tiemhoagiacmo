@@ -5,7 +5,7 @@ import { rbox, cyl, sphere, at, textSprite, mesh } from '../models/primitives.js
 import { mat } from '../models/materials.js';
 import { buildCharacter } from '../models/character.js';
 import {
-  tree, bush, rock, grassTuft, fence, lampPost, flowerShop, marketStall, toolShed, crate, pond, scarecrow, signPost, rng,
+  tree, bush, rock, grassTuft, fence, lampPost, flowerShop, marketStall, toolShed, crate, pond, scarecrow, signPost, rng, labHouse,
 } from '../models/environment.js';
 
 export const ZONES = {
@@ -141,6 +141,13 @@ export function buildWorld(scene) {
   marketG.userData.pick = { kind: 'zone', zone: 'market' };
   world.add(marketG);
 
+  // ----- nhà lai tạo (GĐ6) -----
+  const lab = labHouse();
+  lab.position.set(-8.8, 0, -1.6);
+  lab.rotation.y = 0.7;
+  lab.userData.pick = { kind: 'zone', zone: 'lab' };
+  world.add(lab);
+
   // ----- đường đá -----
   const junction = new THREE.Vector3(0, 0, -6.2);
   const paths = [
@@ -190,6 +197,7 @@ export function buildWorld(scene) {
     { c: ZONES.market.center, r: 6.2 },
     { c: pd.position, r: 3.6 },
     { c: junction, r: 2.2 },
+    { c: new THREE.Vector3(-8.8, 0, -1.6), r: 2.8 },
   ];
   const free = (x, z, pad = 0) => {
     if (Math.hypot(x, z) > ISLAND_R - 2) return false;
@@ -242,16 +250,17 @@ export function buildWorld(scene) {
     { text: 'Nông Trại', sub: '', pos: new THREE.Vector3(fc.x - fx, 2.6, fc.z - fz) },
     { text: 'Tiệm Hoa Giấc Mơ', sub: 'Chạm để mở quầy bán hoa', pos: ZONES.shop.center.clone().setY(5.6) },
     { text: 'Khu Chợ', sub: 'Chạm để mua hạt giống, vật tư, nâng cấp', pos: ZONES.market.center.clone().setY(4.4) },
+    { text: 'Nhà Lai Tạo', sub: 'Lai ra màu hoa mới', pos: new THREE.Vector3(-8.8, 3.6, -1.6), scale: 0.8 },
   ];
   for (const l of labels) {
-    const sp = textSprite(l.text, { sub: l.sub, scale: 1.1 });
+    const sp = textSprite(l.text, { sub: l.sub, scale: l.scale || 1.1 });
     sp.position.copy(l.pos);
     world.add(sp);
   }
 
   mergeStatic(world);
 
-  return { world, lampLights, fireflyAnchors, lockedSlots, shop, market: marketG };
+  return { world, lampLights, fireflyAnchors, lockedSlots, shop, market: marketG, lab };
 }
 
 function distToSeg(x, z, a, b) {

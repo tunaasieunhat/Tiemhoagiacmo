@@ -11,6 +11,8 @@ Tiemhoagiacmo/
 │  ├─ shop.js, wrapping.js, customers.js   Cửa hàng, giấy gói/ruy băng, khách
 │  ├─ market.js, levels.js Khu chợ (nâng cấp, mở đất), cấp độ & XP
 │  ├─ seasons.js           Mùa, thời tiết, thiên tai, dịch bệnh, lễ hội, đồ phòng hộ
+│  ├─ variants.js          Màu hoa, ý nghĩa, công thức lai, thưởng sổ tay
+│  ├─ regulars.js          Khách quen & câu chuyện
 │  ├─ online.js            Địa chỉ + khóa công khai Supabase
 │  └─ badwords.js          Từ cấm (bản phụ, bản chính ở máy chủ)
 ├─ src/
@@ -25,6 +27,11 @@ Tiemhoagiacmo/
 │  │  ├─ progression.js    XP, lên cấp, mở khóa, tác dụng nâng cấp
 │  │  ├─ calendar.js       Mùa, ngày trong mùa, lễ hội, hoa đúng mùa
 │  │  ├─ weather.js        Thời tiết + dự báo, bão/sương giá/nắng nóng, dịch bệnh
+│  │  ├─ variants.js       Mã hoa có màu ("rose:red|3"), tên, tông, ý nghĩa
+│  │  ├─ bouquet.js        Chấm điểm bó hoa sáng tạo (phối màu, ý nghĩa, cân đối, chất lượng)
+│  │  ├─ breeding.js       Lai tạo
+│  │  ├─ notebook.js       Sổ tay thực vật
+│  │  ├─ regulars.js       Khách quen
 │  │  └─ time.js           Đồng hồ game
 │  ├─ save/                LƯU GAME
 │  │  ├─ schema.js         Cấu trúc save + số phiên bản + chuyển đổi save cũ
@@ -57,7 +64,7 @@ cùng công thức để kiểm tra gian lận.
 
 ```js
 {
-  version: 5,                     // số phiên bản cấu trúc → tự chuyển đổi khi game cập nhật
+  version: 6,                     // số phiên bản cấu trúc → tự chuyển đổi khi game cập nhật
   meta: { saveId, ownerId, rev, syncedRev, createdAt, updatedAt },
   player: { name, avatar, level, xp, coins, reputation },
   time: { gameMinutes, lastRealTs },

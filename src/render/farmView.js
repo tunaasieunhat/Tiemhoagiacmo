@@ -136,13 +136,13 @@ export class FarmView {
     const stage = stageOf(tile);
     const hasPlant = tile.state === 'growing' || tile.state === 'ready' || tile.state === 'dead';
     const wilted = isWilted(tile);
-    const key = hasPlant ? `${tile.flower}|${tile.state === 'dead' ? 'dead' : stage}|${wilted ? 1 : 0}` : '';
+    const key = hasPlant ? `${tile.flower}:${tile.variant}|${tile.state === 'dead' ? 'dead' : stage}|${wilted ? 1 : 0}` : '';
     if (key !== v.key) {
       if (v.plant) v.plantHolder.remove(v.plant);
       v.plant = null;
       if (hasPlant) {
         const dead = tile.state === 'dead';
-        v.plant = buildPlant(tile.flower, dead ? 3 : stage, { wilted, dead });
+        v.plant = buildPlant(tile.flower, dead ? 3 : stage, { wilted, dead, variant: tile.variant });
         v.plantHolder.add(v.plant);
         v.pop = instant ? 1 : 0;
       }

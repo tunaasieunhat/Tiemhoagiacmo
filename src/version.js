@@ -1,3 +1,3 @@
 // Phiên bản game (tăng mỗi lần phát hành). GĐ9 sẽ dùng để báo "Có bản cập nhật".
-export const GAME_VERSION = '0.5.0';
-export const GAME_STAGE = 'Giai đoạn 5';
+export const GAME_VERSION = '0.6.0';
+export const GAME_STAGE = 'Giai đoạn 6';

@@ -66,16 +66,23 @@ export const TONES = {
   natural: { name: 'mộc mạc, tự nhiên' },
 };
 
-// Dịp tặng (GĐ6 sẽ thêm ý nghĩa hoa)
+// Dịp tặng: tông màu + ý nghĩa mong muốn (xem MEANINGS trong data/variants.js)
 export const OCCASIONS = [
-  { text: 'tặng mẹ', tone: 'warm' },
-  { text: 'mừng sinh nhật bạn thân', tone: 'pastel' },
-  { text: 'cho buổi hẹn hò đầu tiên', tone: 'warm' },
-  { text: 'chúc mừng tốt nghiệp', tone: 'warm' },
-  { text: 'để bàn làm việc', tone: 'natural' },
-  { text: 'tặng cô giáo', tone: 'pastel' },
-  { text: 'thăm người ốm', tone: 'cool' },
-  { text: 'xin lỗi người yêu', tone: 'pastel' },
-  { text: 'trang trí quán cà phê', tone: 'natural' },
-  { text: 'tặng đồng nghiệp chuyển công tác', tone: 'cool' },
+  { text: 'tặng mẹ', tone: 'warm', meaning: 'gratitude' },
+  { text: 'mừng sinh nhật bạn thân', tone: 'pastel', meaning: 'friendship' },
+  { text: 'cho buổi hẹn hò đầu tiên', tone: 'warm', meaning: 'love' },
+  { text: 'chúc mừng tốt nghiệp', tone: 'warm', meaning: 'congrats' },
+  { text: 'để bàn làm việc', tone: 'natural', meaning: 'joy' },
+  { text: 'tặng cô giáo', tone: 'pastel', meaning: 'respect' },
+  { text: 'thăm người ốm', tone: 'cool', meaning: 'health' },
+  { text: 'xin lỗi người yêu', tone: 'pastel', meaning: 'apology' },
+  { text: 'trang trí quán cà phê', tone: 'natural', meaning: 'joy' },
+  { text: 'tặng đồng nghiệp chuyển công tác', tone: 'cool', meaning: 'friendship' },
+  { text: 'động viên bạn thi đại học', tone: 'warm', meaning: 'hope' },
+  { text: 'tặng ông bà', tone: 'natural', meaning: 'respect' },
 ];
+
+// Tỉ lệ khách đặt bó hoa có yêu cầu ý nghĩa (khách mới mở tiệm ít khi đòi hỏi)
+export const MEANING_DEMAND = [0.5, 0.65, 0.8, 0.9, 1];
+// Tỉ lệ khách đặt đúng màu cụ thể (chỉ với màu bạn đã từng trồng)
+export const COLOR_DEMAND = 0.3;

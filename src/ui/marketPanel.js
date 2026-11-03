@@ -6,6 +6,7 @@ import { nextUpgrade, nextPlot } from '../systems/market.js';
 import { wholesalePrice } from '../systems/shop.js';
 import { formatDuration } from '../systems/time.js';
 import { PROTECTION } from '../../data/seasons.js';
+import * as variants from '../systems/variants.js';
 
 const TABS = [
   { id: 'seeds', label: '🌱 Hạt giống' },
@@ -60,12 +61,12 @@ export class MarketPanel {
 
   seeds() {
     const lv = this.save.player.level;
-    return `<p class="muted small">Giá hạt → giá bán 1 cành 1★ ở tiệm. Hoa chất lượng cao bán đắt hơn.</p>` + FLOWER_IDS.map((id) => {
+    return `<p class="muted small">Chợ chỉ bán hạt màu cơ bản. Màu khác có được nhờ 🧬 lai tạo hoặc quà của khách quen.</p>` + FLOWER_IDS.map((id) => {
       const f = FLOWERS[id];
       return this.card({
-        icon: f.icon, name: `Hạt ${f.name}`,
+        icon: f.icon, name: `Hạt ${variants.variantName(id, null)}`,
         desc: `Lớn trong ${formatDuration(f.growHours * 60)} · tưới ${f.waterPerDay} lần/ngày · bán ~${f.basePrice} 💰`,
-        price: f.seedPrice, lock: lv < f.unlockLevel ? f.unlockLevel : 0, owned: this.save.inventory.seeds[id] || 0,
+        price: f.seedPrice, lock: lv < f.unlockLevel ? f.unlockLevel : 0, owned: this.save.inventory.seeds[variants.vkey(id)] || 0,
         buttons: this.buyBtns('seed', id, f.seedPrice),
       });
     }).join('');
@@ -138,10 +139,10 @@ export class MarketPanel {
     const stacks = Object.entries(this.save.inventory.flowers).filter(([, n]) => n > 0);
     if (!stacks.length) return '<p class="muted">Kho chưa có hoa để bán.</p>';
     return `<p class="muted small">Thương lái mua sỉ với giá thấp (khoảng một nửa). Bán cho khách ở Tiệm Hoa sẽ lời hơn và được uy tín.</p>` + stacks.map(([k, n]) => {
-      const [id, q] = k.split('|');
-      const each = wholesalePrice(id, +q);
+      const f = variants.parseFlowerKey(k);
+      const each = wholesalePrice(k);
       return this.card({
-        icon: FLOWERS[id].icon, name: `${FLOWERS[id].name} ${'★'.repeat(+q)}`, desc: `${each} 💰 / cành`, owned: n,
+        icon: FLOWERS[f.species].icon, name: `${variants.variantName(f.species, f.variant)} ${'★'.repeat(f.q)}`, desc: `${each} 💰 / cành`, owned: n,
         buttons: `<button class="btn" data-mk="sell1" data-k="${k}">Bán 1</button><button class="btn primary" data-act="sell" data-k="${k}" data-n="${n}" data-total="${each * n}">Bán hết</button>`,
       });
     }).join('');

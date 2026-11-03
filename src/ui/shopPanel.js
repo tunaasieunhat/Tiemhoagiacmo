@@ -5,6 +5,14 @@ import { PAPERS, RIBBONS } from '../../data/wrapping.js';
 import * as shop from '../systems/shop.js';
 import { avatarSVG } from './avatar.js';
 import { bouquetSVG } from './bouquetPreview.js';
+import * as variants from '../systems/variants.js';
+import { MEANINGS } from '../../data/variants.js';
+import { REGULARS } from '../../data/regulars.js';
+import { PART_NAMES } from '../systems/bouquet.js';
+import { regularChapter } from '../systems/regulars.js';
+
+const vdot = (sp, v) => `<i class="vdot" style="--c:${variants.variantData(sp, v).petal}"></i>`;
+const meaningChip = (m) => `<span class="mchip ${MEANINGS[m]?.negative ? 'neg' : ''}">${MEANINGS[m].icon} ${MEANINGS[m].name}</span>`;
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const stars = (q) => '★'.repeat(q);
@@ -81,11 +89,15 @@ export class ShopPanel {
       const npc = shop.npcOf(c.npc);
       const f = Math.max(0, 1 - (now - c.arrivedAt) / c.patience);
       const typeLabel = { single: '1 cành', multi: 'Nhiều cành', bouquet: 'Bó hoa' }[c.request.type];
-      return `<div class="cust">
+      const reg = c.regular ? REGULARS[c.regular] : null;
+      const hearts = reg ? '❤️'.repeat(s.regulars[c.regular].hearts) + '🤍'.repeat(reg.chapters.length - s.regulars[c.regular].hearts) : '';
+      return `<div class="cust ${reg ? 'regular' : ''}">
         <div class="cust-av">${avatarSVG(npc.look, 52)}</div>
         <div class="cust-body">
-          <div class="cust-top"><b>${esc(npc.name)}</b><span class="tag">${typeLabel}</span><span class="reward">~${shop.estimateReward(c.request)} 💰</span></div>
+          <div class="cust-top"><b>${esc(npc.name)}</b>${reg ? `<span class="tag reg">Khách quen ${hearts}</span>` : `<span class="tag">${typeLabel}</span>`}<span class="reward">~${shop.estimateReward(c.request)} 💰</span></div>
+          ${reg ? `<p class="story-snip">${esc(regularChapter(c.regular, s).intro)}</p>` : ''}
           <p>“${esc(shop.requestText(c.request, c.npc))}”</p>
+          ${c.request.meaning ? `<div class="chips">${meaningChip(c.request.meaning)}</div>` : ''}
           <div class="track sm"><i data-pbar="${c.id}" style="width:${f * 100}%;background:${f > 0.5 ? '#7cc27f' : f > 0.25 ? '#f6c84a' : '#ec6b6b'}"></i></div>
           <div class="cust-btns">
             <button class="btn primary" data-sp="compose" data-id="${c.id}">${c.request.type === 'bouquet' ? '💐 Gói hoa' : '🌸 Chọn hoa'}</button>
@@ -95,7 +107,7 @@ export class ShopPanel {
     }).join('') || `<div class="empty-shop">🪴<p>Chưa có khách nào. ${s.stats.harvested ? 'Khách sẽ ghé trong giờ mở cửa, hãy chuẩn bị sẵn hoa nhé!' : 'Hãy trồng và thu hoạch hoa trước đã.'}</p></div>`;
 
     const stock = Object.entries(s.inventory.flowers).filter(([, n]) => n > 0)
-      .map(([k, n]) => { const [id, q] = k.split('|'); return `<span class="chip-s">${FLOWERS[id].icon} ${stars(+q)} ×${n}</span>`; }).join('') || '<span class="muted small">Kho trống</span>';
+      .map(([k, n]) => { const f = variants.parseFlowerKey(k); return `<span class="chip-s">${FLOWERS[f.species].icon}${vdot(f.species, f.variant)} ${stars(f.q)} ×${n}</span>`; }).join('') || '<span class="muted small">Kho trống</span>';
 
     return `
       <h2>🏪 Tiệm Hoa Giấc Mơ</h2>
@@ -122,19 +134,23 @@ export class ShopPanel {
     const npc = shop.npcOf(c.npc);
     const s = this.save;
     const ev = shop.evaluateDelivery(req, this.sel);
-    const items = Object.entries(this.sel.items).filter(([, n]) => n > 0).map(([k, n]) => ({ flower: k.split('|')[0], n }));
+    const items = Object.entries(this.sel.items).filter(([, n]) => n > 0).map(([k, n]) => { const f = variants.parseFlowerKey(k); return { flower: f.species, variant: f.variant, n }; });
     const wanted = req.type === 'bouquet' ? req.mustInclude?.flower : req.flower;
+    const known = s.book?.meanings || {};
 
     const stacks = Object.entries(s.inventory.flowers).filter(([, n]) => n > 0).map(([k, n]) => {
-      const [id, q] = k.split('|');
-      return { k, id, q: +q, n };
-    }).sort((a, b) => (b.id === wanted) - (a.id === wanted) || a.id.localeCompare(b.id) || b.q - a.q);
+      const f = variants.parseFlowerKey(k);
+      const ms = known[f.vkey] ? variants.meaningsOf(f.species, f.variant) : null;
+      const match = req.meaning && ms?.includes(req.meaning);
+      return { k, id: f.species, variant: f.variant, q: f.q, n, ms, match };
+    }).sort((a, b) => (b.match ? 1 : 0) - (a.match ? 1 : 0) || (b.id === wanted) - (a.id === wanted) || a.id.localeCompare(b.id) || b.q - a.q);
     const rows = stacks.map((st) => {
       const chosen = this.sel.items[st.k] || 0;
       const low = st.q < req.minQuality;
+      const mtxt = st.ms ? st.ms.map((m) => `<span class="mchip sm ${MEANINGS[m].negative ? 'neg' : ''} ${m === req.meaning ? 'hit' : ''}">${MEANINGS[m].icon} ${MEANINGS[m].name}</span>`).join('') : '<span class="mchip sm unk">❔ chưa rõ ý nghĩa</span>';
       return `<div class="stack ${chosen ? 'on' : ''} ${low ? 'low' : ''}">
-        <span class="si">${FLOWERS[st.id].icon}</span>
-        <span class="sn">${FLOWERS[st.id].name} <i class="stars">${stars(st.q)}</i><small>có ${st.n}${low ? ' · thấp hơn yêu cầu' : ''}</small></span>
+        <span class="si">${FLOWERS[st.id].icon}${vdot(st.id, st.variant)}</span>
+        <span class="sn">${esc(variants.variantName(st.id, st.variant))} <i class="stars">${stars(st.q)}</i><small>có ${st.n}${low ? ' · thấp hơn yêu cầu' : ''}</small><span class="mrow">${mtxt}</span></span>
         <span class="step"><button class="round sm" data-sp="dec" data-k="${st.k}" aria-label="Bớt">−</button><b>${chosen}</b><button class="round sm" data-sp="inc" data-k="${st.k}" aria-label="Thêm">+</button></span>
       </div>`;
     }).join('') || '<p class="muted">Kho chưa có hoa. Hãy ra nông trại thu hoạch nhé!</p>';
@@ -152,13 +168,21 @@ export class ShopPanel {
     }
 
     const checks = ev.checks.map((x) => `<li class="${x.ok ? 'ok' : 'no'}">${x.ok ? '✅' : '⬜'} ${esc(x.text)}</li>`).join('');
+    const partBars = req.type === 'bouquet' && ev.items.length ? `<div class="parts">${Object.entries(PART_NAMES).map(([k, name]) => {
+      const v = ev.parts[k] || 0;
+      return `<div class="part"><span>${name}</span><div class="track sm"><i style="width:${v}%;background:${v >= 70 ? '#7cc27f' : v >= 45 ? '#f6c84a' : '#ec8b7b'}"></i></div><b>${v}</b></div>`;
+    }).join('')}</div>${ev.tips.length ? `<ul class="tips">${ev.tips.slice(0, 3).map((t) => `<li>💡 ${esc(t)}</li>`).join('')}</ul>` : ''}` : '';
+    const reg = c.regular ? REGULARS[c.regular] : null;
     const [mIcon, mText] = MOOD[ev.mood];
     const total = items.reduce((a, b) => a + b.n, 0);
     return `
       <div class="comp-head">
         <button class="round sm" data-sp="back" aria-label="Quay lại">←</button>
         <div class="cust-av">${avatarSVG(npc.look, 44)}</div>
-        <div><b>${esc(npc.name)}</b><p>“${esc(shop.requestText(req, c.npc))}”</p>
+        <div><b>${esc(npc.name)}${reg ? ' <span class="tag reg">Khách quen</span>' : ''}</b>
+          ${reg ? `<p class="story-snip">${esc(regularChapter(c.regular, s).intro)}</p>` : ''}
+          <p>“${esc(shop.requestText(req, c.npc))}”</p>
+          ${req.meaning ? `<div class="chips">${meaningChip(req.meaning)}<span class="muted small">${Object.keys(known).some((k) => known[k] && variants.meaningsOf(...k.split(':')).includes(req.meaning)) ? '' : 'Chưa biết hoa nào mang ý nghĩa này — thử đoán xem!'}</span></div>` : ''}
           <div class="track sm"><i data-pbar="${c.id}" style="width:100%"></i></div></div>
       </div>
       <div class="comp-main">
@@ -166,6 +190,7 @@ export class ShopPanel {
         <div class="comp-info">
           <ul class="checks">${checks}</ul>
           ${total ? `<div class="estimate"><span class="mood">${mIcon}</span><div><b>${mText}</b> <small>(${ev.score}/100)</small><br><small>Nhận ~${ev.price} 💰 · ${ev.repDelta >= 0 ? '+' : ''}${ev.repDelta} 💗</small></div></div>` : ''}
+          ${partBars}
         </div>
       </div>
       <h3>Chọn hoa</h3><div class="stacks">${rows}</div>
@@ -174,7 +199,7 @@ export class ShopPanel {
         <button class="btn" data-sp="auto">✨ Tự chọn</button>
         <button class="btn primary ${ev.ok ? '' : 'disabled'}" data-sp="deliver">${req.type === 'bouquet' ? '💐 Gói & giao' : '🌸 Giao hoa'}</button>
       </div>
-      ${req.type === 'bouquet' ? '<p class="muted small">Mẹo: giấy gói, ruy băng và hoa hợp tông khách thích, phối 2 loài hoa trở lên sẽ được điểm cao hơn.</p>' : ''}`;
+      ${req.type === 'bouquet' ? '<p class="muted small">Mẹo: chọn hoa đúng ý nghĩa, hợp tông; 1 loài chủ đạo + hoa điểm xuyết; tặng số lẻ cành. Ý nghĩa hoa khám phá dần khi bán cho khách (xem 📖 Sổ tay).</p>' : ''}`;
   }
 
   // ---------------- xử lý nút ----------------
@@ -220,17 +245,17 @@ export class ShopPanel {
       }
       case 'auto': {
         const req = this.customer().request;
-        const p = shop.autoPick(req, s.inventory);
+        const p = shop.autoPick(req, s.inventory, s.book?.meanings);
         this.sel = { items: p.items, paper: p.paper ?? this.sel.paper, ribbon: p.ribbon ?? this.sel.ribbon };
         if (!Object.keys(p.items).length) this.hud.toast('Kho chưa có hoa phù hợp yêu cầu này', 'warn');
         this.renderKeepScroll();
         break;
       }
       case 'deliver': {
+        this.view = 'list'; // chuyển trước để không báo nhầm "khách đã rời đi"
         const res = g.deliverToCustomer(this.customerId, this.sel);
-        if (!res.ok) { this.hud.toast(res.msg, 'warn'); return; }
-        this.view = 'list';
-        this.render();
+        if (!res.ok) { this.view = 'compose'; this.hud.toast(res.msg, 'warn'); return; }
+        if (!res.story) this.render();
         break;
       }
       case 'toggle-open':

@@ -6,6 +6,7 @@ import { PAPERS, RIBBONS } from '../../data/wrapping.js';
 import { SUPPLIES, UPGRADES, PLOT_UNLOCKS } from '../../data/market.js';
 import { createPlot } from '../save/schema.js';
 import { PROTECTION } from '../../data/seasons.js';
+import { vkey } from './variants.js';
 
 const fail = (msg) => ({ ok: false, msg });
 
@@ -26,7 +27,8 @@ export function buySeeds(save, id, n = 1) {
   if (!checkLevel(save, f.unlockLevel)) return fail(`Cần đạt cấp ${f.unlockLevel} để mua hạt ${f.name}`);
   const cost = f.seedPrice * n;
   if (!pay(save, cost)) return fail(`Không đủ tiền (cần ${cost} 💰)`);
-  save.inventory.seeds[id] = (save.inventory.seeds[id] || 0) + n;
+  const k = vkey(id);
+  save.inventory.seeds[k] = (save.inventory.seeds[k] || 0) + n;
   return { ok: true, msg: `Đã mua ${n} hạt ${f.name} (−${cost} 💰)` };
 }
 

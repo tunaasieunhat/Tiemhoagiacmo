@@ -57,10 +57,10 @@ export const PROTECTION = {
 // Lễ hội: season + days (ngày trong mùa). Khách đến nhanh hơn (spawnMult < 1), trả giá cao hơn (priceMult),
 // hay đặt bó hoa (bouquetBoost) với loài hoa & tông riêng của dịp lễ.
 export const FESTIVALS = [
-  { id: 'tet', name: 'Tết Nguyên Đán', icon: '🧧', season: 'xuan', days: [1, 2], flowers: ['sunflower', 'daisy'], tone: 'warm', occasion: 'chưng ngày Tết', spawnMult: 0.5, priceMult: 1.4, bouquetBoost: 0.25 },
-  { id: 'valentine', name: 'Lễ Tình nhân 14/2', icon: '💘', season: 'xuan', days: [4], flowers: ['rose', 'tulip'], tone: 'warm', occasion: 'tặng người yêu dịp Valentine', spawnMult: 0.45, priceMult: 1.5, bouquetBoost: 0.3 },
-  { id: 'women83', name: 'Quốc tế Phụ nữ 8/3', icon: '👩', season: 'xuan', days: [6], flowers: ['rose', 'tulip', 'daisy'], tone: 'pastel', occasion: 'tặng mẹ và chị em ngày 8/3', spawnMult: 0.5, priceMult: 1.4, bouquetBoost: 0.3 },
-  { id: 'wedding', name: 'Mùa cưới', icon: '💍', season: 'thu', days: [1, 2, 3, 4, 5, 6, 7], flowers: ['hydrangea', 'rose', 'daisy'], tone: 'pastel', occasion: 'làm hoa cưới', spawnMult: 0.8, priceMult: 1.2, bouquetBoost: 0.2 },
-  { id: 'women2010', name: 'Phụ nữ Việt Nam 20/10', icon: '🌹', season: 'thu', days: [5], flowers: ['rose', 'lavender'], tone: 'warm', occasion: 'tặng mẹ ngày 20/10', spawnMult: 0.5, priceMult: 1.4, bouquetBoost: 0.3 },
-  { id: 'teacher', name: 'Nhà giáo Việt Nam 20/11', icon: '📚', season: 'dong', days: [3], flowers: ['daisy', 'lavender', 'tulip'], tone: 'pastel', occasion: 'tặng thầy cô ngày 20/11', spawnMult: 0.5, priceMult: 1.35, bouquetBoost: 0.3 },
+  { id: 'tet', name: 'Tết Nguyên Đán', icon: '🧧', season: 'xuan', days: [1, 2], flowers: ['sunflower', 'daisy'], tone: 'warm', meaning: 'hope', occasion: 'chưng ngày Tết', spawnMult: 0.5, priceMult: 1.4, bouquetBoost: 0.25 },
+  { id: 'valentine', name: 'Lễ Tình nhân 14/2', icon: '💘', season: 'xuan', days: [4], flowers: ['rose', 'tulip'], tone: 'warm', meaning: 'love', occasion: 'tặng người yêu dịp Valentine', spawnMult: 0.45, priceMult: 1.5, bouquetBoost: 0.3 },
+  { id: 'women83', name: 'Quốc tế Phụ nữ 8/3', icon: '👩', season: 'xuan', days: [6], flowers: ['rose', 'tulip', 'daisy'], tone: 'pastel', meaning: 'gratitude', occasion: 'tặng mẹ và chị em ngày 8/3', spawnMult: 0.5, priceMult: 1.4, bouquetBoost: 0.3 },
+  { id: 'wedding', name: 'Mùa cưới', icon: '💍', season: 'thu', days: [1, 2, 3, 4, 5, 6, 7], flowers: ['hydrangea', 'rose', 'daisy'], tone: 'pastel', meaning: 'loyalty', occasion: 'làm hoa cưới', spawnMult: 0.8, priceMult: 1.2, bouquetBoost: 0.2 },
+  { id: 'women2010', name: 'Phụ nữ Việt Nam 20/10', icon: '🌹', season: 'thu', days: [5], flowers: ['rose', 'lavender'], tone: 'warm', meaning: 'gratitude', occasion: 'tặng mẹ ngày 20/10', spawnMult: 0.5, priceMult: 1.4, bouquetBoost: 0.3 },
+  { id: 'teacher', name: 'Nhà giáo Việt Nam 20/11', icon: '📚', season: 'dong', days: [3], flowers: ['daisy', 'lavender', 'tulip'], tone: 'pastel', meaning: 'respect', occasion: 'tặng thầy cô ngày 20/11', spawnMult: 0.5, priceMult: 1.35, bouquetBoost: 0.3 },
 ];

@@ -1,6 +1,7 @@
 // Mô hình 3D chibi cho các loài hoa theo từng giai đoạn lớn.
 import * as THREE from 'three';
 import { FLOWERS } from '../../data/flowers.js';
+import { variantColors } from '../systems/variants.js';
 import { sphere, cyl, cone, at, group } from './primitives.js';
 
 const DRY = '#b39a74';
@@ -35,9 +36,9 @@ function stem(h, color, r = 0.04) {
  * @param {number} stage 0 hạt, 1 mầm, 2 nụ, 3 nở
  * @param {{wilted?: boolean, dead?: boolean}} cond
  */
-export function buildPlant(flowerId, stage, { wilted = false, dead = false } = {}) {
+export function buildPlant(flowerId, stage, { wilted = false, dead = false, variant = null } = {}) {
   const def = FLOWERS[flowerId];
-  const base = def.colors;
+  const base = variantColors(flowerId, variant);
   const t = dead ? 0.85 : wilted ? 0.45 : 0;
   const C = {
     petal: mixColor(base.petal, DRY, t),

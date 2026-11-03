@@ -266,3 +266,30 @@ export function signPost(color = '#f3dcc0') {
 }
 
 export { group };
+
+/** Nhà lai tạo: nhà gỗ nhỏ có mái vòm kính và bình thí nghiệm */
+export function labHouse() {
+  const g = new THREE.Group();
+  g.add(at(rbox(3.0, 0.2, 2.6, '#e9dccd', 0.08), 0, 0.1, 0));
+  g.add(at(rbox(2.6, 1.6, 2.2, '#fff6ea', 0.14), 0, 1.0, 0));
+  const dome = mesh(new THREE.SphereGeometry(1.3, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), uniqueMat('#cfeefe', { transparent: true, opacity: 0.45 }), { cast: false });
+  dome.position.y = 1.8;
+  dome.scale.set(1, 0.75, 0.85);
+  g.add(dome);
+  g.add(at(cyl(1.32, 1.32, 0.12, '#8cc9a0', 20), 0, 1.82, 0));
+  // cây con trong vòm kính
+  [['#f47a93', -0.4], ['#ffd34e', 0.1], ['#9cc7f2', 0.5]].forEach(([c, x]) => {
+    g.add(at(cyl(0.03, 0.03, 0.4, '#5fae63', 6), x, 2.05, 0));
+    g.add(at(sphere(0.12, c, 8), x, 2.3, 0));
+  });
+  g.add(at(rbox(0.8, 1.2, 0.1, '#a87458', 0.08), 0, 0.75, 1.12));
+  g.add(at(sphere(0.05, '#ffd56b', 8), 0.25, 0.75, 1.2));
+  // bình thí nghiệm
+  const flask = new THREE.Group();
+  flask.add(at(sphere(0.22, uniqueMat('#d9b8ff', { transparent: true, opacity: 0.8 }), 10), 0, 0.22, 0));
+  flask.add(at(cyl(0.07, 0.07, 0.25, uniqueMat('#e8f4ff', { transparent: true, opacity: 0.7 }), 8), 0, 0.5, 0));
+  flask.position.set(1.0, 0.2, 1.4);
+  g.add(flask);
+  g.add(at(windowBox(0.6, 0.5), -0.85, 1.1, 1.12));
+  return g;
+}

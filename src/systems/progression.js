@@ -5,6 +5,7 @@ import { LEVEL_XP, LEVEL_XP_AFTER, levelReward } from '../../data/levels.js';
 import { UPGRADES, PLOT_UNLOCKS } from '../../data/market.js';
 import { FLOWERS } from '../../data/flowers.js';
 import { PAPERS, RIBBONS } from '../../data/wrapping.js';
+import { BREEDING } from '../../data/variants.js';
 
 /** Tổng XP cần để đạt cấp lv */
 export function xpForLevel(lv) {
@@ -48,6 +49,7 @@ export function unlocksAt(lv) {
   Object.values(RIBBONS).forEach((w) => { if ((w.unlockLevel || 1) === lv) list.push(`🎀 ${w.name}`); });
   Object.values(UPGRADES).forEach((u) => u.tiers.forEach((t) => { if (t.level === lv) list.push(`${u.icon} ${t.name}`); }));
   PLOT_UNLOCKS.forEach((pl, i) => { if (pl.level === lv) list.push(`🗺️ Lô đất số ${i + 2}`); });
+  if (lv === BREEDING.unlockLevel) list.push('🧬 Nhà Lai Tạo');
   return list;
 }
 

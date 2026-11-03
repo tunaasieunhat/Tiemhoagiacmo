@@ -1,9 +1,10 @@
 // Hình xem trước bó hoa / cành hoa (SVG 2D dễ thương)
 import { FLOWERS } from '../../data/flowers.js';
 import { PAPERS, RIBBONS } from '../../data/wrapping.js';
+import { variantColors } from '../systems/variants.js';
 
-function flowerSVG(id, x, y, s) {
-  const c = FLOWERS[id]?.colors || { petal: '#f6a6b9', petalDark: '#ea7f99' };
+function flowerSVG(id, variant, x, y, s) {
+  const c = FLOWERS[id] ? variantColors(id, variant) : { petal: '#f6a6b9', petalDark: '#ea7f99' };
   if (id === 'sunflower') {
     let p = '';
     for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; p += `<ellipse cx="${x + Math.cos(a) * s * 0.75}" cy="${y + Math.sin(a) * s * 0.75}" rx="${s * 0.42}" ry="${s * 0.22}" transform="rotate(${(a * 180) / Math.PI} ${x + Math.cos(a) * s * 0.75} ${y + Math.sin(a) * s * 0.75})" fill="${c.petal}"/>`; }
@@ -14,7 +15,7 @@ function flowerSVG(id, x, y, s) {
   }
   if (id === 'daisy') {
     let p = '';
-    for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; p += `<ellipse cx="${x + Math.cos(a) * s * 0.6}" cy="${y + Math.sin(a) * s * 0.6}" rx="${s * 0.38}" ry="${s * 0.16}" transform="rotate(${(a * 180) / Math.PI} ${x + Math.cos(a) * s * 0.6} ${y + Math.sin(a) * s * 0.6})" fill="#fff" stroke="#e6ddd0" stroke-width=".8"/>`; }
+    for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; p += `<ellipse cx="${x + Math.cos(a) * s * 0.6}" cy="${y + Math.sin(a) * s * 0.6}" rx="${s * 0.38}" ry="${s * 0.16}" transform="rotate(${(a * 180) / Math.PI} ${x + Math.cos(a) * s * 0.6} ${y + Math.sin(a) * s * 0.6})" fill="${c.petal}" stroke="#e6ddd0" stroke-width=".8"/>`; }
     return p + `<circle cx="${x}" cy="${y}" r="${s * 0.3}" fill="${c.center}"/>`;
   }
   if (id === 'lavender') {
@@ -36,7 +37,7 @@ function flowerSVG(id, x, y, s) {
 /** items: [{flower, n}] ; type: 'single' | 'multi' | 'bouquet' */
 export function bouquetSVG({ items, paper, ribbon, type }, size = 150) {
   const list = [];
-  items.forEach((it) => { for (let i = 0; i < it.n; i++) list.push(it.flower); });
+  items.forEach((it) => { for (let i = 0; i < it.n; i++) list.push([it.flower, it.variant]); });
   const n = Math.min(list.length, 12);
   let flowers = '';
   let stems = '';
@@ -53,7 +54,7 @@ export function bouquetSVG({ items, paper, ribbon, type }, size = 150) {
   }
   pos.forEach(([x, y], i) => { stems += `<line x1="${x}" y1="${y}" x2="${75 + (x - 75) * 0.15}" y2="128" stroke="#5fae63" stroke-width="3"/>`; });
   // vẽ hàng sau trước
-  pos.map((p, i) => [p, i]).sort((a, b) => a[0][1] - b[0][1]).forEach(([[x, y], i]) => { flowers += flowerSVG(list[i], x, y, 11); });
+  pos.map((p, i) => [p, i]).sort((a, b) => a[0][1] - b[0][1]).forEach(([[x, y], i]) => { flowers += flowerSVG(list[i][0], list[i][1], x, y, 11); });
   const leaves = n ? `<ellipse cx="52" cy="78" rx="16" ry="6" fill="#76c27a" transform="rotate(-30 52 78)"/><ellipse cx="98" cy="78" rx="16" ry="6" fill="#76c27a" transform="rotate(30 98 78)"/>` : '';
   let wrap = '';
   if (type === 'bouquet' && n) {

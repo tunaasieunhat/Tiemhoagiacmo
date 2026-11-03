@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { FLOWERS } from '../../data/flowers.js';
 import { buildCharacter } from '../models/character.js';
 import { npcOf } from '../systems/shop.js';
+import { variantColors } from '../systems/variants.js';
 import { ZONES } from './world.js';
 
 const WALK = 3.2;
@@ -44,7 +45,7 @@ export class CustomersView {
         this.views.set(c.id, v);
       }
       const frac = Math.max(0, 1 - (now - c.arrivedAt) / c.patience);
-      if (Math.abs(frac - v.frac) > 0.02) { v.frac = frac; drawBubble(v, c.request, frac); }
+      if (Math.abs(frac - v.frac) > 0.02 && v.state !== 'leaving') { v.frac = frac; drawBubble(v, c.request, frac); }
     }
     // khách đã bị xóa khỏi save mà chưa có hiệu ứng rời đi => cho rời đi lặng lẽ
     for (const [id, v] of this.views) if (!ids.has(id) && v.state !== 'leaving') this.leave(id, 'neutral');
@@ -74,6 +75,7 @@ export class CustomersView {
     model.root.add(sh);
     this.root.add(model.root);
     const v = { model, bubble, canvas, tex, target, state: instant ? 'wait' : 'walk', frac: 2, phase: Math.random() * 6, heading: 0, emote: null };
+    v.regular = !!c.regular;
     drawBubble(v, c.request, 1);
     return v;
   }
@@ -157,7 +159,7 @@ function drawBubble(v, req, frac) {
     [[50, 44, fl], [64, 38, '#ffd34e'], [78, 44, '#c79cf2'], [57, 52, '#ffffff'], [71, 52, fl]].forEach(([cx, cy, c]) => flower(x, cx, cy, 9, c));
     x.fillStyle = '#f47a93'; x.beginPath(); x.ellipse(64, 76, 9, 5, 0, 0, Math.PI * 2); x.fill();
   } else {
-    const c = FLOWERS[req.flower].colors.petal;
+    const c = variantColors(req.flower, req.variant).petal;
     if (req.type === 'single') {
       stem(x, 64, 62, 92); flower(x, 64, 48, 16, c);
     } else {
@@ -168,6 +170,11 @@ function drawBubble(v, req, frac) {
   if (req.minQuality > 1) {
     x.fillStyle = '#f4b42a'; x.font = 'bold 20px sans-serif'; x.textAlign = 'center';
     x.fillText('★'.repeat(req.minQuality), 64, 30);
+  }
+  if (v.regular) {
+    // trái tim hồng: khách quen
+    x.fillStyle = '#f4708c';
+    x.beginPath(); x.moveTo(104, 34); x.bezierCurveTo(88, 22, 92, 6, 104, 14); x.bezierCurveTo(116, 6, 120, 22, 104, 34); x.fill();
   }
   v.tex.needsUpdate = true;
 }

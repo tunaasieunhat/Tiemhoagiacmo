@@ -12,8 +12,14 @@ import { createShopState } from '../systems/shop.js';
 import { STARTER_WRAPS } from '../../data/wrapping.js';
 import { levelFromXp } from '../systems/progression.js';
 import { createWeatherState } from '../systems/weather.js';
+import { vkey, DEFAULT_VARIANT } from '../systems/variants.js';
+import { createBook } from '../systems/notebook.js';
+import { createLabState } from '../systems/breeding.js';
+import { createRegularsState } from '../systems/regulars.js';
 
-export const SAVE_VERSION = 5;
+const toVkeys = (obj) => Object.fromEntries(Object.entries(obj).map(([k, n]) => [k.includes(':') ? k : vkey(k), n]));
+
+export const SAVE_VERSION = 6;
 
 export function newId() {
   if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
@@ -59,15 +65,18 @@ export function createNewSave() {
     },
     tools: { ...STARTER.tools },
     inventory: {
-      seeds: { ...STARTER.seeds },
+      seeds: toVkeys(STARTER.seeds),     // "rose:pink": số hạt (loài:màu)
       items: { ...STARTER.items },
-      flowers: {},          // "rose|3": số lượng  (loài|số sao)
+      flowers: {},          // "rose:pink|3": số lượng  (loài:màu|số sao)
       papers: { ...STARTER_WRAPS.papers },
       ribbons: { ...STARTER_WRAPS.ribbons },
     },
     shop: createShopState(),
     upgrades: { can: 0, shoes: 0, gloves: 0, counter: 0, sign: 0 }, // bậc nâng cấp (GĐ4)
     weather: createWeatherState(), // thời tiết hôm nay + dự báo ngày mai (GĐ5)
+    book: createBook(),            // sổ tay thực vật (GĐ6)
+    lab: createLabState(),         // nhà lai tạo (GĐ6)
+    regulars: createRegularsState(), // khách quen (GĐ6)
     farm: {
       plots: [createPlot('plot-1')],
     },
@@ -116,6 +125,24 @@ export const MIGRATIONS = {
     }
     s.inventory.items.cover = s.inventory.items.cover ?? 2;
     s.inventory.items.medicine = s.inventory.items.medicine ?? 3;
+    return s;
+  },
+  // v5 -> v6 (Giai đoạn 6): hoa có màu (biến thể), sổ tay, lai tạo, khách quen
+  5: (s) => {
+    s.inventory.seeds = toVkeys(s.inventory.seeds || {});
+    const flowers = {};
+    for (const [k, n] of Object.entries(s.inventory.flowers || {})) {
+      const [f, q] = k.split('|');
+      const nk = (f.includes(':') ? f : vkey(f)) + '|' + q;
+      flowers[nk] = (flowers[nk] || 0) + n;
+    }
+    s.inventory.flowers = flowers;
+    for (const p of s.farm.plots) for (const t of p.tiles) if (t.flower && !t.variant) t.variant = DEFAULT_VARIANT[t.flower];
+    s.book = s.book || createBook();
+    // những loài đã từng có trong kho coi như đã khám phá màu mặc định
+    for (const k of Object.keys(flowers)) { const vk = k.split('|')[0]; s.book.found[vk] = s.book.found[vk] || { day: 1, harvested: 1, bestQ: +k.split('|')[1] }; }
+    s.lab = s.lab || createLabState();
+    s.regulars = s.regulars || createRegularsState();
     return s;
   },
 };
