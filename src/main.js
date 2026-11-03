@@ -29,6 +29,7 @@ async function boot() {
   const music = new MusicPlayer(audioPrefs);
   const sfx = new Sfx(audioPrefs);
   initTapEffects({ prefs: audioPrefs, sfx });
+  lockLandscape();
   // mở từ link trong email (xác nhận / quên mật khẩu) thì bỏ intro cho nhanh
   const fromAuthLink = /access_token|error|type=/.test(initialHash);
   const introDone = playIntro({ enabled: audioPrefs.intro && !fromAuthLink });
@@ -171,11 +172,12 @@ async function boot() {
   }
 
   // GĐ9: báo bản cập nhật, chơi khi mất mạng, ứng dụng Android
-  if (cloud?.outdated) hud.showUpdate({}, true);
+  if (cloud?.outdated) emitter.emit('update-required', {});
   startUpdateChecks(emitter);
   registerServiceWorker();
   initNative({
     onBack: () => {
+      if (document.getElementById('force-update')) return false; // đang bắt cập nhật: nút Back chỉ thu nhỏ app
       if (hud.modal) { hud.closeModal(); return true; }
       if (game.visit) { game.exitVisit(); return true; }
       if (game.decorMode) { game.setDecorMode(false); return true; }
@@ -199,6 +201,13 @@ async function boot() {
 
   window.__game = game; // để thử nghiệm trong console trình duyệt
   console.info('Khởi động từ:', startSource);
+}
+
+/** Bản cài lên màn hình chính (PWA) / toàn màn hình: thử khóa xoay ngang. Trình duyệt thường không cho thì bỏ qua. */
+function lockLandscape() {
+  const tryLock = () => { try { screen.orientation?.lock?.('landscape').catch(() => {}); } catch { /* không hỗ trợ */ } };
+  if (window.matchMedia?.('(display-mode: standalone), (display-mode: fullscreen)').matches) tryLock();
+  window.addEventListener('pointerdown', tryLock, { once: true, passive: true });
 }
 
 function hideLoading() {

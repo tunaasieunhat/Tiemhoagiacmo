@@ -4,6 +4,13 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.9.3',
+    notes: [
+      'Game chơi ở màn hình ngang',
+      'App Android: có bản mới thì bắt buộc tải về để chơi tiếp (tiến độ vẫn giữ nguyên)',
+    ],
+  },
+  {
     version: '0.9.2',
     notes: [
       'Có nhạc nền: 3 bài phát lần lượt, chỉnh âm lượng hoặc chuyển bài trong ⚙️ Cài đặt',

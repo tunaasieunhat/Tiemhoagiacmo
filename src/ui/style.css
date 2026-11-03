@@ -573,3 +573,24 @@ h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
 .audio-check { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; margin: 6px 0; }
 .audio-check input { width: 18px; height: 18px; accent-color: #ff8fb1; }
 .now-playing { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+
+/* ---------- Chỉ chơi màn hình ngang: điện thoại / máy tính bảng dựng dọc thì nhắc xoay ---------- */
+#rotate { display: none; }
+@media (orientation: portrait) and (pointer: coarse) {
+  #rotate { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; background: linear-gradient(#ffe3ea, #c2e9ff); color: #6b4a52; }
+  #rotate .rot-phone { font-size: 72px; animation: rotPhone 2.2s ease-in-out infinite; }
+  #rotate b { font-size: 22px; }
+  #rotate small { font-size: 14px; opacity: .8; }
+}
+@keyframes rotPhone { 0%, 25% { transform: rotate(0); } 55%, 80% { transform: rotate(-90deg); } 100% { transform: rotate(0); } }
+
+/* ---------- App Android: bắt buộc tải bản mới ---------- */
+#force-update { position: fixed; inset: 0; z-index: 85; display: grid; place-items: center; padding: 16px; overflow: auto; background: rgba(90, 60, 70, .55); backdrop-filter: blur(3px); }
+#force-update.hidden { display: none; }
+#force-update .fu-card { width: min(440px, 100%); background: var(--card, #fffaf5); border-radius: 24px; padding: 18px 20px 14px; text-align: center; box-shadow: 0 10px 30px rgba(90, 50, 60, .3); animation: pop .25s ease-out; }
+#force-update .fu-icon { font-size: 44px; line-height: 1; }
+#force-update h2 { margin: 6px 0 2px; }
+#force-update .fu-ver { margin: 0 0 6px; }
+#force-update .fu-notes { text-align: left; margin: 6px 0; padding-left: 20px; font-size: 14px; }
+#force-update .fu-must { font-weight: 800; color: #d0577a; margin: 8px 0; }
+@media (max-height: 480px) { #force-update .fu-card { padding: 12px 16px 10px; } #force-update .fu-icon { font-size: 32px; } #force-update .fu-notes { font-size: 13px; } }

@@ -21,6 +21,10 @@ export const ONLINE = {
   // Link tải APK mới nhất (GitHub Releases, tên file cố định TiemHoaGiacMo.apk) — app mở link này khi có bản mới
   apkDownloadUrl: 'https://github.com/tunaasieunhat/Tiemhoagiacmo/releases/latest/download/TiemHoaGiacMo.apk',
   checkUpdateMinutes: 5,  // bao lâu hỏi máy chủ xem có bản mới một lần
+  // App Android hỏi GitHub bản APK mới nhất ở đây; có bản số phiên bản cao hơn ⇒ BẮT BUỘC tải bản mới mới chơi tiếp
+  apkReleaseApi: 'https://api.github.com/repos/tunaasieunhat/Tiemhoagiacmo/releases/latest',
+  apkFileName: 'TiemHoaGiacMo.apk',
+  forceAppUpdate: true,   // false = chỉ hiện thông báo nhỏ, có nút "Để sau"
 
   cloudSyncSeconds: 45,   // tự đẩy save lên mạng tối đa mỗi bao nhiêu giây
   retrySeconds: 20,       // lỗi mạng thì thử lại sau bao lâu

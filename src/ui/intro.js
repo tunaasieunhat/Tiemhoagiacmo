@@ -61,8 +61,20 @@ export function playIntro({ enabled = true } = {}) {
     });
 
     // không tải được video sau một lúc => vào game luôn
-    let waitTimer = setTimeout(() => finish('timeout'), cfg.maxWaitSeconds * 1000);
+    let waitTimer = 0;
     video.src = cfg.file;
-    tryPlay();
+    // điện thoại đang dựng dọc: đợi xoay ngang rồi mới phát (lúc dọc có màn hình "Xoay ngang" che)
+    whenLandscape(() => {
+      waitTimer = setTimeout(() => finish('timeout'), cfg.maxWaitSeconds * 1000);
+      tryPlay();
+    });
   });
+}
+
+const PORTRAIT = '(orientation: portrait) and (pointer: coarse)';
+function whenLandscape(fn) {
+  const mq = window.matchMedia?.(PORTRAIT);
+  if (!mq?.matches) { fn(); return; }
+  const on = () => { if (!mq.matches) { mq.removeEventListener?.('change', on); fn(); } };
+  mq.addEventListener?.('change', on);
 }

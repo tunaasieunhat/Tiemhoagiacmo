@@ -6,6 +6,8 @@ import * as farming from '../systems/farming.js';
 import { formatClock, periodName, isNight, formatDuration } from '../systems/time.js';
 import { avatarSVG } from './avatar.js';
 import { savePrefs } from '../audio/audio.js';
+import { isNative, openExternal } from '../online/native.js';
+import { ONLINE } from '../../data/online.js';
 import { TUTORIAL } from '../game.js';
 import { ShopPanel } from './shopPanel.js';
 import { MarketPanel } from './marketPanel.js';
@@ -80,7 +82,9 @@ export class Hud {
     em.on('social', () => this.updateFriendBadge());
     em.on('visit', (v) => this.updateVisit(v));
     em.on('update-available', (v) => this.showUpdate(v, false));
-    em.on('update-required', (v) => this.showUpdate(v, true));
+    // app Android: có APK mới => màn hình bắt buộc tải; save trên mạng thuộc bản mới hơn => cũng bắt cập nhật app
+    em.on('app-update-required', (v) => this.showForceUpdate(v));
+    em.on('update-required', (v) => (isNative() ? this.showForceUpdate({ ...v, apkUrl: ONLINE.apkDownloadUrl, cloud: true }) : this.showUpdate(v, true)));
     em.on('quests', () => { this.updateQuestBadge(); if (this.modal === 'quests') this.quests.render(); });
     em.on('decor-mode', (on) => { this.root.classList.toggle('decorating', on); $('.decor-bar', this.root).classList.toggle('hidden', !on); });
     em.on('decor-slot', (slot) => this.openDecorSlot(slot));
@@ -319,13 +323,52 @@ export class Hud {
     el.classList.remove('hidden');
   }
 
+  /** App Android: che toàn màn hình, không có nút "Để sau" — phải tải bản APK mới. */
+  showForceUpdate(v) {
+    let el = document.getElementById('force-update');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'force-update';
+      document.body.appendChild(el);
+      el.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-fu]');
+        if (b) this.doForceUpdate(b);
+      });
+    }
+    this.closeModal?.();
+    const notes = (v.notes || []).slice(0, 4).map((n) => `<li>${esc(n)}</li>`).join('');
+    el.innerHTML = `
+      <div class="fu-card">
+        <div class="fu-icon">🌷</div>
+        <h2>Có phiên bản mới!</h2>
+        <p class="fu-ver">${v.version ? `Bản ${esc(GAME_VERSION)} → <b>${esc(v.version)}</b>` : `Bản đang dùng: ${esc(GAME_VERSION)}`}</p>
+        ${v.cloud ? '<p>Tiến độ trên mạng của bạn được lưu bởi bản game mới hơn.</p>' : ''}
+        ${notes ? `<ul class="fu-notes">${notes}</ul>` : ''}
+        <p class="fu-must">Bạn cần tải bản mới để tiếp tục chơi.</p>
+        <button class="btn primary wide" data-fu="${esc(v.apkUrl || ONLINE.apkDownloadUrl || '')}">⬇️ Tải bản mới</button>
+        <p class="muted small">Tải xong, mở file <b>${esc(ONLINE.apkFileName || 'TiemHoaGiacMo.apk')}</b> và bấm <b>Cập nhật</b>. Tiến độ chơi được giữ nguyên.</p>
+      </div>`;
+    el.classList.remove('hidden');
+  }
+
+  async doForceUpdate(btn) {
+    const url = btn.dataset.fu;
+    btn.disabled = true;
+    btn.textContent = 'Đang lưu tiến độ...';
+    try { await this.game.saveMgr.saveNow('manual'); } catch { /* bỏ qua */ }
+    try { await this.game.account?.cloud?.flush(4000); } catch { /* bỏ qua */ }
+    try { await openExternal(url); } catch { /* bỏ qua */ }
+    btn.disabled = false;
+    btn.textContent = '⬇️ Tải lại bản mới';
+  }
+
   async doUpdate(btn) {
     const g = this.game;
     btn.disabled = true;
     btn.textContent = 'Đang lưu...';
     await g.saveMgr.saveNow('manual');
     try { await g.account?.cloud?.flush(4000); } catch { /* bỏ qua */ }
-    if (btn.dataset.apk) { const { openExternal } = await import('../online/native.js'); await openExternal(btn.dataset.apk); btn.disabled = false; btn.textContent = 'Tải bản mới'; return; }
+    if (btn.dataset.apk) { await openExternal(btn.dataset.apk); btn.disabled = false; btn.textContent = 'Tải bản mới'; return; }
     try { const regs = await navigator.serviceWorker?.getRegistrations?.(); await Promise.all((regs || []).map((r) => r.update())); } catch { /* bỏ qua */ }
     location.reload();
   }

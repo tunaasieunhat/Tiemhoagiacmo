@@ -36,13 +36,16 @@ Muốn build ngay mà không đợi: tab **Actions** → **Đóng gói APK Andro
 Nếu lượt chạy bị ❌: bấm vào lượt chạy, dòng chữ đỏ ở mục *Annotations* cho biết lý do
 (thường gặp: dán secret thiếu ký tự ⇒ xóa secret rồi dán lại toàn bộ file).
 
-## 3. App tự báo có bản mới
+## 3. App bắt buộc cập nhật khi có bản mới
 
 Khi phát hành bản mới (tăng `"version"` trong `package.json` + ghi chú trong `data/changelog.js`):
-- Trang web cập nhật, app trên điện thoại so số phiên bản với trang web và hiện nút **Tải bản mới**.
-- Bấm nút ⇒ tải `TiemHoaGiacMo.apk` ⇒ mở file ⇒ **Cập nhật** (cài đè, giữ nguyên tiến độ).
+- Khoảng 3 phút sau, APK mới lên trang Releases. App trên điện thoại hỏi GitHub (lúc mở app, khi mở lại app,
+  và 5 phút một lần), thấy số phiên bản cao hơn thì **che màn hình, bắt buộc bấm "Tải bản mới"** mới chơi tiếp.
+- Bấm nút ⇒ game lưu tiến độ ⇒ tải `TiemHoaGiacMo.apk` ⇒ mở file ⇒ **Cập nhật** (cài đè, giữ nguyên tiến độ).
+- Chỉ báo khi file APK đã thật sự có trên Releases (không báo lúc APK còn đang build).
+- Muốn đổi thành thông báo nhỏ có nút "Để sau": sửa `forceAppUpdate: false` trong `data/online.js`.
 
-Ghi chú trong `data/changelog.js` cũng được dùng làm mô tả trên trang Releases.
+Ghi chú trong `data/changelog.js` cũng được dùng làm mô tả trên trang Releases và trong màn hình cập nhật.
 
 ## 4. Cài lên điện thoại
 

@@ -66,6 +66,12 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   `data/audio.js`. Code: `src/audio/audio.js` (MusicPlayer, Sfx tạo tiếng bằng Web Audio), `src/ui/tapFx.js` (cánh hoa khi
   chạm), `src/ui/intro.js` (bị chặn tự phát tiếng ⇒ hiện "Chạm để bắt đầu"). Lựa chọn âm thanh lưu trên máy
   (`localStorage` khóa `thgm:audio`), không nằm trong save. Service worker bỏ qua yêu cầu `Range` (nhạc/video không lưu offline trên web).
+- **Chỉ màn hình ngang** (0.9.3): app Android khóa `sensorLandscape` (`scripts/android-setup.mjs`), PWA `orientation: landscape`,
+  web trên máy cảm ứng dựng dọc hiện lớp phủ `#rotate` (CSS `(orientation: portrait) and (pointer: coarse)`); intro chờ xoay ngang.
+  Kiểm tra giao diện ở khổ 844×390 và 740×360 (không còn cần khổ dọc 390×800 cho điện thoại).
+- **App Android bắt buộc cập nhật** (0.9.3): `src/online/updater.js` hỏi `ONLINE.apkReleaseApi` (GitHub Releases), APK có số
+  phiên bản cao hơn ⇒ sự kiện `app-update-required` ⇒ `hud.showForceUpdate()` che toàn màn hình. Vì vậy **mỗi lần muốn app
+  nhận bản mới phải tăng `version`**; đẩy code mà không tăng version thì app không bị bắt cập nhật.
 - Code chỉ dành cho app Android nằm ở `src/online/native.js` (kiểm tra `isNative()`); trên web các hàm không làm gì.
 - Đồ họa theo mức `GRAPHICS` trong `data/config.js` (`settings.quality`: auto/high/medium/low); bundle build thành
   1 file JS (`inlineDynamicImports`) để ghép được bản xem thử.
@@ -102,7 +108,7 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
 
 Chưa có test tự động trong repo. Các giai đoạn trước được kiểm bằng:
 - Playwright + Chromium có sẵn (`require('playwright')`, launch với
-  `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader`), chụp màn hình khổ 390×800 và 1280×760.
+  `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader`), chụp màn hình khổ ngang 844×390 (điện thoại) và 1280×760.
   Trong trang có `window.__game` để điều khiển trạng thái khi test.
 - "Máy chủ Supabase giả" bằng `page.route('https://fake.supabase.co/**', ...)`, chạy dev với
   `VITE_SUPABASE_URL=https://fake.supabase.co VITE_SUPABASE_ANON_KEY=<JWT role anon giả>`.
