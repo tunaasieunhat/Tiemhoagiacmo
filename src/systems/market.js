@@ -71,8 +71,12 @@ export function buyUpgrade(save, key) {
 }
 
 /** Lô đất kế tiếp có thể mua (hoặc null nếu đã mua hết) */
+/** Các vị trí lô trong nông trại đã có (lô mua của dân làng không tính) */
+export const ownedSlots = (save) => new Set(save.farm.plots.map((p, i) => (p.parcel ? null : p.slot ?? i)).filter((x) => x != null));
+
 export function nextPlot(save) {
-  return PLOT_UNLOCKS.find((p) => p.slot === save.farm.plots.length) || null;
+  const own = ownedSlots(save);
+  return PLOT_UNLOCKS.find((p) => !own.has(p.slot)) || null;
 }
 
 export function buyPlot(save) {
@@ -80,7 +84,7 @@ export function buyPlot(save) {
   if (!p) return fail('Đã mở rộng hết đất');
   if (!checkLevel(save, p.level)) return fail(`Cần đạt cấp ${p.level} để mở lô đất này`);
   if (!pay(save, p.price)) return fail(`Không đủ tiền (cần ${p.price} 💰)`);
-  save.farm.plots.push(createPlot(`plot-${p.slot + 1}`));
+  save.farm.plots.push({ ...createPlot(`plot-${p.slot + 1}`), slot: p.slot });
   return { ok: true, msg: `🗺️ Đã mở rộng lô đất số ${p.slot + 1}!` };
 }
 

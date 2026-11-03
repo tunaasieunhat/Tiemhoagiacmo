@@ -7,7 +7,7 @@ import { grassTuft } from '../models/environment.js';
 import { buildPlant } from '../models/flowers.js';
 import { stageOf, isThirsty, isWilted, isSick } from '../systems/farming.js';
 import { uniqueMat } from '../models/materials.js';
-import { PLOT_SLOTS } from './world.js';
+import { PLOT_SLOTS, plotPosition } from './world.js';
 import { iconMaterial } from './icons.js';
 import { buildSprinkler, buildFeeder } from '../models/decor.js';
 
@@ -69,7 +69,7 @@ export class FarmView {
     this.plots = [];
     save.farm.plots.forEach((plot, pi) => {
       const g = new THREE.Group();
-      g.position.copy(PLOT_SLOTS[pi] ?? new THREE.Vector3(pi * 5, 0, 0));
+      g.position.copy(plotPosition(plot, pi));
       const s = this.step();
       const w = plot.cols * s + 0.3, d = plot.rows * s + 0.3;
       // khung gỗ

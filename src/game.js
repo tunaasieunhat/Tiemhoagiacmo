@@ -47,7 +47,10 @@ import { viError } from './online/errors.js';
 import { Particles, Fireflies } from './render/particles.js';
 import { DayNight } from './render/dayNight.js';
 import { CameraControls } from './render/cameraControls.js';
-import { PLOT_SLOTS, ZONES } from './render/world.js';
+import { PLOT_SLOTS, ZONES, plotPosition } from './render/world.js';
+import * as land from './systems/land.js';
+import { PARCELS } from '../data/land.js';
+import { createPlot } from './save/schema.js';
 
 const ACTIONS = {
   till: (t, s) => farming.till(t, s),
@@ -380,6 +383,9 @@ export class Game {
     } else if (pick.kind === 'house') {
       this.select(null);
       this.emitter.emit('house', { id: pick.id });
+    } else if (pick.kind === 'parcel') {
+      this.select(null);
+      this.emitter.emit('parcel', { id: pick.id });
     } else if (pick.kind === 'lockedPlot') {
       this.select(null);
       this.emitter.emit('open-market', { tab: 'land' });
@@ -610,13 +616,13 @@ export class Game {
     if (what === 'plot') {
       if (!this.visit) this.farmView.build(s);
       this.updateLockedSlots();
-      const slot = s.farm.plots.length - 1;
-      this.controls.focusOn(PLOT_SLOTS[slot]);
-      this.particles.spawn('sparkle', PLOT_SLOTS[slot].clone());
-      this.particles.spawn('leaf', PLOT_SLOTS[slot].clone());
+      const pi = s.farm.plots.length - 1;
+      this.controls.focusOn(this.plotPos(pi));
+      this.particles.spawn('sparkle', this.plotPos(pi));
+      this.particles.spawn('leaf', this.plotPos(pi));
     }
     if (what === 'upgrade') this.applyUpgradeEffects();
-    if (what === 'greenhouse') { this.refreshFarm(true); this.controls.focusOn(PLOT_SLOTS[+id]); this.particles.spawn('sparkle', PLOT_SLOTS[+id].clone()); }
+    if (what === 'greenhouse') { this.refreshFarm(true); this.controls.focusOn(this.plotPos(+id)); this.particles.spawn('sparkle', this.plotPos(+id)); }
     this.advanceTutorial('buy');
     this.saveMgr.markDirty();
     this.saveMgr.saveNow('manual');
@@ -632,12 +638,24 @@ export class Game {
 
   /** Ẩn biển "lô bị khóa" ở những lô đã mở; cập nhật danh sách vật có thể chạm */
   updateLockedSlots() {
-    const n = this.save.farm.plots.length;
+    const plots = (this.visit ? this.visitFarm : this.save).farm.plots;
+    const own = market.ownedSlots({ farm: { plots } });
     const locked = this.world.lockedSlots.filter((g) => {
-      g.visible = g.userData.pick.slot >= n;
-      return g.visible;
+      g.visible = !own.has(g.userData.pick.slot);
+      return g.visible && !this.visit;
     });
-    this.pickRoots = this.decorMode ? [this.decorView.root] : [this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, ...locked, this.villagers.root, ...this.villagers.housePick()];
+    // mảnh đất của dân làng: mua rồi thì ẩn biển & hàng rào dây
+    const parcels = Object.entries(this.world.parcels || {}).filter(([id, g]) => {
+      g.visible = !plots.some((p) => p.parcel === id);
+      return g.visible && !this.visit;
+    }).map(([, g]) => g);
+    this.pickRoots = this.decorMode ? [this.decorView.root] : [this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, ...locked, ...parcels, this.villagers.root, ...this.villagers.housePick()];
+  }
+
+  /** Vị trí lô thứ pi (lô của dân làng nằm ở mảnh đất riêng) */
+  plotPos(pi) {
+    const plots = (this.visit ? this.visitFarm : this.save).farm.plots;
+    return plotPosition(plots[pi], pi);
   }
 
   /** Vẽ lại nông trại của mình (không làm gì khi đang thăm nhà bạn) */
@@ -655,7 +673,7 @@ export class Game {
     s.farm.plots.forEach((p) => p.tiles.forEach((t) => { if (['tilled', 'growing', 'ready'].includes(t.state)) t.water = Math.max(t.water, cap); }));
     const names = [...new Set(helps.map((h) => h.helper || 'Một người bạn'))];
     this.toast(`💧 ${names.slice(0, 3).join(', ')}${names.length > 3 ? ` và ${names.length - 3} người khác` : ''} đã tưới giúp nông trại của bạn!`, 'good');
-    if (!this.visit) { s.farm.plots.forEach((_, pi) => this.particles.spawn('water', PLOT_SLOTS[pi].clone())); this.farmView.sync(s); }
+    if (!this.visit) { s.farm.plots.forEach((_, pi) => this.particles.spawn('water', this.plotPos(pi))); this.farmView.sync(s); }
     this.saveMgr.markDirty();
   }
 
@@ -689,7 +707,7 @@ export class Game {
       this.visit.helped_today = true;
       this.visitFarm.farm.plots.forEach((p, pi) => {
         p.tiles.forEach((t) => { if (t.state !== 'untilled') t.water = 1; });
-        this.particles.spawn('water', PLOT_SLOTS[pi].clone());
+        this.particles.spawn('water', this.plotPos(pi));
       });
       this.farmView.sync(this.visitFarm, true);
       this.emitter.emit('visit', this.visit);
@@ -745,8 +763,7 @@ export class Game {
     if (this.decorMode) this.setDecorMode(false);
     this.decorView.sync(decorSys.placedFromSnapshot(data.snapshot));
     this.updateStaffModels();
-    const n = this.visitFarm.farm.plots.length;
-    this.world.lockedSlots.forEach((g) => { g.visible = g.userData.pick.slot >= n; });
+    this.updateLockedSlots();
     if (this.visitor) this.stage.scene.remove(this.visitor);
     this.visitor = buildCharacter({ ...data.profile.avatar }).root;
     this.visitor.position.copy(PLOT_SLOTS[0]).add(new THREE.Vector3(2.6, 0, 1.2));
@@ -864,7 +881,7 @@ export class Game {
   buyMachine(kind, pi) {
     const r = automation.buyMachine(this.save, kind, pi);
     this.toast(r.msg, r.ok ? 'good' : 'warn');
-    if (r.ok) { this.refreshFarm(true); this.particles.spawn('sparkle', PLOT_SLOTS[pi].clone()); this.afterAutomation(); }
+    if (r.ok) { this.refreshFarm(true); this.particles.spawn('sparkle', this.plotPos(pi)); this.afterAutomation(); }
     return r;
   }
 
@@ -901,6 +918,51 @@ export class Game {
   focusVillager(id) {
     const v = this.villagers.list.find((q) => q.id === id);
     if (v) this.controls.focusOn(new THREE.Vector3(v.x, 0, v.z), Math.max(this.controls.zoom, 1.5));
+  }
+
+  // ---------------- mua đất của dân làng (GĐ13) ----------------
+  landQuote(id) { return land.quote(this.save, id, this.today); }
+
+  landBargain(id) {
+    const P = PARCELS[id];
+    const m = this.canMeet(P.owner);
+    if (!m.ok) { this.toast(m.reason, 'info'); return null; }
+    const r = land.bargain(this.save, id, this.today);
+    if (!r.ok) return null;
+    if (r.fp) this.afterBond(P.owner, r.fp);
+    this.saveMgr.markDirty();
+    return r;
+  }
+
+  buyParcel(id) {
+    const P = PARCELS[id];
+    const m = this.canMeet(P.owner);
+    if (!m.ok) { this.toast(m.reason, 'info'); return null; }
+    const r = land.buyParcel(this.save, id, this.today, createPlot);
+    if (!r.ok) { this.toast(r.msg, 'warn'); return r; }
+    // đồ trang trí lỡ đặt trên mảnh đất => trả về kho
+    const rect = land.parcelRect(id, 2.6);
+    const dec = this.save.decor;
+    const moved = dec.placed.filter((p) => Math.abs(p.x - rect.x) < rect.hx && Math.abs(p.z - rect.z) < rect.hz);
+    if (moved.length) {
+      dec.placed = dec.placed.filter((p) => !moved.includes(p));
+      for (const p of moved) dec.owned[p.id] = (dec.owned[p.id] || 0) + 1;
+      this.decorView.sync(dec.placed);
+      setTimeout(() => this.toast(`📦 ${moved.length} món trang trí trên mảnh đất đã được cất vào kho`, 'info'), 1200);
+    }
+    this.afterBond(P.owner, r.fp);
+    if (!this.visit) this.farmView.build(this.save);
+    this.updateLockedSlots();
+    const pos = this.plotPos(r.plotIndex);
+    this.controls.focusOn(pos, Math.max(this.controls.zoom, 1.1));
+    this.particles.spawn('sparkle', pos.clone());
+    this.particles.spawn('leaf', pos.clone());
+    this.toast(`🗺️ Đã mua ${P.name}! Thêm 9 ô đất để trồng hoa`, 'good');
+    this.gainXp(30);
+    this.saveMgr.markDirty();
+    this.saveMgr.saveNow('manual');
+    this.emitter.emit('inventory');
+    return r;
   }
 
   // ---------------- kết thân (GĐ12) ----------------
@@ -1159,7 +1221,7 @@ export class Game {
     if (!(s.inventory.items.cover > 0)) { if (!quiet) this.toast('Hết bạt che! Mua ở Khu Chợ, mục Phòng hộ', 'warn'); return false; }
     s.inventory.items.cover -= 1;
     plot.coverUntil = until;
-    this.particles.spawn('sparkle', PLOT_SLOTS[pi].clone());
+    this.particles.spawn('sparkle', this.plotPos(pi));
     if (!quiet) this.toast(`⛺ Đã che bạt lô số ${pi + 1} đến hết ngày mai`, 'good');
     this.afterProtect();
     return true;

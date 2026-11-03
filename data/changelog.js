@@ -4,6 +4,15 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.13.0',
+    notes: [
+      '🗺️ Mua đất của dân làng: 4 mảnh đất quanh nông trại của Bà Tư, Ông Ba, Cô Ngân, thầy Duy — mỗi mảnh thêm 9 ô trồng hoa',
+      'Chủ đất chỉ bán khi đủ thân; giá đổi mỗi ngày theo số tim và tâm trạng (vui, bình thường, khó tính, có hôm không muốn bán)',
+      '💬 Trả giá mỗi ngày 1 lần: thành công bớt thêm 10%, hỏng thì chủ đất phật ý và hôm đó không bán',
+      'Đồ trang trí lỡ đặt trên mảnh đất được trả về kho khi mua',
+    ],
+  },
+  {
     version: '0.12.1',
     notes: [
       '🙏 Dân làng nhờ việc: thấy 🙏 trên đầu ai thì chạm vào để giúp — mỗi việc là 1 mini game',

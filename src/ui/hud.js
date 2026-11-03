@@ -9,6 +9,8 @@ import { savePrefs } from '../audio/audio.js';
 import { villagerInfo, greeting, houseStatus } from '../systems/village.js';
 import * as rel from '../systems/relations.js';
 import { runMiniGame } from './minigames.js';
+import { PARCELS, LAND_RULES } from '../../data/land.js';
+import * as landSys from '../systems/land.js';
 import { FAVOR_RULES } from '../../data/minigames.js';
 import { FRIEND, REACTION, BONDS } from '../../data/stories.js';
 import { DECOR as DECOR_ALL } from '../../data/decor.js';
@@ -98,6 +100,7 @@ export class Hud {
     em.on('villager', ({ id }) => this.openVillager(id));
     em.on('bond-reward', (e) => { this.pendingRewards = [...(this.pendingRewards || []), e]; });
     em.on('house', ({ id }) => this.openHouse(id));
+    em.on('parcel', ({ id }) => this.openParcel(id));
     em.on('inventory', () => { if (this.game.decorMode) this.renderDecorBar(); });
     em.on('xp', () => this.updateWallet());
     em.on('levelup', (ups) => this.showLevelUp(ups));
@@ -192,6 +195,8 @@ export class Hud {
     if (qq) { this.quests.onAction(qq.dataset.q, qq); return; }
     const rk = e.target.closest('[data-rk]');
     if (rk) { this.rank.onAction(rk.dataset.rk, rk); return; }
+    const ld = e.target.closest('[data-ld]');
+    if (ld) { this.onLandAct(ld); return; }
     const vg = e.target.closest('[data-vg]');
     if (vg) { this.onVillagerAct(vg); return; }
     const db = e.target.closest('[data-db]');
@@ -467,6 +472,8 @@ export class Hud {
     const chapters = info.regular ? (g.save.regulars?.[id]?.hearts || 0) : null;
     const hasFlowers = Object.values(g.save.inventory.flowers).some((n) => n > 0);
     const favor = g.favorToday(id);
+    const parcelId = Object.keys(PARCELS).find((k) => PARCELS[k].owner === id && !landSys.ownsParcel(g.save, k));
+    const landBtn = parcelId ? `<button class="btn wide" data-ld="open" data-id="${parcelId}">🗺️ Hỏi mua ${esc(PARCELS[parcelId].name.toLowerCase())}</button>` : '';
     this.openModal('villager', `
       <div class="vg-head">${avatarSVG(info.look, 64)}<div><h2>${esc(info.name)}${bday ? ' 🎂' : ''}</h2><small class="muted">${esc(info.role)}${info.home ? ` · ${esc(HOUSES[info.home].name)}` : ''}</small>${this.heartBar(id)}</div></div>
       <p class="vg-say">“${esc(greeting(id, ctx))}”</p>
@@ -475,6 +482,7 @@ export class Hud {
         <button class="btn ${ev ? 'primary glow' : 'primary'} ${!meet.ok || !canTalk ? 'disabled' : ''}" data-vg="talk" data-id="${id}">${ev ? `✨ ${esc(ev.title)}` : '💬 Trò chuyện'}${canTalk ? '' : ' ✓'}</button>
         <button class="btn ${!meet.ok || !canGift || !hasFlowers ? 'disabled' : ''}" data-vg="gift" data-id="${id}">🎁 Tặng hoa${canGift ? '' : ' ✓'}</button>
       </div>
+      ${landBtn}
       ${favor && meet.ok ? `<button class="btn primary glow wide favor-btn" data-vg="favor" data-id="${id}">🙏 ${esc(info.name)} nhờ bạn: ${esc(favor.icon)} ${esc(favor.title)}</button>` : ''}
       ${!meet.ok ? `<p class="muted small">${esc(meet.reason)}</p>` : !canTalk && !canGift && !favor ? '<p class="muted small">Hôm nay đã trò chuyện và tặng quà rồi — mai ghé tiếp nhé!</p>' : ''}
       <div class="kv"><span>📍 Bây giờ</span><b>${act ? `${act.icon} ${esc(act.name)}` : '—'}${st?.walking ? ' (đang đi tới)' : ''}</b></div>
@@ -530,6 +538,69 @@ export class Hud {
         if (res) this.showGiftResult(this.giftFor, res);
         break;
       }
+    }
+  }
+
+  // ---------- mua đất của dân làng (GĐ13) ----------
+  openParcel(id, note = '') {
+    const g = this.game;
+    const P = PARCELS[id];
+    if (!P) return;
+    const info = villagerInfo(P.owner);
+    if (landSys.ownsParcel(g.save, id)) { this.openModal('parcel', `<h2>🗺️ ${esc(P.name)}</h2><p>✅ Mảnh đất này đã là của bạn.</p>`); return; }
+    const q = g.landQuote(id);
+    const meet = g.canMeet(P.owner);
+    let body;
+    if (!q.ok) {
+      const req = q.reason === 'hearts' ? `<p class="land-req">❤️ Cần thân với ${esc(info.name)} ít nhất <b>${q.need} tim</b> (đang có ${q.hearts}). Trò chuyện, tặng hoa và giúp việc để thân hơn.</p>`
+        : q.reason === 'level' ? `<p class="land-req">⭐ Cần đạt <b>cấp ${P.level}</b>.</p>`
+          : q.reason === 'mood' ? `<p class="land-req">${q.mood.icon} Hôm nay ${esc(info.name)} <b>không muốn bán</b>. Mai thử lại nhé!</p>`
+            : q.reason === 'angry' ? '<p class="land-req">😤 Trả giá hỏng rồi, hôm nay không bán nữa. Mai quay lại nhé.</p>' : '';
+      body = `${q.reason !== 'level' && q.line ? `<p class="vg-say">“${esc(q.line)}”</p>` : ''}${req}`;
+    } else {
+      const base = P.price;
+      body = `
+        <p class="vg-say">“${esc(q.line)}”</p>
+        <div class="kv"><span>${q.mood.icon} Tâm trạng hôm nay</span><b>${esc(q.mood.name)}</b></div>
+        <div class="kv"><span>🏷️ Giá gốc</span><b>${base.toLocaleString('vi-VN')} 💰</b></div>
+        <div class="kv"><span>💰 Giá hôm nay${q.bargained ? ' (đã trả giá)' : ''}</span><b class="land-price">${q.price.toLocaleString('vi-VN')} 💰</b></div>
+        <p class="muted small">Càng thân càng rẻ (mỗi tim trên ${q.need} bớt ${Math.round(LAND_RULES.discountPerHeart * 100)}%), giá đổi theo tâm trạng mỗi ngày. Mua thêm 9 ô đất, đồ trang trí đặt trên mảnh đất sẽ được cất vào kho.</p>
+        ${note ? `<p class="land-note">${esc(note)}</p>` : ''}
+        <div class="vg-acts">
+          <button class="btn primary ${!meet.ok || g.save.player.coins < q.price ? 'disabled' : ''}" data-ld="buy" data-id="${id}">💰 Mua ${q.price.toLocaleString('vi-VN')}</button>
+          ${q.canBargain ? `<button class="btn ${!meet.ok ? 'disabled' : ''}" data-ld="bargain" data-id="${id}">💬 Trả giá (~${Math.round(q.bargainChance * 100)}%)</button>` : ''}
+        </div>
+        ${!meet.ok ? `<p class="muted small">${esc(meet.reason)} — gặp chủ đất mới mua được.</p>` : g.save.player.coins < q.price ? '<p class="muted small">Chưa đủ tiền.</p>' : ''}`;
+    }
+    this.openModal('parcel', `
+      <h2>🗺️ ${esc(P.name)}</h2>
+      <div class="vg-head">${avatarSVG(info.look, 52)}<div><b>${esc(info.name)}</b> <small class="muted">chủ đất</small>${this.heartBar(P.owner)}</div></div>
+      <p class="muted small">📜 ${esc(P.story)}</p>
+      ${body}`);
+  }
+
+  onLandAct(el) {
+    const g = this.game;
+    const id = el.dataset.id;
+    if (el.dataset.ld === 'open') { this.openParcel(id); return; }
+    if (el.classList.contains('disabled')) { const m = g.canMeet(PARCELS[id].owner); g.toast(!m.ok ? m.reason : 'Chưa đủ tiền', 'info'); return; }
+    if (el.dataset.ld === 'bargain') {
+      const r = g.landBargain(id);
+      if (!r) return;
+      g.toast(r.success ? `🤝 Trả giá thành công! Bớt thêm ${Math.round(LAND_RULES.bargainOff * 100)}%` : '😤 Trả giá hỏng rồi...', r.success ? 'good' : 'warn');
+      this.openParcel(id, `${PARCELS[id].owner ? villagerInfo(PARCELS[id].owner).name : ''}: “${r.line}”`);
+      return;
+    }
+    if (el.dataset.ld === 'buy') {
+      const r = g.buyParcel(id);
+      if (!r?.ok) return;
+      const P = PARCELS[id];
+      const info = villagerInfo(P.owner);
+      this.openModal('parcel', `<div class="story">
+        <div class="story-av">${avatarSVG(info.look, 72)}</div><h2>🗺️ ${esc(P.name)}</h2>${this.heartBar(P.owner)}
+        <p class="story-text">“${esc(r.line)}”</p>
+        <p class="fp-chip up">Đã trả ${r.price.toLocaleString('vi-VN')} 💰 · +${LAND_RULES.buyThanksFp} tình thân 💗 · thêm 9 ô đất</p>
+        <button class="btn primary wide" data-vg="done" data-id="${P.owner}">Tuyệt vời!</button></div>`);
     }
   }
 

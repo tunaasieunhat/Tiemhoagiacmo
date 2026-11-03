@@ -2,13 +2,17 @@
 import { FLOWERS, FLOWER_IDS } from '../../data/flowers.js';
 import { PAPERS, RIBBONS } from '../../data/wrapping.js';
 import { SUPPLIES, UPGRADES, PLOT_UNLOCKS } from '../../data/market.js';
-import { nextUpgrade, nextPlot } from '../systems/market.js';
+import { nextUpgrade, nextPlot, ownedSlots } from '../systems/market.js';
 import { wholesalePrice } from '../systems/shop.js';
 import { formatDuration } from '../systems/time.js';
 import { PROTECTION } from '../../data/seasons.js';
 import * as variants from '../systems/variants.js';
 import { MACHINES, STAFF } from '../../data/automation.js';
 import { DECOR, DECOR_EVENTS } from '../../data/decor.js';
+import { PARCELS } from '../../data/land.js';
+import { ownsParcel } from '../systems/land.js';
+import { heartsOf } from '../systems/relations.js';
+import { villagerInfo } from '../systems/village.js';
 import { eventOpen } from '../systems/decor.js';
 
 const TABS = [
@@ -173,7 +177,7 @@ export class MarketPanel {
     const s = this.save;
     const next = nextPlot(s);
     const rows = PLOT_UNLOCKS.map((p) => {
-      const owned = s.farm.plots.length > p.slot;
+      const owned = ownedSlots(s).has(p.slot);
       const isNext = next && next.slot === p.slot;
       return this.card({
         icon: owned ? '🟫' : '🔒', name: `Lô đất số ${p.slot + 1}`,
@@ -182,7 +186,19 @@ export class MarketPanel {
         buttons: owned ? '<span class="maxed">✔ Của bạn</span>' : isNext ? `<button class="btn ${s.player.coins < p.price ? 'disabled' : 'primary'}" data-mk="buy" data-what="plot" data-id="${p.slot}">Mở rộng</button>` : '',
       });
     }).join('');
-    return `<p class="muted small">Bạn đang có ${s.farm.plots.length} lô đất (${s.farm.plots.length * 9} ô).</p>${rows}`;
+    const village = Object.entries(PARCELS).map(([id, P]) => {
+      const owned = ownsParcel(s, id);
+      const h = heartsOf(s, P.owner);
+      const who = villagerInfo(P.owner)?.name || '';
+      return this.card({
+        icon: owned ? '🟫' : '🏘️', name: P.name,
+        desc: owned ? 'Đã là của bạn' : `Chủ đất: ${who} · cần ${P.minHearts} ❤️ (đang có ${h})${s.player.level < P.level ? ` · cấp ${P.level}` : ''} · giá đổi theo ngày`,
+        price: owned ? null : P.price, lock: 0,
+        buttons: owned ? '<span class="maxed">✔ Của bạn</span>' : `<button class="btn" data-ld="open" data-id="${id}">Xem & hỏi mua</button>`,
+      });
+    }).join('');
+    return `<p class="muted small">Bạn đang có ${s.farm.plots.length} lô đất (${s.farm.plots.length * 9} ô).</p>${rows}
+      <h3>🏘️ Đất của dân làng</h3><p class="muted small">Kết thân với chủ đất để họ chịu bán. Chạm vào biển "Đất của…" quanh nông trại hoặc bấm nút dưới đây.</p>${village}`;
   }
 
   sell() {

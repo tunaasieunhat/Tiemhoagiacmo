@@ -764,3 +764,6 @@ h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
 .mem .card.done .f { border-color: #7be08f; background: #f0fff2; }
 .favor-btn { margin: 4px 0 6px; white-space: normal; }
 .fav-stars { text-align: center; font-size: 34px; margin: 4px 0; letter-spacing: 3px; color: #e9c46a; }
+.land-req { background: #fff4d6; border-radius: 12px; padding: 7px 10px; font-size: 13.5px; }
+.land-note { background: #eef8ff; border-radius: 12px; padding: 6px 10px; font-size: 13px; }
+.land-price { color: #d0577a; font-size: 17px; }

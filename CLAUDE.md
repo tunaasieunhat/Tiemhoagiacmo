@@ -13,8 +13,7 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
 
 ## Tiến độ
 
-- ✅ GĐ1–12 xong (xem `README.md`). Kế hoạch đã thống nhất với người dùng (03/11/2026), mỗi GĐ xong thì DỪNG chờ đồng ý:
-  GĐ13 Mua đất của dân làng (giá theo tim + tâm trạng trong ngày, có thể từ chối) →
+- ✅ GĐ1–13 xong (xem `README.md`). Kế hoạch đã thống nhất với người dùng (03/11/2026), mỗi GĐ xong thì DỪNG chờ đồng ý:
   GĐ14 6 hạt mới (cẩm chướng, mẫu đơn, ly, sao nhái, lan hồ điệp chỉ nhà kính, cúc vạn thọ), 3 bệnh mới, 5 thời tiết mới
   → GĐ15 Vận May (gói Thường/Vàng bằng tiền & vé TRONG GAME, công khai tỉ lệ, bảo hiểm, mảnh; cây hiếm có hiệu ứng động).
 - Đưa lên mạng: Netlify (`netlify.toml`, `docs/HUONG_DAN_DUA_LEN_MANG.md`) — trang thật: https://tiem-hoa-giac-mo.netlify.app
@@ -90,6 +89,12 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   finishFavor ghi `rel.favorDay`, `rel.favors[id].best`). UI `src/ui/minigames.js`: `runMiniGame(kind, opts)` → {stars, quit},
   7 game DOM/CSS (needle, hammer, fishing, pour, math, rhyme, memory), bỏ cuộc = 0⭐. Dân làng có việc nhờ hiện 🙏 trên đầu.
   Thử mini game: trang thử import `runMiniGame` + "người chơi tự động" đọc DOM (vd vị trí kim `translateX`).
+- **Mua đất của dân làng** (GĐ13): `data/land.js` (LAND_RULES, MOODS, PARCELS: owner, x/z tâm lô, price, minHearts, level,
+  lời thoại). Lô có vị trí riêng: lô Chợ `plot.slot` (0–3 → PLOT_SLOTS), lô dân làng `plot.parcel` → dùng
+  `plotPosition(plot, idx)` (world.js) / `game.plotPos(pi)`, KHÔNG dùng `PLOT_SLOTS[pi]`. `market.ownedSlots/nextPlot` tính theo slot.
+  Logic `src/systems/land.js` (quote cố định theo ngày bằng hash, bargain 1 lần/ngày lưu `save.land.deals`, buyParcel).
+  Bản đồ: biển + dây quanh mảnh đất `world.parcels[id]` (pick 'parcel'), vùng cấm đặt đồ; cây cũ trên mảnh đất bị bỏ khi dựng.
+  Mua xong trả đồ trang trí trong mảnh đất về kho. Ảnh chụp bạn bè: plots có `sl`/`pc` (tối đa 8 lô).
 - **Dò chạm** (0.9.7): `game.pickAt` bỏ qua vật ẩn (three.js không tự bỏ), chạm sát mặt đất / khe thì lấy ô dưới ngón tay
   (`farmView.tileNear`).
 - **Âm thanh / intro** (bản 0.9.2): nhạc nền `public/audio/*.mp3` (đã nén 112 kbps), số liệu ở `data/audio.js`.
@@ -109,7 +114,7 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
 - Code chỉ dành cho app Android nằm ở `src/online/native.js` (kiểm tra `isNative()`); trên web các hàm không làm gì.
 - Đồ họa theo mức `GRAPHICS` trong `data/config.js` (`settings.quality`: auto/high/medium/low); bundle build thành
   1 file JS (`inlineDynamicImports`) để ghép được bản xem thử.
-- **Save có phiên bản** (hiện `SAVE_VERSION = 9`). Đổi cấu trúc save ⇒ tăng `SAVE_VERSION` và thêm
+- **Save có phiên bản** (hiện `SAVE_VERSION = 10`). Đổi cấu trúc save ⇒ tăng `SAVE_VERSION` và thêm
   `MIGRATIONS[phiên_bản_cũ]` trong `src/save/schema.js`; **không bao giờ làm mất tiến độ**. `fillDefaults` tự bổ sung
   trường thiếu (vì vậy số lượng hạt về 0 thì giữ khóa với giá trị 0, không xóa khóa).
 - **Mã vật phẩm**: hạt `"loài:màu"` (vd `rose:red`), hoa trong kho `"loài:màu|sao"` (vd `rose:red|3`).

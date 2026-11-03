@@ -23,7 +23,7 @@ import { createAutomationState } from '../systems/automation.js';
 
 const toVkeys = (obj) => Object.fromEntries(Object.entries(obj).map(([k, n]) => [k.includes(':') ? k : vkey(k), n]));
 
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 export function newId() {
   if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
@@ -86,8 +86,9 @@ export function createNewSave() {
     automation: createAutomationState(), // nhân viên (GĐ8)
     decor: { owned: {}, placed: [], nextUid: 1 },  // đồ trang trí: số lượng trong kho, đồ đã đặt tự do [{u,id,x,z,r}] (GĐ10)
     village: createVillageState(),   // kết thân với dân làng: điểm tình thân, sự kiện đã xem, dấu cốt truyện (GĐ12)
+    land: { deals: {} },             // mua đất của dân làng: trạng thái trả giá trong ngày (GĐ13)
     farm: {
-      plots: [createPlot('plot-1')],
+      plots: [{ ...createPlot('plot-1'), slot: 0 }], // slot = vị trí trong nông trại; lô mua của dân làng có parcel (GĐ13)
     },
     stats: { harvested: 0, playMinutes: 0, lastFreePackDay: 0, served: 0, sold: 0, coinsEarned: 0, tips: 0, bouquets: 0, spent: 0 },
     tutorial: { step: 0, done: false },
@@ -181,6 +182,12 @@ export const MIGRATIONS = {
   // v8 -> v9 (Giai đoạn 12): kết thân với dân làng — khách quen đã xong chương nào ở tiệm thì được tặng sẵn ít điểm
   8: (s) => {
     s.village = s.village || initVillageFromRegulars(s);
+    return s;
+  },
+  // v9 -> v10 (Giai đoạn 13): mỗi lô nhớ vị trí của mình (slot) vì có thêm lô mua của dân làng (parcel)
+  9: (s) => {
+    s.farm.plots.forEach((p, i) => { if (p.slot == null && !p.parcel) p.slot = i; });
+    s.land = s.land || { deals: {} };
     return s;
   },
 };

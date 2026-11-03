@@ -82,7 +82,7 @@ export const SPOTS = {
   workshop: { x: 8.4, z: 26.4, rot: 250, node: 'd_ba' },
   swing_su: { x: 11.4, z: 34.6, rot: 250, node: 'd_su' },
   plaza_s: { x: -0.6, z: 37.2, rot: 180, node: 'S' },
-  fence: { x: 7.3, z: 5.6, rot: 270, node: 'm0' },
+  fence: { x: 6.6, z: 8.2, rot: 300, node: 'm0' },
   shop_win: { x: 12.4, z: -1.3, rot: 190, node: 'e1' },
   // cửa nhà (đi vào thì ẩn)
   door_tu: { node: 'd_tu', door: 'tu' }, door_duy: { node: 'd_duy', door: 'duy' }, door_mai: { node: 'd_mai', door: 'mai' },
@@ -103,7 +103,7 @@ export const SCHEDULES = {
 // Đường đi (các điểm nối nhau). stone: true = lát đá.
 export const NODES = {
   m0: { x: 7.4, z: 8.9 }, m1: { x: 4.6, z: 16.5 }, entry: { x: 0.6, z: 25.8 },
-  e1: { x: 9.2, z: 2.2 },
+  e0: { x: 12.8, z: 7.6 }, e1: { x: 13.0, z: 1.2 }, // vòng qua đất của Cô Ngân
   N: { x: 0, z: 30 }, NE: { x: 2.9, z: 31.1 }, E: { x: 4, z: 34 }, SE: { x: 2.9, z: 36.9 },
   S: { x: 0, z: 38 }, SW: { x: -2.9, z: 36.9 }, W: { x: -4, z: 34 }, NW: { x: -2.9, z: 31.1 },
   s1: { x: 0, z: 43 }, pier: { x: 0, z: 46.6 },
@@ -111,7 +111,7 @@ export const NODES = {
   d_su: { x: 7.5, z: 32.0 }, d_cafe: { x: 5.9, z: 39.5 }, d_school: { x: -9.4, z: 37.0 },
 };
 export const EDGES = [
-  ['m0', 'm1', true], ['m1', 'entry', true], ['entry', 'N', true], ['m0', 'e1', false],
+  ['m0', 'm1', true], ['m1', 'entry', true], ['entry', 'N', true], ['m0', 'e0', false], ['e0', 'e1', false],
   ['N', 'NE', true], ['NE', 'E', true], ['E', 'SE', true], ['SE', 'S', true], ['S', 'SW', true], ['SW', 'W', true], ['W', 'NW', true], ['NW', 'N', true],
   ['S', 's1', true], ['s1', 'pier', true],
   ['SW', 'd_tu', true], ['W', 'd_duy', true], ['NW', 'd_mai', true], ['entry', 'd_mai', true], ['NE', 'd_ba', true], ['entry', 'd_ba', true],

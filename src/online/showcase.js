@@ -3,6 +3,7 @@ import { stageOf, isWilted, isSick, growMinutes } from '../systems/farming.js';
 import { tierInfo } from '../systems/shop.js';
 import { bookProgress } from '../systems/notebook.js';
 import { placedToSnapshot, beautyOf } from '../systems/decor.js';
+import { PARCELS } from '../../data/land.js';
 
 const STATE = { untilled: 0, tilled: 1, growing: 2, ready: 3, dead: 4 };
 const STATE_BACK = ['untilled', 'tilled', 'growing', 'ready', 'dead'];
@@ -25,7 +26,9 @@ export function buildSnapshot(save) {
     // đồ trang trí đặt tự do: [[loại, x, z, góc], ...] (GĐ10)
     deco: placedToSnapshot(save.decor?.placed || []),
     beauty: beautyOf(save.decor?.placed || []),
-    plots: save.farm.plots.map((p) => ({
+    plots: save.farm.plots.map((p, i) => ({
+      sl: p.parcel ? undefined : p.slot ?? i, // vị trí trong nông trại (GĐ13)
+      pc: p.parcel || undefined,              // lô mua của dân làng
       gh: p.greenhouse ? 1 : 0,
       mc: p.machines?.sprinkler ? 1 : 0,
       mf: p.machines?.feeder ? 1 : 0,
@@ -45,12 +48,13 @@ export function buildSnapshot(save) {
 
 /** Dựng lại dữ liệu kiểu "save" tối thiểu để vẽ nông trại của bạn bè */
 export function snapshotToFarm(snap) {
-  const plots = (snap?.plots?.length ? snap.plots : [{ tiles: Array.from({ length: 9 }, () => ({ s: 0 })) }]).slice(0, 4);
+  const plots = (snap?.plots?.length ? snap.plots : [{ tiles: Array.from({ length: 9 }, () => ({ s: 0 })) }]).slice(0, 8);
   return {
     time: { gameMinutes: 0 },
     farm: {
       plots: plots.map((p) => ({
-        cols: 3, rows: 3, greenhouse: !!p.gh, coverUntil: p.cv ? Infinity : -1, machines: { sprinkler: !!p.mc, feeder: !!p.mf },
+        cols: 3, rows: 3, slot: Number.isInteger(p.sl) && p.sl >= 0 && p.sl < 4 ? p.sl : undefined,
+        parcel: typeof p.pc === 'string' && PARCELS[p.pc] ? p.pc : undefined, greenhouse: !!p.gh, coverUntil: p.cv ? Infinity : -1, machines: { sprinkler: !!p.mc, feeder: !!p.mf },
         tiles: (p.tiles || []).slice(0, 9).map((t) => {
           const state = STATE_BACK[t.s] || 'untilled';
           const flower = t.f || null;
