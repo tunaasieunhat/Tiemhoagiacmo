@@ -37,24 +37,46 @@ export function isOpenHour(hourFloat) {
 export const npcOf = (id) => CUSTOMERS.find((c) => c.id === id) || CUSTOMERS[0];
 
 // ------------------- tạo khách -------------------
-export function generateRequest(rng, tier, flowerIds) {
-  const mix = REQUEST_MIX[Math.min(tier, REQUEST_MIX.length - 1)];
+/**
+ * ctx.festival : lễ hội hôm nay (data/seasons.js) — khách thích loài hoa & tông riêng, trả giá cao hơn
+ * ctx.seasonal : các loài đúng mùa — khách hỏi nhiều hơn
+ */
+export function generateRequest(rng, tier, flowerIds, ctx = {}) {
+  const mix = [...REQUEST_MIX[Math.min(tier, REQUEST_MIX.length - 1)]];
+  const fest = ctx.festival;
+  if (fest) { const b = Math.min(mix[0], fest.bouquetBoost); mix[0] -= b; mix[2] += b; }
   const r = rng();
   const type = r < mix[0] ? 'single' : r < mix[0] + mix[1] ? 'multi' : 'bouquet';
+  const festFlowers = fest ? fest.flowers.filter((f) => flowerIds.includes(f)) : [];
+  const seasonal = (ctx.seasonal || []).filter((f) => flowerIds.includes(f));
+  const pickFlower = () => {
+    if (festFlowers.length && rng() < 0.65) return pick(rng, festFlowers);
+    if (seasonal.length && rng() < 0.5) return pick(rng, seasonal);
+    return pick(rng, flowerIds);
+  };
+  const extra = fest ? { festival: fest.id, priceMult: fest.priceMult } : {};
+  const req = makeRequest(rng, tier, type, pickFlower, fest);
+  return Object.assign(req, extra);
+}
+
+function makeRequest(rng, tier, type, pickFlower, fest) {
   const qd = QUALITY_DEMAND[Math.min(tier, QUALITY_DEMAND.length - 1)];
   const q = rng();
   let minQuality = q < qd[1] ? 3 : q < qd[0] + qd[1] ? 2 : 1;
-  if (type === 'single') return { type, flower: pick(rng, flowerIds), count: 1, minQuality };
-  if (type === 'multi') return { type, flower: pick(rng, flowerIds), count: randInt(rng, REQUEST_SIZE.multi[tier]), minQuality };
+  if (type === 'single') return { type, flower: pickFlower(), count: 1, minQuality };
+  if (type === 'multi') return { type, flower: pickFlower(), count: randInt(rng, REQUEST_SIZE.multi[tier]), minQuality };
   const [min, max] = REQUEST_SIZE.bouquet[tier];
   const occ = Math.floor(rng() * OCCASIONS.length);
-  const tone = rng() < 0.75 ? OCCASIONS[occ].tone : pick(rng, Object.keys(TONES));
-  const mustInclude = rng() < 0.5 ? { flower: pick(rng, flowerIds), n: Math.min(2, min) } : null;
+  let tone = rng() < 0.75 ? OCCASIONS[occ].tone : pick(rng, Object.keys(TONES));
+  if (fest && rng() < 0.8) tone = fest.tone;
+  const mustInclude = rng() < (fest ? 0.75 : 0.5) ? { flower: pickFlower(), n: Math.min(2, min) } : null;
   if (minQuality === 3 && rng() < 0.5) minQuality = 2;
-  return { type, min, max, occasion: occ, tone, mustInclude, minQuality };
+  const req = { type, min, max, occasion: occ, tone, mustInclude, minQuality };
+  if (fest) req.occasionText = fest.occasion;
+  return req;
 }
 
-export function spawnCustomer(save, rng, flowerIds) {
+export function spawnCustomer(save, rng, flowerIds, ctx = {}) {
   const sh = save.shop;
   const tier = tierOf(save.player.reputation);
   const busy = new Set(sh.customers.map((c) => c.npc));
@@ -67,7 +89,7 @@ export function spawnCustomer(save, rng, flowerIds) {
     id: sh.nextId++,
     npc: npc.id,
     spot,
-    request: generateRequest(rng, tier, flowerIds),
+    request: generateRequest(rng, tier, flowerIds, ctx),
     arrivedAt: save.time.gameMinutes,
     patience: Math.round(randRange(rng, SHOP.patience) * (1 + tier * SHOP.patienceBonusPerTier) * (save.upgrades ? upgradeValue(save, 'sign') : 1)),
   };
@@ -76,7 +98,7 @@ export function spawnCustomer(save, rng, flowerIds) {
 }
 
 /** Cho thời gian trôi ở cửa hàng. Trả về danh sách sự kiện [{type:'arrive'|'timeout', customer}] */
-export function shopTick(save, { offline = false, rng = Math.random, hourFloat, flowerIds }) {
+export function shopTick(save, { offline = false, rng = Math.random, hourFloat, flowerIds, festival = null, seasonal = [] }) {
   const sh = save.shop;
   const now = save.time.gameMinutes;
   const events = [];
@@ -98,8 +120,8 @@ export function shopTick(save, { offline = false, rng = Math.random, hourFloat, 
   }
   const maxQueue = save.upgrades ? upgradeValue(save, 'counter') : SHOP.maxQueue;
   if (now >= sh.nextSpawnAt && sh.customers.length < maxQueue) {
-    events.push({ type: 'arrive', customer: spawnCustomer(save, rng, flowerIds) });
-    sh.nextSpawnAt = now + randRange(rng, SHOP.spawnEvery) * (1 - SHOP.spawnFasterPerTier) ** tier;
+    events.push({ type: 'arrive', customer: spawnCustomer(save, rng, flowerIds, { festival, seasonal }) });
+    sh.nextSpawnAt = now + randRange(rng, SHOP.spawnEvery) * (1 - SHOP.spawnFasterPerTier) ** tier * (festival ? festival.spawnMult : 1);
   } else if (now >= sh.nextSpawnAt) {
     sh.nextSpawnAt = now + 10; // hàng đã đầy, thử lại sau
   }
@@ -112,8 +134,8 @@ export function requestText(req, npcId) {
   const qText = req.minQuality > 1 ? ` loại ${req.minQuality}★ trở lên` : '';
   if (req.type === 'single') return `Cho ${self} 1 cành ${FLOWERS[req.flower].name.toLowerCase()}${qText} nhé!`;
   if (req.type === 'multi') return `${cap(self)} cần ${req.count} cành ${FLOWERS[req.flower].name.toLowerCase()}${qText}.`;
-  const occ = OCCASIONS[req.occasion];
-  let t = `Gói giúp ${self} một bó ${req.min}–${req.max} cành ${occ.text}, ${TONES[req.tone].name}`;
+  const occText = req.occasionText || OCCASIONS[req.occasion].text;
+  let t = `Gói giúp ${self} một bó ${req.min}–${req.max} cành ${occText}, ${TONES[req.tone].name}`;
   if (req.mustInclude) t += `, có ít nhất ${req.mustInclude.n} cành ${FLOWERS[req.mustInclude.flower].name.toLowerCase()}`;
   return t + (req.minQuality > 1 ? `, hoa${qText}.` : '.');
 }
@@ -177,7 +199,7 @@ export function evaluateDelivery(req, sel) {
 
   let base = items.reduce((a, it) => a + FLOWERS[it.flower].basePrice * SHOP.qualityMult[it.q] * it.n, 0);
   if (req.type === 'bouquet') base = base * SHOP.bouquetMult + (PAPERS[sel.paper]?.price || 0) + (RIBBONS[sel.ribbon]?.price || 0);
-  const price = Math.round(base * (0.8 + 0.4 * (score / 100)));
+  const price = Math.round(base * (0.8 + 0.4 * (score / 100)) * (req.priceMult || 1));
 
   const S = SHOP.satisfaction;
   const mood = score >= S.perfect ? 'perfect' : score >= S.good ? 'good' : score >= S.ok ? 'ok' : 'bad';
@@ -192,9 +214,10 @@ export function tipAmount(rng, tier, ev) {
 
 /** Ước tính tiền nhận được (để hiển thị trên thẻ khách) */
 export function estimateReward(req) {
-  if (req.type !== 'bouquet') return Math.round(FLOWERS[req.flower].basePrice * SHOP.qualityMult[req.minQuality] * req.count);
+  const m = req.priceMult || 1;
+  if (req.type !== 'bouquet') return Math.round(FLOWERS[req.flower].basePrice * SHOP.qualityMult[req.minQuality] * req.count * m);
   const avg = Object.values(FLOWERS).reduce((a, f) => a + f.basePrice, 0) / Object.keys(FLOWERS).length;
-  return Math.round(avg * req.min * SHOP.bouquetMult * SHOP.qualityMult[req.minQuality]);
+  return Math.round(avg * req.min * SHOP.bouquetMult * SHOP.qualityMult[req.minQuality] * m);
 }
 
 /** Giá bán sỉ 1 cành */

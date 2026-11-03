@@ -10,6 +10,7 @@ const PRESETS = {
   leaf: { color: '#8fd18b', n: 10, size: 0.07, speed: 1.4, up: 1.8, gravity: 4, life: 0.8 },
   fert: { color: '#e8d3a6', n: 12, size: 0.05, speed: 1.2, up: 1.6, gravity: 6, life: 0.7 },
   seed: { color: '#f3e1b5', n: 6, size: 0.05, speed: 0.8, up: 1.4, gravity: 8, life: 0.5 },
+  spray: { color: '#b8f0c8', n: 14, size: 0.06, speed: 1.0, up: 1.0, gravity: 1.5, life: 0.9 },
 };
 
 export class Particles {

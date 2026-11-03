@@ -23,9 +23,25 @@ export class DayNight {
     this.lampLights = lampLights;
     this.tmp = new THREE.Color();
     this.night = 0;
+    this.wx = { sun: 1, hemi: 1, sky: new THREE.Color('#ffffff'), skyAmt: 0 };
+    this.wxTarget = { sun: 1, hemi: 1, sky: new THREE.Color('#ffffff'), skyAmt: 0 };
   }
 
-  update(hourFloat, focus) {
+  /** Thời tiết làm trời tối / sáng hơn */
+  setWeather(type) {
+    const T = {
+      rain: [0.55, 0.88, '#9aa7b8', 0.45], storm: [0.35, 0.75, '#6f7a8c', 0.6],
+      snow: [0.85, 1, '#e6eef5', 0.35], frost: [0.9, 1, '#dfe9f5', 0.3], heat: [1.12, 1.05, '#ffd9a0', 0.25],
+    }[type] || [1, 1, '#ffffff', 0];
+    Object.assign(this.wxTarget, { sun: T[0], hemi: T[1], skyAmt: T[3] });
+    this.wxTarget.sky.set(T[2]);
+  }
+
+  update(hourFloat, focus, dt = 0.016) {
+    const k = 1 - Math.exp(-dt * 1.5);
+    const W = this.wx, WT = this.wxTarget;
+    W.sun += (WT.sun - W.sun) * k; W.hemi += (WT.hemi - W.hemi) * k; W.skyAmt += (WT.skyAmt - W.skyAmt) * k;
+    W.sky.lerp(WT.sky, k);
     const { scene, sun, hemi } = this.stage;
     let i = 0;
     while (i < KEYS_C.length - 2 && KEYS_C[i + 1].h <= hourFloat) i++;
@@ -38,6 +54,9 @@ export class DayNight {
     hemi.color.copy(a.hemiSky).lerp(b.hemiSky, t);
     hemi.groundColor.copy(a.hemiGround).lerp(b.hemiGround, t);
     hemi.intensity = THREE.MathUtils.lerp(a.hemiI, b.hemiI, t);
+    sun.intensity *= W.sun;
+    hemi.intensity *= W.hemi;
+    scene.background.lerp(W.sky, W.skyAmt * (1 - this.night * 0.7));
     const lamp = THREE.MathUtils.lerp(a.lamp, b.lamp, t);
     this.night = lamp;
     glow.bulb.emissiveIntensity = lamp * 1.6;

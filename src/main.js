@@ -106,6 +106,10 @@ async function boot() {
     let msg = `Chào mừng trở lại! Đã trôi qua ${formatDuration(off.gameMin)} trong game.`;
     if (off.ready) msg += ` ${off.ready} cây đã nở 🌸`;
     if (off.dead) msg += ` ${off.dead} cây bị héo 🥀`;
+    const hit = (off.disasters || []).reduce((a, d) => a + d.hit, 0);
+    const sick = (off.outbreaks || []).reduce((a, d) => a + d.infected, 0);
+    if (hit) msg += ` Thiên tai làm ${hit} cây bị ảnh hưởng.`;
+    if (sick) msg += ` ${sick} cây bị bệnh, hãy phun thuốc 💊.`;
     notices.push([msg, off.dead ? 'warn' : 'info']);
   } else if (saveMgr.isNew) {
     notices.push([profile ? `🌷 Chào mừng ${save.player.name} đến Tiệm Hoa Giấc Mơ!` : "🌷 Chào mừng đến Tiệm Hoa Giấc Mơ!", "good"]);

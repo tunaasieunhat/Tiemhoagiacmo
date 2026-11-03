@@ -10,6 +10,7 @@ Tiemhoagiacmo/
 │  ├─ config.js            Thời gian ngày/đêm, chăm sóc, đồ khởi đầu, camera...
 │  ├─ shop.js, wrapping.js, customers.js   Cửa hàng, giấy gói/ruy băng, khách
 │  ├─ market.js, levels.js Khu chợ (nâng cấp, mở đất), cấp độ & XP
+│  ├─ seasons.js           Mùa, thời tiết, thiên tai, dịch bệnh, lễ hội, đồ phòng hộ
 │  ├─ online.js            Địa chỉ + khóa công khai Supabase
 │  └─ badwords.js          Từ cấm (bản phụ, bản chính ở máy chủ)
 ├─ src/
@@ -22,6 +23,8 @@ Tiemhoagiacmo/
 │  │  ├─ shop.js           Khách, yêu cầu, chấm điểm bó hoa, giá, tiền bo, uy tín
 │  │  ├─ market.js         Mua hạt, vật tư, nâng cấp, mở rộng đất
 │  │  ├─ progression.js    XP, lên cấp, mở khóa, tác dụng nâng cấp
+│  │  ├─ calendar.js       Mùa, ngày trong mùa, lễ hội, hoa đúng mùa
+│  │  ├─ weather.js        Thời tiết + dự báo, bão/sương giá/nắng nóng, dịch bệnh
 │  │  └─ time.js           Đồng hồ game
 │  ├─ save/                LƯU GAME
 │  │  ├─ schema.js         Cấu trúc save + số phiên bản + chuyển đổi save cũ
@@ -54,7 +57,7 @@ cùng công thức để kiểm tra gian lận.
 
 ```js
 {
-  version: 4,                     // số phiên bản cấu trúc → tự chuyển đổi khi game cập nhật
+  version: 5,                     // số phiên bản cấu trúc → tự chuyển đổi khi game cập nhật
   meta: { saveId, ownerId, rev, syncedRev, createdAt, updatedAt },
   player: { name, avatar, level, xp, coins, reputation },
   time: { gameMinutes, lastRealTs },
@@ -62,6 +65,7 @@ cùng công thức để kiểm tra gian lận.
   farm: { plots: [{ id, cols, rows, tiles: [...] }] },
   shop: { open, customers: [{ id, npc, spot, request, arrivedAt, patience }], nextSpawnAt },  // v3
   upgrades: { can, shoes, gloves, counter, sign },  // v4: bậc nâng cấp
+  weather: { today: {day, type, disease}, tomorrow: {...} },  // v5; mỗi lô có greenhouse, coverUntil; mỗi ô có sick, guardUntil, offSeason
   stats, tutorial, settings
 }
 ```

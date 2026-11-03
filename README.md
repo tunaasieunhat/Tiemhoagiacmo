@@ -8,6 +8,7 @@ Công nghệ: Three.js + Vite, sau này dùng Supabase cho tài khoản online.
 - ✅ Giai đoạn 2 — tài khoản (email, quên mật khẩu, Google), hồ sơ + avatar chibi, lưu game lên mạng, chơi khi mất mạng rồi tự đồng bộ, bảo mật RLS.
 - ✅ Giai đoạn 3 — Tiệm Hoa: khách chibi xếp hàng, yêu cầu 1 cành / nhiều cành / bó hoa, gói hoa (giấy + ruy băng), chấm điểm, tiền, uy tín, tiền bo, bán sỉ.
 - ✅ Giai đoạn 4 — Khu Chợ (hạt giống, vật tư, nâng cấp, mở rộng đất, bán sỉ), cấp độ + XP + thưởng lên cấp, 3 loài hoa mới (cúc họa mi, oải hương, cẩm tú cầu).
+- ✅ Giai đoạn 5 — 4 mùa (hoa đúng/trái mùa, cảnh vật đổi màu), lễ hội (Tết, 14/2, 8/3, Mùa cưới, 20/10, 20/11), thời tiết & thiên tai & dịch bệnh có dự báo trước 1 ngày, bạt che, thuốc, nhà kính.
 
 **Cài đặt online:** xem [Hướng dẫn Supabase](docs/HUONG_DAN_SUPABASE.md). Chưa cài thì game vẫn chạy ở chế độ khách (lưu trên máy).
 
@@ -46,6 +47,7 @@ Thanh công cụ dưới: ✋ Xem · 🪏 Xới · 🌱 Gieo · 💧 Tưới · 
 - `data/wrapping.js` — giấy gói, ruy băng (màu, tông, giá, cấp mở khóa, số lượng khởi đầu)
 - `data/market.js` — giá phân bón, các nâng cấp (giá, cấp cần, tác dụng), giá & cấp mở rộng đất
 - `data/levels.js` — XP cần cho mỗi cấp, XP mỗi việc, thưởng lên cấp
+- `data/seasons.js` — độ dài mùa, ảnh hưởng mùa, xác suất thời tiết/thiên tai/dịch bệnh theo mùa, mức thiệt hại, đồ phòng hộ, các lễ hội
 - `data/customers.js` — tên, ngoại hình, câu nói của khách
 - `data/online.js` — địa chỉ & khóa công khai Supabase, tần suất đồng bộ
 - `data/badwords.js` — từ cấm (bản chính nằm trong bảng `banned_words` trên Supabase)

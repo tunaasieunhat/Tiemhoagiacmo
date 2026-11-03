@@ -5,11 +5,13 @@ import { SUPPLIES, UPGRADES, PLOT_UNLOCKS } from '../../data/market.js';
 import { nextUpgrade, nextPlot } from '../systems/market.js';
 import { wholesalePrice } from '../systems/shop.js';
 import { formatDuration } from '../systems/time.js';
+import { PROTECTION } from '../../data/seasons.js';
 
 const TABS = [
   { id: 'seeds', label: '🌱 Hạt giống' },
   { id: 'supplies', label: '🧪 Vật tư' },
   { id: 'upgrades', label: '🛠️ Nâng cấp' },
+  { id: 'protect', label: '🛡️ Phòng hộ' },
   { id: 'land', label: '🗺️ Đất' },
   { id: 'sell', label: '📦 Bán sỉ' },
 ];
@@ -33,7 +35,7 @@ export class MarketPanel {
     const m = this.hud.root.querySelector('.modal');
     const top = keepScroll && this.hud.modal === 'market' ? m?.scrollTop || 0 : 0;
     const s = this.save;
-    const body = { seeds: this.seeds, supplies: this.supplies, upgrades: this.upgrades, land: this.land, sell: this.sell }[this.tab].call(this);
+    const body = { seeds: this.seeds, supplies: this.supplies, upgrades: this.upgrades, protect: this.protect, land: this.land, sell: this.sell }[this.tab].call(this);
     this.hud.openModal('market', `
       <h2>🧺 Khu Chợ</h2>
       <div class="mk-wallet"><span>💰 <b>${s.player.coins}</b></span><span>⭐ Cấp <b>${s.player.level}</b></span></div>
@@ -98,6 +100,22 @@ export class MarketPanel {
         buttons: `<button class="btn ${s.player.coins < next.price ? 'disabled' : 'primary'}" data-mk="buy" data-what="upgrade" data-id="${key}">Nâng cấp</button>`,
       });
     }).join('');
+  }
+
+  protect() {
+    const s = this.save;
+    const lv = s.player.level;
+    const items = ['cover', 'medicine'].map((k) => {
+      const it = PROTECTION[k];
+      return this.card({ icon: it.icon, name: it.name, desc: it.desc, price: it.price, lock: lv < it.level ? it.level : 0, owned: s.inventory.items[k] || 0, buttons: this.buyBtns('protect', k, it.price) });
+    }).join('');
+    const gh = PROTECTION.greenhouse;
+    const houses = s.farm.plots.map((p, i) => this.card({
+      icon: gh.icon, name: `Nhà kính cho lô số ${i + 1}`, desc: p.greenhouse ? 'Đã xây' : gh.desc,
+      price: p.greenhouse ? null : gh.price, lock: !p.greenhouse && lv < gh.level ? gh.level : 0,
+      buttons: p.greenhouse ? '<span class="maxed">✔ Đã có</span>' : `<button class="btn ${s.player.coins < gh.price ? 'disabled' : 'primary'}" data-mk="buy" data-what="greenhouse" data-id="${i}">Xây</button>`,
+    })).join('');
+    return `<p class="muted small">Xem dự báo thời tiết bằng cách bấm vào đồng hồ. Thiên tai và dịch bệnh luôn được báo trước 1 ngày.</p>${items}<h3>Nhà kính</h3>${houses}`;
   }
 
   land() {

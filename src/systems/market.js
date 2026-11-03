@@ -5,6 +5,7 @@ import { FLOWERS } from '../../data/flowers.js';
 import { PAPERS, RIBBONS } from '../../data/wrapping.js';
 import { SUPPLIES, UPGRADES, PLOT_UNLOCKS } from '../../data/market.js';
 import { createPlot } from '../save/schema.js';
+import { PROTECTION } from '../../data/seasons.js';
 
 const fail = (msg) => ({ ok: false, msg });
 
@@ -79,4 +80,29 @@ export function buyPlot(save) {
   if (!pay(save, p.price)) return fail(`Không đủ tiền (cần ${p.price} 💰)`);
   save.farm.plots.push(createPlot(`plot-${p.slot + 1}`));
   return { ok: true, msg: `🗺️ Đã mở rộng lô đất số ${p.slot + 1}!` };
+}
+
+// ---------------- phòng hộ (GĐ5) ----------------
+
+/** key: 'cover' | 'medicine' */
+export function buyProtection(save, key, n = 1) {
+  const it = PROTECTION[key];
+  if (!it || key === 'greenhouse') return fail('Không rõ món hàng');
+  if (!checkLevel(save, it.level)) return fail(`Cần đạt cấp ${it.level}`);
+  const cost = it.price * n;
+  if (!pay(save, cost)) return fail(`Không đủ tiền (cần ${cost} 💰)`);
+  save.inventory.items[key] = (save.inventory.items[key] || 0) + n;
+  return { ok: true, msg: `Đã mua ${n} ${it.name} (−${cost} 💰)` };
+}
+
+export function buyGreenhouse(save, plotIdx) {
+  const it = PROTECTION.greenhouse;
+  const plot = save.farm.plots[plotIdx];
+  if (!plot) return fail('Không có lô đất này');
+  if (plot.greenhouse) return fail('Lô này đã có nhà kính');
+  if (!checkLevel(save, it.level)) return fail(`Cần đạt cấp ${it.level}`);
+  if (!pay(save, it.price)) return fail(`Không đủ tiền (cần ${it.price} 💰)`);
+  plot.greenhouse = true;
+  plot.coverUntil = 0;
+  return { ok: true, msg: `🏠 Đã xây nhà kính cho lô số ${plotIdx + 1}!` };
 }

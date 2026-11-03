@@ -377,3 +377,33 @@ h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
 .tiers i { width: 8px; height: 8px; border-radius: 50%; background: #f3e6dd; }
 .tiers i.on { background: #f4b42a; }
 @media (max-width: 420px) { .wallet .wchip { font-size: 13px; padding: 3px 8px; } .xpbar { width: 26px; } }
+
+/* ---------- lịch, thời tiết ---------- */
+.clock { cursor: pointer; }
+.wx-icon { font-size: 20px; }
+.alert-chip { position: absolute; top: calc(98px + var(--safe-top)); left: 8px; max-width: calc(100% - 16px); background: #eef8ff; border: 2px solid #9fd6f0; border-radius: 999px; padding: 4px 12px; font-weight: 800; font-size: 13px; box-shadow: var(--shadow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.alert-chip.warn { background: #fff1e6; border-color: #f4a596; animation: nudge 2.5s ease-in-out infinite; }
+@keyframes nudge { 0%, 90%, 100% { transform: none; } 94% { transform: rotate(-2deg); } 97% { transform: rotate(2deg); } }
+.seasons-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.seasons-row span { text-align: center; padding: 6px 2px; border-radius: 12px; background: #f6e8df; font-weight: 800; font-size: 13px; opacity: .55; }
+.seasons-row span.on { background: #fff; box-shadow: inset 0 0 0 2px var(--pink); opacity: 1; }
+.fc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fc-card { background: #fff; border: 2px solid var(--line); border-radius: 18px; padding: 10px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.fc-card.danger { border-color: #f4a596; background: #fff6f2; }
+.fc-card small { color: var(--ink-soft); font-weight: 700; font-size: 12px; }
+.fc-card p { margin: 0; font-size: 12px; font-weight: 600; }
+.fc-card p.bad { color: #c0503c; }
+.fc-card p.fest { color: #b0558a; }
+.fc-main { display: flex; align-items: center; gap: 6px; }
+.fc-icon { font-size: 30px; }
+.todos { display: flex; flex-direction: column; gap: 6px; }
+.todo { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #fff; border: 2px solid var(--line); border-radius: 16px; padding: 8px 10px; font-weight: 700; font-size: 13px; flex-wrap: wrap; }
+.todo .btn { padding: 7px 12px; font-size: 13px; }
+.fests { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.fests li { background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 6px 10px; font-size: 13px; }
+.fests small { color: var(--ink-soft); font-weight: 700; }
+.note { font-size: 12px; font-weight: 700; border-radius: 10px; padding: 4px 8px; margin-top: 4px; }
+.note.bad { background: #ffefeb; color: #c0503c; }
+.note.warn { background: #fff8de; color: #9a6b12; }
+.note.good { background: #eef8e8; color: #4f7f3f; }
+@media (max-width: 420px) { .fc-grid { grid-template-columns: 1fr; } .tool .tl { font-size: 11px; } .wx-icon { font-size: 16px; } }

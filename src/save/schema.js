@@ -11,8 +11,9 @@ import { createTile } from '../systems/farming.js';
 import { createShopState } from '../systems/shop.js';
 import { STARTER_WRAPS } from '../../data/wrapping.js';
 import { levelFromXp } from '../systems/progression.js';
+import { createWeatherState } from '../systems/weather.js';
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 export function newId() {
   if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
@@ -25,6 +26,8 @@ export function createPlot(id) {
     cols: FARM.plotCols,
     rows: FARM.plotRows,
     tiles: Array.from({ length: FARM.plotCols * FARM.plotRows }, createTile),
+    greenhouse: false, // nhà kính (GĐ5)
+    coverUntil: 0,     // đang che bạt đến phút game này
   };
 }
 
@@ -64,6 +67,7 @@ export function createNewSave() {
     },
     shop: createShopState(),
     upgrades: { can: 0, shoes: 0, gloves: 0, counter: 0, sign: 0 }, // bậc nâng cấp (GĐ4)
+    weather: createWeatherState(), // thời tiết hôm nay + dự báo ngày mai (GĐ5)
     farm: {
       plots: [createPlot('plot-1')],
     },
@@ -100,6 +104,18 @@ export const MIGRATIONS = {
     s.player.xp = Math.max(s.player.xp || 0, xp);
     s.player.level = Math.max(s.player.level || 1, levelFromXp(s.player.xp));
     if (s.tutorial?.done && s.tutorial.step >= 6) { s.tutorial.done = false; s.tutorial.step = 6; }
+    return s;
+  },
+  // v4 -> v5 (Giai đoạn 5): mùa, thời tiết, bệnh, nhà kính, bạt che, thuốc
+  4: (s) => {
+    s.weather = s.weather || createWeatherState();
+    for (const p of s.farm.plots) {
+      p.greenhouse = !!p.greenhouse;
+      p.coverUntil = p.coverUntil || 0;
+      for (const t of p.tiles) { t.sick = t.sick || null; t.guardUntil = t.guardUntil || 0; t.offSeason = !!t.offSeason; }
+    }
+    s.inventory.items.cover = s.inventory.items.cover ?? 2;
+    s.inventory.items.medicine = s.inventory.items.medicine ?? 3;
     return s;
   },
 };

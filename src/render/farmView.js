@@ -5,7 +5,8 @@ import { rbox, mesh } from '../models/primitives.js';
 import { mat } from '../models/materials.js';
 import { grassTuft } from '../models/environment.js';
 import { buildPlant } from '../models/flowers.js';
-import { stageOf, isThirsty, isWilted } from '../systems/farming.js';
+import { stageOf, isThirsty, isWilted, isSick } from '../systems/farming.js';
+import { uniqueMat } from '../models/materials.js';
 import { PLOT_SLOTS } from './world.js';
 import { iconMaterial } from './icons.js';
 
@@ -25,6 +26,7 @@ export class FarmView {
     scene.add(this.root);
     this.plots = []; // [{ group, tiles: [{...view}] }]
     this.time = 0;
+    this.wind = 0; // 0..1 (bão = 1)
 
     this.hoverCursor = makeCursor('#ffffff', 0.55);
     this.selectCursor = makeCursor('#ffd34e', 0.95);
@@ -98,17 +100,27 @@ export class FarmView {
       });
 
       g.userData.pick = null;
+      // nhà kính & bạt che
+      const greenhouse = makeGreenhouse(w, d);
+      greenhouse.visible = !!plot.greenhouse;
+      g.add(greenhouse);
+      const cover = makeCover(w, d);
+      cover.visible = false;
+      g.add(cover);
       this.root.add(g);
-      this.plots.push({ group: g, tiles });
+      this.plots.push({ group: g, tiles, greenhouse, cover });
     });
     this.sync(save, true);
   }
 
   /** Cập nhật hình ảnh theo dữ liệu (gọi thường xuyên, chỉ vẽ lại khi có thay đổi) */
   sync(save, instant = false) {
+    const now = save.time.gameMinutes;
     save.farm.plots.forEach((plot, pi) => {
       const pv = this.plots[pi];
       if (!pv) return;
+      pv.greenhouse.visible = !!plot.greenhouse;
+      pv.cover.visible = !plot.greenhouse && (plot.coverUntil || 0) >= now;
       plot.tiles.forEach((tile, ti) => this.syncTile(pv.tiles[ti], tile, instant));
     });
   }
@@ -139,6 +151,7 @@ export class FarmView {
 
     let iconKind = '';
     if (tile.state === 'dead') iconKind = 'dead';
+    else if (isSick(tile)) iconKind = 'sick';
     else if (tile.state === 'ready') iconKind = 'ready';
     else if (isThirsty(tile)) iconKind = 'thirsty';
     if (iconKind !== v.iconKey) {
@@ -161,7 +174,7 @@ export class FarmView {
         if (v.plant) {
           const sway = v.plant.userData.sway;
           if (sway && v.key.indexOf('dead') < 0) {
-            sway.rotation.x = Math.sin(t * 1.6 + v.phase) * 0.05;
+            sway.rotation.x = Math.sin(t * (1.6 + this.wind * 3) + v.phase) * (0.05 + this.wind * 0.18);
           }
           if (v.pop < 1) {
             v.pop = Math.min(1, v.pop + dt * 2.5);
@@ -175,6 +188,56 @@ export class FarmView {
     }
     this.selectCursor.material.opacity = 0.65 + Math.sin(t * 5) * 0.3;
   }
+}
+
+const GLASS = uniqueMat('#dff4ff', { transparent: true, opacity: 0.28, depthWrite: false });
+function makeGreenhouse(w, d) {
+  const g = new THREE.Group();
+  const H = 2.3;
+  const frame = '#ffffff';
+  for (const [x, z] of [[-w / 2, -d / 2], [w / 2, -d / 2], [-w / 2, d / 2], [w / 2, d / 2]]) {
+    const post = rbox(0.12, H, 0.12, frame, 0.04);
+    post.position.set(x, H / 2, z);
+    g.add(post);
+  }
+  for (const z of [-d / 2, d / 2]) { const b = rbox(w, 0.1, 0.1, frame, 0.04); b.position.set(0, H, z); g.add(b); }
+  // mái vòm bằng kính
+  // nửa ống trụ nằm dọc trục z, phần trên mặt đất; ép dẹt chiều cao
+  const roof = new THREE.Mesh(new THREE.CylinderGeometry(w / 2, w / 2, d, 20, 1, true, Math.PI / 2, Math.PI), GLASS);
+  roof.rotation.x = Math.PI / 2;
+  roof.scale.z = 0.45;
+  roof.position.y = H;
+  g.add(roof);
+  for (let i = 0; i <= 4; i++) {
+    const rib = new THREE.Mesh(new THREE.TorusGeometry(w / 2, 0.04, 6, 20, Math.PI), mat(frame));
+    rib.scale.y = 0.45;
+    rib.position.set(0, H, -d / 2 + (i / 4) * d);
+    g.add(rib);
+  }
+  // vách kính 4 phía
+  for (const [x, z, ry, len] of [[0, -d / 2, 0, w], [0, d / 2, 0, w], [-w / 2, 0, Math.PI / 2, d], [w / 2, 0, Math.PI / 2, d]]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(len, H), GLASS);
+    p.position.set(x, H / 2, z); p.rotation.y = ry;
+    g.add(p);
+  }
+  return g;
+}
+
+function makeCover(w, d) {
+  const g = new THREE.Group();
+  const H = 1.6;
+  for (const [x, z] of [[-w / 2, -d / 2], [w / 2, -d / 2], [-w / 2, d / 2], [w / 2, d / 2]]) {
+    const post = rbox(0.1, H, 0.1, '#b98563', 0.03);
+    post.position.set(x, H / 2, z);
+    g.add(post);
+  }
+  const n = 6;
+  for (let i = 0; i < n; i++) {
+    const strip = rbox(w / n + 0.01, 0.05, d + 0.2, i % 2 ? '#9fd6f0' : '#ffffff', 0.02, { cast: true });
+    strip.position.set(-w / 2 + (i + 0.5) * (w / n), H + Math.sin(((i + 0.5) / n) * Math.PI) * 0.35, 0);
+    g.add(strip);
+  }
+  return g;
 }
 
 function makeCursor(color, opacity) {

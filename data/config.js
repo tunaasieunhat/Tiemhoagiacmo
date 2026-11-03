@@ -34,7 +34,7 @@ export const FARM = {
 export const STARTER = {
   coins: 100,
   seeds: { rose: 4, tulip: 6, sunflower: 3 },
-  items: { fertilizer: 8 },
+  items: { fertilizer: 8, cover: 2, medicine: 3 },
   tools: { shovel: 1, wateringCan: 1 },
   freeSeedsPack: { rose: 2, tulip: 3, sunflower: 2 }, // nút "nhận hạt thử nghiệm" (chỉ GĐ1, GĐ4 sẽ thay bằng cửa hàng)
 };
