@@ -1,87 +1,114 @@
-// Hiển thị đồ trang trí ở các vị trí; chế độ trang trí hiện ô trống (+) để chạm vào đặt đồ.
+// Hiển thị đồ trang trí đặt TỰ DO (GĐ10).
+// - Đồ đã đặt: mỗi món 1 nhóm, chạm được khi đang ở chế độ trang trí (pick { kind: 'decor', u })
+// - Món đang chọn/dời: vẽ riêng ("bóng") kèm vòng dưới chân: xanh = đặt được, đỏ = vướng
 import * as THREE from 'three';
-import { DECOR_SLOTS } from '../../data/decor.js';
 import { buildDecor } from '../models/decor.js';
+import { sizeOf } from '../systems/decor.js';
 
-function plusMaterial() {
-  const c = document.createElement('canvas');
-  c.width = c.height = 96;
-  const x = c.getContext('2d');
-  x.fillStyle = 'rgba(255,250,243,.92)'; x.strokeStyle = '#f6a6b9'; x.lineWidth = 6;
-  x.beginPath(); x.arc(48, 48, 40, 0, Math.PI * 2); x.fill(); x.stroke();
-  x.strokeStyle = '#ea7f99'; x.lineWidth = 9; x.lineCap = 'round';
-  x.beginPath(); x.moveTo(48, 28); x.lineTo(48, 68); x.moveTo(28, 48); x.lineTo(68, 48); x.stroke();
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return new THREE.SpriteMaterial({ map: t, depthTest: false, transparent: true });
+const RING_OK = new THREE.MeshBasicMaterial({ color: '#7be08f', transparent: true, opacity: 0.55, depthWrite: false });
+const RING_BAD = new THREE.MeshBasicMaterial({ color: '#ff6b7d', transparent: true, opacity: 0.55, depthWrite: false });
+const MARK = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.35, depthWrite: false });
+
+function ring(r, material) {
+  const m = new THREE.Mesh(new THREE.RingGeometry(r * 0.82, r, 36), material);
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = 0.06;
+  m.renderOrder = 4;
+  return m;
 }
 
 export class DecorView {
   constructor(scene) {
     this.root = new THREE.Group();
     scene.add(this.root);
-    this.items = {}; // slotId -> { id, obj }
-    this.markers = {};
+    this.items = new Map(); // u -> { id, obj, key }
     this.editing = false;
+    this.ghost = null;      // { u, id, obj, ring, ok }
     this.t = 0;
-    const pm = plusMaterial();
-    for (const s of DECOR_SLOTS) {
-      const holder = new THREE.Group();
-      holder.position.set(s.x, 0, s.z);
-      holder.userData.pick = { kind: 'decorSlot', slot: s.id };
-      // vùng chạm vô hình để dễ bấm vào ô trống
-      const hit = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 1.6, 10), new THREE.MeshBasicMaterial({ visible: false }));
-      hit.position.y = 0.8;
-      holder.add(hit);
-      const m = new THREE.Sprite(pm);
-      m.scale.set(0.9, 0.9, 1);
-      m.position.y = 0.7;
-      m.visible = false;
-      m.renderOrder = 7;
-      holder.add(m);
-      this.root.add(holder);
-      this.markers[s.id] = { holder, sprite: m, hit };
-    }
   }
 
-  /** slots: { slotId: decorId } */
-  sync(slots = {}) {
-    for (const s of DECOR_SLOTS) {
-      const want = slots[s.id] || null;
-      const cur = this.items[s.id];
-      if ((cur?.id || null) === want) continue;
-      if (cur) this.markers[s.id].holder.remove(cur.obj);
-      delete this.items[s.id];
-      if (want) {
-        const obj = buildDecor(want);
-        obj.rotation.y = Math.atan2(-s.x, -s.z) * 0 + (s.zone === 'shop' ? 0.3 : 0.6);
-        this.markers[s.id].holder.add(obj);
-        this.items[s.id] = { id: want, obj };
+  /** placed: [{u, id, x, z, r}] — hideUid: món đang được dời (vẽ ở dạng bóng) */
+  sync(placed = [], hideUid = null) {
+    const seen = new Set();
+    for (const p of placed) {
+      seen.add(p.u);
+      let it = this.items.get(p.u);
+      if (!it || it.id !== p.id) {
+        if (it) this.root.remove(it.obj);
+        const obj = buildDecor(p.id);
+        obj.userData.pick = this.editing ? { kind: 'decor', u: p.u } : null;
+        // vùng chạm vô hình để dễ chạm trúng món nhỏ
+        const hit = new THREE.Mesh(new THREE.CylinderGeometry(Math.max(0.45, sizeOf(p.id)), Math.max(0.45, sizeOf(p.id)), 1.6, 10), new THREE.MeshBasicMaterial({ visible: false }));
+        hit.position.y = 0.8;
+        obj.add(hit);
+        const mark = ring(sizeOf(p.id) + 0.05, MARK);
+        mark.visible = this.editing;
+        obj.add(mark);
+        obj.userData.mark = mark;
+        this.root.add(obj);
+        it = { id: p.id, obj };
+        this.items.set(p.u, it);
       }
+      it.obj.position.set(p.x, 0, p.z);
+      it.obj.rotation.y = THREE.MathUtils.degToRad(p.r || 0);
+      it.obj.visible = p.u !== hideUid;
     }
-    this.setEditing(this.editing);
+    for (const [u, it] of this.items) if (!seen.has(u)) { this.root.remove(it.obj); this.items.delete(u); }
   }
 
   setEditing(on) {
     this.editing = on;
-    for (const s of DECOR_SLOTS) {
-      const m = this.markers[s.id];
-      m.sprite.visible = on;
-      m.sprite.position.y = this.items[s.id] ? 2.4 : 0.7;
-      m.holder.userData.pick = on ? { kind: 'decorSlot', slot: s.id } : null;
-      m.hit.visible = false;
+    for (const [u, it] of this.items) {
+      it.obj.userData.pick = on ? { kind: 'decor', u } : null;
+      if (it.obj.userData.mark) it.obj.userData.mark.visible = on;
     }
+    if (!on) this.clearGhost();
   }
 
-  /** Các nhóm có thể chạm (chỉ khi đang trang trí) */
-  pickRoot() { return this.editing ? this.root : null; }
+  /** Vẽ món đang chọn ở vị trí (x, z), góc r độ; ok = đặt được không */
+  showGhost(id, x, z, r, ok) {
+    if (!this.ghost || this.ghost.id !== id) {
+      this.clearGhost();
+      const obj = buildDecor(id);
+      obj.userData.pick = { kind: 'decorGhost' };
+      const hit = new THREE.Mesh(new THREE.CylinderGeometry(Math.max(0.6, sizeOf(id) + 0.2), Math.max(0.6, sizeOf(id) + 0.2), 2, 10), new THREE.MeshBasicMaterial({ visible: false }));
+      hit.position.y = 1;
+      obj.add(hit);
+      const rg = ring(sizeOf(id) + 0.08, RING_OK);
+      obj.add(rg);
+      this.root.add(obj);
+      this.ghost = { id, obj, ring: rg };
+    }
+    this.ghost.obj.position.set(x, 0, z);
+    this.ghost.obj.rotation.y = THREE.MathUtils.degToRad(r || 0);
+    this.ghost.ring.material = ok ? RING_OK : RING_BAD;
+  }
+
+  clearGhost() {
+    if (this.ghost) { this.root.remove(this.ghost.obj); this.ghost = null; }
+  }
 
   update(dt) {
     this.t += dt;
-    for (const it of Object.values(this.items)) {
-      if (it.obj.userData.spin) it.obj.userData.spin.rotation.z += dt * 1.2;
-      if (it.obj.userData.bob) it.obj.userData.bob.position.y += Math.sin(this.t * 2) * 0.002;
+    const t = this.t;
+    const each = (obj) => {
+      const u = obj.userData;
+      if (u.spin) u.spin.rotation.z += dt * 1.2;
+      if (u.bob) u.bob.position.y += Math.sin(t * 2) * 0.002;
+      if (u.float) u.float.position.y = 1.15 + Math.sin(t * 1.6) * 0.12;
+      if (u.orbit) {
+        u.orbit.rotation.y += dt * 1.4;
+        u.orbit.userData.bats?.forEach((b, i) => { const f = Math.sin(t * 14 + i * 2) * 0.45; if (b.userData.wl) b.userData.wl.rotation.z = -0.35 - f; if (b.userData.wr) b.userData.wr.rotation.z = 0.35 + f; });
+      }
+      if (u.dangle) u.dangle.position.y = 1.1 + Math.sin(t * 1.2) * 0.12;
+      if (u.flicker) u.flicker.forEach((f, i) => { const k = 1 + Math.sin(t * 13 + i * 2.1) * 0.12 + Math.sin(t * 7.3 + i) * 0.08; f.scale.set(k, 1.7 * k, k); });
+      if (u.bubbles) u.bubbles.forEach((b) => { const k = ((t * 0.8 + b.userData.phase) % 1); b.position.y = 0.98 + k * 0.35; b.scale.setScalar(1 - k * 0.7); });
+    };
+    for (const it of this.items.values()) if (it.obj.visible) each(it.obj);
+    if (this.ghost) {
+      each(this.ghost.obj);
+      this.ghost.obj.position.y = 0.12 + Math.abs(Math.sin(t * 4)) * 0.08; // nhấc lên nhún nhẹ khi đang dời
+      this.ghost.ring.position.y = 0.06 - this.ghost.obj.position.y;
     }
-    if (this.editing) for (const m of Object.values(this.markers)) m.sprite.material.opacity = 0.75 + Math.sin(this.t * 4) * 0.25;
   }
 }

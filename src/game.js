@@ -25,7 +25,8 @@ import { MEANINGS } from '../data/variants.js';
 import * as quests from './systems/quests.js';
 import * as automation from './systems/automation.js';
 import { STAFF, MACHINES } from '../data/automation.js';
-import { DECOR } from '../data/decor.js';
+import { DECOR, DECOR_RULES, DECOR_EVENTS } from '../data/decor.js';
+import * as decorSys from './systems/decor.js';
 import { DecorView } from './render/decorView.js';
 import { submitContest } from './online/ranking.js';
 import { PAPERS as WRAP_PAPERS, RIBBONS as WRAP_RIBBONS } from '../data/wrapping.js';
@@ -92,7 +93,8 @@ export class Game {
     this.applyWeatherVisuals(true);
     // GĐ8: trang trí, nhân viên, nhiệm vụ
     this.decorView = new DecorView(stage.scene);
-    this.decorView.sync(this.save.decor.slots);
+    this.decorEdit = null; // món đang chọn / đang dời trong chế độ trang trí (GĐ10)
+    this.decorView.sync(this.save.decor.placed);
     this.staffModels = {};
     for (const [id, st] of Object.entries(STAFF)) {
       const m = buildCharacter(st.look).root;
@@ -108,6 +110,10 @@ export class Game {
     this.controls = new CameraControls(stage.camera, stage.renderer.domElement, {
       onTap: (x, y) => this.onTap(x, y),
       onHover: (x, y) => this.onHover(x, y),
+      // kéo món đồ đang dời (chế độ trang trí)
+      onDragStart: (x, y) => this.decorMode && this.decorEdit && this.pickAt(x, y)?.kind === 'decorGhost',
+      onDrag: (x, y) => this.moveDecorEdit(x, y),
+      onDragEnd: () => {},
     });
     // camera bắt đầu nhìn vào lô đất đầu tiên; điện thoại dọc thì zoom gần hơn
     const portrait = innerWidth < innerHeight;
@@ -338,7 +344,7 @@ export class Game {
   onTap(x, y) {
     const pick = this.pickAt(x, y);
     if (this.visit) { this.onVisitTap(pick); return; }
-    if (this.decorMode) { if (pick?.kind === 'decorSlot') this.emitter.emit('decor-slot', pick.slot); return; }
+    if (this.decorMode) { this.onDecorTap(pick, x, y); return; }
     if (!pick) { this.select(null); return; }
     if (pick.kind === 'tile') {
       if (this.tool === 'hand') this.select(pick);
@@ -722,7 +728,7 @@ export class Game {
     this.customers.root.visible = false;
     this.labIcon.visible = false;
     if (this.decorMode) this.setDecorMode(false);
-    this.decorView.sync(data.snapshot?.decor || {});
+    this.decorView.sync(decorSys.placedFromSnapshot(data.snapshot));
     this.updateStaffModels();
     const n = this.visitFarm.farm.plots.length;
     this.world.lockedSlots.forEach((g) => { g.visible = g.userData.pick.slot >= n; });
@@ -745,7 +751,7 @@ export class Game {
     this.farmView.build(this.save);
     this.player.root.visible = true;
     this.customers.root.visible = true;
-    this.decorView.sync(this.save.decor.slots);
+    this.decorView.sync(this.save.decor.placed);
     this.updateStaffModels();
     this.updateLockedSlots();
     this.controls.focusOn(PLOT_SLOTS[0].clone().add(new THREE.Vector3(1.4, 0, -0.6)));
@@ -871,51 +877,147 @@ export class Game {
     for (const [id, m] of Object.entries(this.staffModels)) m.visible = !this.visit && automation.staffActive(this.save, id);
   }
 
-  // ---------------- trang trí (GĐ8) ----------------
+  // ---------------- trang trí (GĐ8, đặt tự do từ GĐ10) ----------------
+  seasonId() { return calendar.calendarOf(dayOf(this.save.time.gameMinutes)).season.id; }
+
   buyDecor(id, n = 1) {
     const d = DECOR[id];
     const s = this.save;
     if (!d) return false;
+    if (d.event && !decorSys.eventOpen(d.event, this.seasonId())) { const ev = DECOR_EVENTS[d.event]; this.toast(`${ev.icon} Đồ ${ev.name} chỉ bán trong Mùa Thu`, 'warn'); return false; }
     if (s.player.level < d.level) { this.toast(`Cần đạt cấp ${d.level}`, 'warn'); return false; }
     if (s.player.coins < d.price * n) { this.toast(`Không đủ tiền (cần ${d.price * n} 💰)`, 'warn'); return false; }
     s.player.coins -= d.price * n;
     s.decor.owned[id] = (s.decor.owned[id] || 0) + n;
-    this.toast(`${d.icon} Đã mua ${d.name}! Bấm 🎨 để đặt vào nông trại`, 'good');
+    this.toast(`${d.icon} Đã mua ${d.name}! Bấm 🎨 để đặt ở bất kỳ đâu`, 'good');
     this.saveMgr.markDirty();
     this.emitter.emit('inventory');
     return true;
   }
 
-  /** Đặt (id) hoặc gỡ (null) đồ ở 1 vị trí */
-  placeDecor(slot, id) {
-    const dec = this.save.decor;
-    const cur = dec.slots[slot];
-    if (cur) { dec.owned[cur] = (dec.owned[cur] || 0) + 1; delete dec.slots[slot]; }
-    if (id) {
-      if (!(dec.owned[id] > 0)) { this.toast('Bạn chưa có món này, mua ở Khu Chợ › Trang trí', 'warn'); return false; }
-      dec.owned[id] -= 1;
-      dec.slots[slot] = id;
-      const sl = this.decorView.markers[slot].holder.position.clone();
-      this.particles.spawn('sparkle', sl);
-    }
-    this.decorView.sync(dec.slots);
-    this.saveMgr.markDirty();
-    this.emitter.emit('inventory');
-    return true;
-  }
-
-  beauty(slots = this.save.decor.slots) {
-    return Object.values(slots).reduce((a, id) => a + (DECOR[id]?.beauty || 0), 0);
-  }
+  beauty(placed = this.save.decor.placed) { return decorSys.beautyOf(placed); }
 
   setDecorMode(on) {
     if (this.visit) return;
+    if (!on && this.decorEdit) this.cancelDecorEdit();
     this.decorMode = on;
     this.decorView.setEditing(on);
     this.select(null);
     this.updateLockedSlots();
     if (on) this.controls.focusOn(new THREE.Vector3(3, 0, 1), 0.85);
     this.emitter.emit('decor-mode', on);
+    this.emitter.emit('decor-edit', this.decorEdit);
+  }
+
+  /** Kiểm tra món đang dời có đặt được ở chỗ hiện tại không */
+  decorCheck(e = this.decorEdit) {
+    if (!e) return { ok: false, reason: '' };
+    return decorSys.checkPlace(this.save.decor.placed, e.id, e.x, e.z, this.world.decorMap, e.u);
+  }
+
+  refreshDecorEdit() {
+    const e = this.decorEdit;
+    this.decorView.sync(this.save.decor.placed, e?.u ?? null);
+    if (e) {
+      const c = this.decorCheck(e);
+      e.ok = c.ok; e.reason = c.reason;
+      this.decorView.showGhost(e.id, e.x, e.z, e.r, c.ok);
+    } else this.decorView.clearGhost();
+    this.emitter.emit('decor-edit', e);
+  }
+
+  /** Lấy 1 món trong kho ra để đặt — hiện ở chỗ trống gần giữa màn hình */
+  startNewDecor(id) {
+    const dec = this.save.decor;
+    if (!(dec.owned[id] > 0)) { this.toast('Bạn chưa có món này, mua ở Khu Chợ › Trang trí', 'warn'); return; }
+    if (dec.placed.length >= DECOR_RULES.maxPlaced) { this.toast(`Đã đặt tối đa ${DECOR_RULES.maxPlaced} món — cất bớt rồi đặt tiếp nhé`, 'warn'); return; }
+    if (this.decorEdit) this.cancelDecorEdit(true);
+    const c = this.controls.target;
+    const spot = decorSys.findFreeSpot(dec.placed, id, c.x, c.z, this.world.decorMap) || { x: decorSys.snap(c.x), z: decorSys.snap(c.z) };
+    this.decorEdit = { u: null, id, x: spot.x, z: spot.z, r: 45, orig: null }; // 45° = quay mặt về phía camera
+    this.refreshDecorEdit();
+  }
+
+  /** Chọn món đã đặt để dời / xoay / cất */
+  selectPlacedDecor(u) {
+    const p = this.save.decor.placed.find((q) => q.u === u);
+    if (!p) return;
+    if (this.decorEdit) { if (this.decorEdit.u === u) return; this.confirmDecorEdit(true) || this.cancelDecorEdit(true); }
+    this.decorEdit = { u, id: p.id, x: p.x, z: p.z, r: p.r || 0, orig: { x: p.x, z: p.z, r: p.r || 0 } };
+    this.refreshDecorEdit();
+  }
+
+  moveDecorEdit(sx, sy) {
+    const e = this.decorEdit;
+    if (!e) return;
+    const g = this.controls.groundPoint(sx, sy);
+    if (!g) return;
+    const x = decorSys.snap(g.x), z = decorSys.snap(g.z);
+    if (x === e.x && z === e.z) return;
+    e.x = x; e.z = z;
+    this.refreshDecorEdit();
+  }
+
+  rotateDecorEdit() {
+    const e = this.decorEdit;
+    if (!e) return;
+    e.r = ((e.r || 0) + DECOR_RULES.rotateStep) % 360;
+    this.refreshDecorEdit();
+  }
+
+  /** Đặt món đang dời xuống. quiet: không báo lỗi (khi tự xác nhận lúc chọn món khác) */
+  confirmDecorEdit(quiet = false) {
+    const e = this.decorEdit;
+    if (!e) return false;
+    const c = this.decorCheck(e);
+    if (!c.ok) { if (!quiet) this.toast(`⛔ ${c.reason || 'Chỗ này không đặt được'}`, 'warn'); return false; }
+    const dec = this.save.decor;
+    if (e.u == null) {
+      if (!(dec.owned[e.id] > 0)) { this.cancelDecorEdit(true); return false; }
+      dec.owned[e.id] -= 1;
+      dec.nextUid = Math.max(dec.nextUid || 1, ...dec.placed.map((p) => p.u + 1));
+      dec.placed.push({ u: dec.nextUid++, id: e.id, x: e.x, z: e.z, r: e.r });
+    } else {
+      const p = dec.placed.find((q) => q.u === e.u);
+      if (p) Object.assign(p, { x: e.x, z: e.z, r: e.r });
+    }
+    this.particles.spawn('sparkle', new THREE.Vector3(e.x, 0.3, e.z));
+    this.decorEdit = null;
+    this.refreshDecorEdit();
+    this.saveMgr.markDirty();
+    this.emitter.emit('inventory');
+    return true;
+  }
+
+  /** Bỏ thao tác: món mới thì trả lại kho (chưa trừ), món cũ thì về chỗ cũ */
+  cancelDecorEdit(silent = false) {
+    if (!this.decorEdit) return;
+    this.decorEdit = null;
+    this.refreshDecorEdit();
+    if (!silent) this.emitter.emit('inventory');
+  }
+
+  /** Cất món đang chọn vào kho */
+  storeDecorEdit() {
+    const e = this.decorEdit;
+    if (!e) return;
+    const dec = this.save.decor;
+    if (e.u != null) {
+      const i = dec.placed.findIndex((q) => q.u === e.u);
+      if (i >= 0) { dec.placed.splice(i, 1); dec.owned[e.id] = (dec.owned[e.id] || 0) + 1; }
+      this.toast(`📦 Đã cất ${DECOR[e.id]?.name || 'đồ'} vào kho`, 'info');
+      this.saveMgr.markDirty();
+    }
+    this.decorEdit = null;
+    this.refreshDecorEdit();
+    this.emitter.emit('inventory');
+  }
+
+  onDecorTap(pick, x, y) {
+    if (pick?.kind === 'decor') { this.selectPlacedDecor(pick.u); return; }
+    if (pick?.kind === 'decorGhost') return;
+    // chạm chỗ trống: đang dời thì đưa món tới đó
+    if (this.decorEdit) this.moveDecorEdit(x, y);
   }
 
   // ---------------- sổ tay & lai tạo ----------------

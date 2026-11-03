@@ -8,7 +8,8 @@ import { formatDuration } from '../systems/time.js';
 import { PROTECTION } from '../../data/seasons.js';
 import * as variants from '../systems/variants.js';
 import { MACHINES, STAFF } from '../../data/automation.js';
-import { DECOR } from '../../data/decor.js';
+import { DECOR, DECOR_EVENTS } from '../../data/decor.js';
+import { eventOpen } from '../systems/decor.js';
 
 const TABS = [
   { id: 'seeds', label: '🌱 Hạt giống' },
@@ -147,10 +148,25 @@ export class MarketPanel {
   decor() {
     const s = this.save;
     const lv = s.player.level;
-    return `<p class="muted small">Mua đồ rồi bấm 🎨 (bên trái) để đặt quanh nông trại và tiệm. Bạn bè ghé thăm sẽ thấy, mỗi món có điểm xinh xắn 🎨.</p>` + Object.entries(DECOR).map(([id, d]) => this.card({
-      icon: d.icon, name: d.name, desc: `🎨 +${d.beauty} điểm xinh xắn`, price: d.price, lock: lv < d.level ? d.level : 0, owned: s.decor.owned[id] || 0,
-      buttons: `<button class="btn ${s.player.coins < d.price ? 'disabled' : 'primary'}" data-mk="decor" data-id="${id}">Mua</button>`,
-    })).join('');
+    const season = this.game.seasonId();
+    const card = ([id, d]) => {
+      const open = !d.event || eventOpen(d.event, season);
+      return this.card({
+        icon: d.icon, name: d.name, desc: `🎨 +${d.beauty} điểm xinh xắn`, price: d.price, lock: lv < d.level ? d.level : 0, owned: s.decor.owned[id] || 0,
+        buttons: open
+          ? `<button class="btn ${s.player.coins < d.price ? 'disabled' : 'primary'}" data-mk="decor" data-id="${id}">Mua</button>`
+          : '<span class="maxed">🍁 Mùa Thu</span>',
+      });
+    };
+    const normal = Object.entries(DECOR).filter(([, d]) => !d.event);
+    const events = Object.entries(DECOR_EVENTS).map(([eid, ev]) => {
+      const items = Object.entries(DECOR).filter(([, d]) => d.event === eid);
+      const open = eventOpen(eid, season);
+      return `<h3>${ev.icon} ${ev.name}${open ? ' <span class="tag-open">Đang mở bán!</span>' : ''}</h3>
+        <p class="muted small">${ev.desc}${open ? '' : ' Hiện chưa tới Mùa Thu — xem lịch ở dự báo thời tiết.'}</p>${items.map(card).join('')}`;
+    }).join('');
+    return `<p class="muted small">Mua đồ rồi bấm 🎨 (bên trái) để <b>đặt ở bất kỳ đâu</b> quanh nông trại, tiệm và chợ. Bạn bè ghé thăm sẽ thấy, mỗi món có điểm xinh xắn 🎨.</p>`
+      + events + '<h3>🪴 Đồ trang trí</h3>' + normal.map(card).join('');
   }
 
   land() {

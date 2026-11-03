@@ -62,5 +62,6 @@ export const FESTIVALS = [
   { id: 'women83', name: 'Quốc tế Phụ nữ 8/3', icon: '👩', season: 'xuan', days: [6], flowers: ['rose', 'tulip', 'daisy'], tone: 'pastel', meaning: 'gratitude', occasion: 'tặng mẹ và chị em ngày 8/3', spawnMult: 0.5, priceMult: 1.4, bouquetBoost: 0.3 },
   { id: 'wedding', name: 'Mùa cưới', icon: '💍', season: 'thu', days: [1, 2, 3, 4, 5, 6, 7], flowers: ['hydrangea', 'rose', 'daisy'], tone: 'pastel', meaning: 'loyalty', occasion: 'làm hoa cưới', spawnMult: 0.8, priceMult: 1.2, bouquetBoost: 0.2 },
   { id: 'women2010', name: 'Phụ nữ Việt Nam 20/10', icon: '🌹', season: 'thu', days: [5], flowers: ['rose', 'lavender'], tone: 'warm', meaning: 'gratitude', occasion: 'tặng mẹ ngày 20/10', spawnMult: 0.5, priceMult: 1.4, bouquetBoost: 0.3 },
+  { id: 'pumpkin', name: 'Lễ hội Bí Ngô', icon: '🎃', season: 'thu', days: [7], flowers: ['sunflower', 'lavender'], tone: 'warm', meaning: 'joy', occasion: 'trang trí đêm Bí Ngô (Halloween)', spawnMult: 0.55, priceMult: 1.35, bouquetBoost: 0.25 },
   { id: 'teacher', name: 'Nhà giáo Việt Nam 20/11', icon: '📚', season: 'dong', days: [3], flowers: ['daisy', 'lavender', 'tulip'], tone: 'pastel', meaning: 'respect', occasion: 'tặng thầy cô ngày 20/11', spawnMult: 0.5, priceMult: 1.35, bouquetBoost: 0.3 },
 ];

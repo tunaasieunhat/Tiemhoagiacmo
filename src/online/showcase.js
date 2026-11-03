@@ -2,7 +2,7 @@
 import { stageOf, isWilted, isSick, growMinutes } from '../systems/farming.js';
 import { tierInfo } from '../systems/shop.js';
 import { bookProgress } from '../systems/notebook.js';
-import { DECOR } from '../../data/decor.js';
+import { placedToSnapshot, beautyOf } from '../systems/decor.js';
 
 const STATE = { untilled: 0, tilled: 1, growing: 2, ready: 3, dead: 4 };
 const STATE_BACK = ['untilled', 'tilled', 'growing', 'ready', 'dead'];
@@ -22,8 +22,9 @@ export function buildSnapshot(save) {
     harvested: save.stats.harvested || 0,
     book: save.book ? bookProgress(save).pct : 0,
     hearts,
-    decor: { ...(save.decor?.slots || {}) },
-    beauty: Object.values(save.decor?.slots || {}).reduce((a, id) => a + (DECOR[id]?.beauty || 0), 0),
+    // đồ trang trí đặt tự do: [[loại, x, z, góc], ...] (GĐ10)
+    deco: placedToSnapshot(save.decor?.placed || []),
+    beauty: beautyOf(save.decor?.placed || []),
     plots: save.farm.plots.map((p) => ({
       gh: p.greenhouse ? 1 : 0,
       mc: p.machines?.sprinkler ? 1 : 0,

@@ -4,6 +4,15 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.10.0',
+    notes: [
+      'Trang trí TỰ DO: đặt đồ ở bất kỳ đâu quanh nông trại, tiệm và chợ; kéo để dời, xoay, cất vào kho',
+      '🎃 Lễ hội Bí Ngô: 8 món Halloween (đèn bí ngô, bù nhìn ma, nồi phù thủy, cột dơi bay, nhà bí ngô...) bán trong Mùa Thu',
+      'Ngày cuối Mùa Thu là Lễ hội Bí Ngô: khách thích hoa hướng dương & oải hương, trả giá cao hơn',
+      'Đồ đã đặt ở bản cũ được giữ nguyên chỗ',
+    ],
+  },
+  {
     version: '0.9.7',
     notes: [
       'Sửa lỗi chạm không chính xác / chạm không phản hồi ở một số chỗ trên ruộng',

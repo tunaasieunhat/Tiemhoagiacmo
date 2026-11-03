@@ -60,9 +60,14 @@ export function buildWorld(scene) {
   market.position.set(ZONES.market.center.x, 0.02, ZONES.market.center.z);
   world.add(market);
 
+  // vùng không được đặt đồ trang trí (GĐ10) — gom dần khi dựng bản đồ
+  const decorMap = { islandR: ISLAND_R, circles: [], rects: [], paths: [] };
+  const block = (x, z, r, name = '') => decorMap.circles.push({ x, z, r, name });
+
   // ----- hàng rào nông trại (cổng ở phía sau, z nhỏ) -----
   const fc = ZONES.farm.center;
   const fx = 5.6, fz = 5.4;
+  decorMap.rects.push({ x: fc.x, z: fc.z, hx: fx + 0.15, hz: fz + 0.15, name: 'nông trại' });
   world.add(fence(fc.x - fx, fc.z - fz, fc.x - fx, fc.z + fz));
   world.add(fence(fc.x + fx, fc.z - fz, fc.x + fx, fc.z + fz));
   world.add(fence(fc.x - fx, fc.z + fz, fc.x + fx, fc.z + fz));
@@ -82,6 +87,7 @@ export function buildWorld(scene) {
   sc.position.set(fc.x - fx - 1.0, 0, fc.z + 3.6); // bên ngoài hàng rào phía tây
   sc.rotation.y = 1.2;
   world.add(sc);
+  block(sc.position.x, sc.position.z, 0.6, 'bù nhìn');
 
   const lockedSlots = [];
   PLOT_SLOTS.forEach((p, i) => {
@@ -147,6 +153,9 @@ export function buildWorld(scene) {
   lab.rotation.y = 0.7;
   lab.userData.pick = { kind: 'zone', zone: 'lab' };
   world.add(lab);
+  block(lab.position.x, lab.position.z, 2.3, 'nhà lai tạo');
+  block(ZONES.shop.center.x, ZONES.shop.center.z, 3.4, 'tiệm hoa');
+  block(ZONES.market.center.x, ZONES.market.center.z, 4.3, 'khu chợ');
 
   // ----- đường đá -----
   const junction = new THREE.Vector3(0, 0, -6.2);
@@ -158,6 +167,7 @@ export function buildWorld(scene) {
     // lối khách đi vào tiệm từ phía đông
     [new THREE.Vector3(ZONES.shop.center.x + 2.2, 0, ZONES.shop.center.z + 4.4), new THREE.Vector3(21, 0, -0.5)],
   ];
+  for (const [a, b] of paths) decorMap.paths.push([{ x: a.x, z: a.z }, { x: b.x, z: b.z }]);
   for (const [a, b] of paths) {
     const len = a.distanceTo(b);
     const n = Math.floor(len / 0.85);
@@ -175,6 +185,7 @@ export function buildWorld(scene) {
     const l = lampPost();
     l.position.set(x, 0, z);
     world.add(l);
+    block(x, z, 0.35, 'đèn đường');
     if (i < 3) {
       const pl = new THREE.PointLight('#ffcf7a', 0, 8, 1.6);
       pl.position.set(x, 2.0, z);
@@ -187,6 +198,7 @@ export function buildWorld(scene) {
   const pd = pond(2.4);
   pd.position.set(-12.5, 0, 5);
   world.add(pd);
+  block(pd.position.x, pd.position.z, 2.9, 'ao nước');
   fireflyAnchors.push(pd.position.clone());
   fireflyAnchors.push(new THREE.Vector3(0, 0, 2));
 
@@ -219,6 +231,7 @@ export function buildWorld(scene) {
     t.rotation.y = rand() * 6;
     world.add(t);
     avoid.push({ c: t.position, r: 1.6 });
+    block(x, z, 0.95, 'cây');
     placed++;
   }
   const flowerColors = [null, '#ffc4d6', '#fff0a8', '#d9c4ff', '#ffffff'];
@@ -229,6 +242,7 @@ export function buildWorld(scene) {
     b.position.x = x; b.position.z = z;
     b.rotation.y = rand() * 6;
     world.add(b);
+    block(x, z, 0.45, 'bụi cây');
   }
   for (let i = 0; i < 90; i++) {
     const x = (rand() - 0.5) * 2 * (ISLAND_R - 1), z = (rand() - 0.5) * 2 * (ISLAND_R - 1);
@@ -260,7 +274,7 @@ export function buildWorld(scene) {
 
   mergeStatic(world);
 
-  return { world, lampLights, fireflyAnchors, lockedSlots, shop, market: marketG, lab };
+  return { world, lampLights, fireflyAnchors, lockedSlots, shop, market: marketG, lab, decorMap };
 }
 
 function distToSeg(x, z, a, b) {

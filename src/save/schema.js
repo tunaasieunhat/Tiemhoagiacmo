@@ -6,6 +6,7 @@
 //   2. Thêm hàm vào MIGRATIONS[phiên_bản_cũ] để biến save cũ thành mới.
 //  => Người chơi cũ không bị mất tiến độ.
 // =============================================================
+import { legacyToPlaced } from '../systems/decor.js';
 import { STARTER, TIME, FARM } from '../../data/config.js';
 import { createTile } from '../systems/farming.js';
 import { createShopState } from '../systems/shop.js';
@@ -21,7 +22,7 @@ import { createAutomationState } from '../systems/automation.js';
 
 const toVkeys = (obj) => Object.fromEntries(Object.entries(obj).map(([k, n]) => [k.includes(':') ? k : vkey(k), n]));
 
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 export function newId() {
   if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
@@ -82,7 +83,7 @@ export function createNewSave() {
     regulars: createRegularsState(), // khách quen (GĐ6)
     quests: createQuestState(),      // nhiệm vụ ngày/tuần (GĐ8)
     automation: createAutomationState(), // nhân viên (GĐ8)
-    decor: { owned: {}, slots: {} },  // đồ trang trí: số lượng đang có, vị trí đã đặt (GĐ8)
+    decor: { owned: {}, placed: [], nextUid: 1 },  // đồ trang trí: số lượng trong kho, đồ đã đặt tự do [{u,id,x,z,r}] (GĐ10)
     farm: {
       plots: [createPlot('plot-1')],
     },
@@ -157,6 +158,22 @@ export const MIGRATIONS = {
     s.automation = s.automation || createAutomationState();
     s.decor = s.decor || { owned: {}, slots: {} };
     for (const p of s.farm.plots) p.machines = p.machines || {};
+    return s;
+  },
+  // v7 -> v8 (Giai đoạn 10): đặt đồ trang trí tự do thay cho 12 vị trí cố định — giữ nguyên chỗ đồ đang đặt
+  7: (s) => {
+    const d = s.decor || { owned: {}, slots: {} };
+    const placed = legacyToPlaced(d.slots || {});
+    const owned = { ...(d.owned || {}) };
+    // món ở vị trí lạ không chuyển được => trả về kho, không bao giờ làm mất đồ
+    const moved = placed.length;
+    const all = Object.values(d.slots || {}).filter((id) => typeof id === 'string');
+    if (all.length > moved) {
+      const left = [...all];
+      for (const p of placed) left.splice(left.indexOf(p.id), 1);
+      for (const id of left) owned[id] = (owned[id] || 0) + 1;
+    }
+    s.decor = { owned, placed, nextUid: placed.length + 1 };
     return s;
   },
 };

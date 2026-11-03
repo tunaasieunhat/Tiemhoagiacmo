@@ -16,7 +16,7 @@ import { FriendsPanel, messagesHtml } from './friendsPanel.js';
 import { QuestsPanel } from './questsPanel.js';
 import { RankPanel } from './rankPanel.js';
 import { claimableCount } from '../systems/quests.js';
-import { DECOR, DECOR_SLOTS } from '../../data/decor.js';
+import { DECOR, DECOR_RULES } from '../../data/decor.js';
 import { social } from '../online/social.js';
 import { viError } from '../online/errors.js';
 import { isCleanText } from '../online/names.js';
@@ -87,7 +87,8 @@ export class Hud {
     em.on('update-required', (v) => (isNative() ? this.showForceUpdate({ ...v, apkUrl: ONLINE.apkDownloadUrl, cloud: true }) : this.showUpdate(v, true)));
     em.on('quests', () => { this.updateQuestBadge(); if (this.modal === 'quests') this.quests.render(); });
     em.on('decor-mode', (on) => { this.root.classList.toggle('decorating', on); $('.decor-bar', this.root).classList.toggle('hidden', !on); });
-    em.on('decor-slot', (slot) => this.openDecorSlot(slot));
+    em.on('decor-edit', () => this.renderDecorBar());
+    em.on('inventory', () => { if (this.game.decorMode) this.renderDecorBar(); });
     em.on('xp', () => this.updateWallet());
     em.on('levelup', (ups) => this.showLevelUp(ups));
     em.on('weather', () => { this.updateAlert(); this.updateClock(this.game.clock); if (this.modal === 'forecast') this.openForecast(); });
@@ -159,7 +160,7 @@ export class Hud {
       </div>
       <div class="tutorial hidden"></div>
       <div class="visit-bar hidden"></div>
-      <div class="decor-bar hidden"><span>🎨 <b>Chế độ trang trí</b> — chạm dấu ＋ để đặt hoặc đổi đồ</span><button class="btn primary" data-act="decor-done">Xong</button></div>
+      <div class="decor-bar hidden"></div>
       <div class="visit-actions hidden"></div>
       <div class="sheet tile-panel hidden"></div>
       <div class="modal-wrap hidden"><div class="modal"></div></div>
@@ -180,8 +181,8 @@ export class Hud {
     if (qq) { this.quests.onAction(qq.dataset.q, qq); return; }
     const rk = e.target.closest('[data-rk]');
     if (rk) { this.rank.onAction(rk.dataset.rk, rk); return; }
-    const dc = e.target.closest('[data-dc]');
-    if (dc) { this.onDecorPick(dc); return; }
+    const db = e.target.closest('[data-db]');
+    if (db) { this.onDecorBar(db); return; }
     const fr = e.target.closest('[data-fr]');
     if (fr) { this.friends.onAction(fr.dataset.fr, fr); return; }
     const lb = e.target.closest('[data-lab]');
@@ -381,25 +382,48 @@ export class Hud {
     b.textContent = n;
   }
 
-  openDecorSlot(slot) {
-    const s = this.game.save;
-    const cur = s.decor.slots[slot];
-    const owned = Object.entries(s.decor.owned).filter(([, n]) => n > 0);
-    const zone = DECOR_SLOTS.find((x) => x.id === slot)?.zone === 'shop' ? 'trước tiệm hoa' : 'quanh nông trại';
-    this.openModal('decorslot', `
-      <h2>🎨 Đặt đồ ${zone}</h2>
-      ${cur ? `<div class="mk-item"><div class="mk-icon">${DECOR[cur].icon}</div><div class="mk-info"><b>Đang đặt: ${DECOR[cur].name}</b></div><div class="mk-buy"><button class="btn" data-dc="remove" data-slot="${slot}">Cất đi</button></div></div>` : ''}
-      <h3>Đồ đang có</h3>
-      ${owned.length ? `<div class="lab-list">${owned.map(([id, n]) => `<button class="lab-item" data-dc="place" data-slot="${slot}" data-id="${id}"><span>${DECOR[id].icon}</span><small>${DECOR[id].name}</small><b>×${n}</b></button>`).join('')}</div>` : '<p class="muted">Bạn chưa có đồ trang trí nào.</p>'}
-      <button class="btn wide" data-act="go-market" data-tab="decor">🧺 Mua thêm ở Khu Chợ</button>
-      <p class="muted small">Điểm xinh xắn hiện tại: 🎨 ${this.game.beauty()}</p>`);
+  /** Thanh trang trí (GĐ10): kho đồ để chọn, hoặc nút Xoay / Cất / Hủy / Đặt khi đang dời 1 món */
+  renderDecorBar() {
+    const el = $('.decor-bar', this.root);
+    const g = this.game;
+    if (!el || !g.decorMode) return;
+    const e = g.decorEdit;
+    if (e) {
+      const d = DECOR[e.id];
+      el.innerHTML = `
+        <div class="db-row">
+          <div class="db-info"><b>${d.icon} ${esc(d.name)}</b>
+            <small class="${e.ok ? 'ok' : 'bad'}">${e.ok ? '✅ Đặt được ở đây' : `⛔ ${esc(e.reason || 'Chỗ này không đặt được')}`} · kéo món đồ hoặc chạm chỗ trống để dời</small></div>
+        </div>
+        <div class="db-row db-btns">
+          <button class="btn" data-db="rotate">🔄 Xoay</button>
+          ${e.u != null ? '<button class="btn" data-db="store">📦 Cất vào kho</button>' : ''}
+          <button class="btn" data-db="cancel">✖ Hủy</button>
+          <button class="btn primary ${e.ok ? '' : 'disabled'}" data-db="place">✅ Đặt</button>
+        </div>`;
+      return;
+    }
+    const owned = Object.entries(g.save.decor.owned).filter(([id, n]) => n > 0 && DECOR[id]);
+    const placed = g.save.decor.placed.length;
+    el.innerHTML = `
+      <div class="db-row"><div class="db-info"><b>🎨 Trang trí tự do</b>
+        <small>Chọn đồ trong kho để đặt · chạm vào đồ đã đặt để dời, xoay hoặc cất · đã đặt ${placed}/${DECOR_RULES.maxPlaced} · 🎨 ${g.beauty()} điểm xinh xắn</small></div>
+        <button class="btn primary" data-act="decor-done">Xong</button></div>
+      <div class="db-items">${owned.length
+        ? owned.map(([id, n]) => `<button class="db-item" data-db="new" data-id="${id}"><span>${DECOR[id].icon}</span><small>${esc(DECOR[id].name)}</small><b>×${n}</b></button>`).join('')
+        : '<span class="muted small">Kho trống.</span>'}
+        <button class="db-item more" data-act="go-market" data-tab="decor"><span>🧺</span><small>Mua thêm</small></button></div>`;
   }
 
-  onDecorPick(el) {
+  onDecorBar(el) {
     const g = this.game;
-    if (el.dataset.dc === 'remove') g.placeDecor(el.dataset.slot, null);
-    if (el.dataset.dc === 'place') g.placeDecor(el.dataset.slot, el.dataset.id);
-    this.closeModal();
+    switch (el.dataset.db) {
+      case 'new': g.startNewDecor(el.dataset.id); break;
+      case 'rotate': g.rotateDecorEdit(); break;
+      case 'store': g.storeDecorEdit(); break;
+      case 'cancel': g.cancelDecorEdit(); break;
+      case 'place': g.confirmDecorEdit(); break;
+    }
   }
 
   // ---------- bạn bè & thăm nhà ----------

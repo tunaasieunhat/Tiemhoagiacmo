@@ -1,9 +1,64 @@
 // Mô hình 3D đồ trang trí & máy móc (khối hình đơn giản, màu pastel)
 import * as THREE from 'three';
-import { rbox, sphere, cyl, cone, at, torus } from './primitives.js';
+import { rbox, sphere, cyl, cone, at, torus, capsule } from './primitives.js';
+import { basic } from './materials.js';
 import { bush } from './environment.js';
 
 const WOOD = '#c9926a', WOOD2 = '#e2b98f';
+// vật liệu "tự sáng" (không bị bóng tối làm tối đi) cho mặt bí ngô, ngọn nến, nước phù thủy
+const GLOW = basic('#ffd36e');
+const FLAME = basic('#ffb347');
+const BREW = basic('#9ff0a8');
+const PUMP = '#ff9a3c', PUMP2 = '#f28a2e';
+
+/** Quả bí ngô tròn có múi (r: bán kính) */
+function pumpkinBall(r, face = false) {
+  const g = new THREE.Group();
+  for (let i = 0; i < 6; i++) {
+    const seg = sphere(r * 0.62, i % 2 ? PUMP : PUMP2, 12);
+    const a = (i / 6) * Math.PI * 2;
+    seg.scale.set(0.75, 0.95, 1.05);
+    seg.position.set(Math.cos(a) * r * 0.38, r * 0.85, Math.sin(a) * r * 0.38);
+    seg.rotation.y = -a;
+    g.add(seg);
+  }
+  g.add(at(sphere(r * 0.7, PUMP, 12), 0, r * 0.85, 0));
+  const stem = cyl(r * 0.09, r * 0.13, r * 0.4, '#6c9a4b', 6); stem.position.y = r * 1.6; stem.rotation.z = 0.25; g.add(stem);
+  if (face) {
+    // mắt tam giác + miệng răng cưa, phát sáng
+    for (const x of [-0.32, 0.32]) {
+      const e = new THREE.Mesh(new THREE.ConeGeometry(r * 0.16, r * 0.24, 3), GLOW);
+      e.position.set(x * r, r * 1.02, r * 0.97); e.rotation.x = Math.PI / 2; e.rotation.y = Math.PI;
+      g.add(e);
+    }
+    const mouth = new THREE.Mesh(new THREE.BoxGeometry(r * 0.75, r * 0.14, r * 0.08), GLOW);
+    mouth.position.set(0, r * 0.62, r * 0.98); g.add(mouth);
+    for (const x of [-0.22, 0, 0.22]) {
+      const t = new THREE.Mesh(new THREE.ConeGeometry(r * 0.07, r * 0.12, 3), GLOW);
+      t.position.set(x * r, r * 0.74, r * 0.99); g.add(t);
+    }
+  }
+  return g;
+}
+
+function bat(scale = 1) {
+  const k = scale;
+  const b = new THREE.Group();
+  const C = '#5b4a73';
+  const body = sphere(0.09 * k, C, 10); body.scale.set(0.9, 1.1, 0.9); b.add(body);
+  const head = sphere(0.07 * k, C, 10); head.position.set(0, 0.1 * k, 0.02 * k); b.add(head);
+  for (const sx of [-1, 1]) {
+    const ear = cone(0.025 * k, 0.07 * k, C, 4); ear.position.set(sx * 0.04 * k, 0.17 * k, 0.02 * k); ear.rotation.z = -sx * 0.25; b.add(ear);
+    // cánh: 2 múi bầu ghép lại, hơi vểnh lên
+    const wing = new THREE.Group(); wing.position.set(sx * 0.07 * k, 0.03 * k, 0); wing.rotation.z = sx * 0.35;
+    for (const [dx, sz] of [[0.09, 1], [0.19, 0.8]]) { const m = sphere(0.075 * k, C, 8); m.scale.set(1.25 * sz, 0.28, 0.85 * sz); m.position.x = sx * dx * k; wing.add(m); }
+    b.add(wing);
+    b.userData[sx < 0 ? 'wl' : 'wr'] = wing;
+    b.add(at(sphere(0.018 * k, '#ffe9a8', 6), sx * 0.028 * k, 0.11 * k, 0.08 * k));
+  }
+  return b;
+}
+
 
 const BUILDERS = {
   bench() {
@@ -117,6 +172,107 @@ const BUILDERS = {
     return g;
   },
 };
+
+// ---- 🎃 Lễ hội Bí Ngô (GĐ10) ----
+Object.assign(BUILDERS, {
+  pumpkin() {
+    const g = new THREE.Group();
+    g.add(pumpkinBall(0.42, true));
+    const small = pumpkinBall(0.22); small.position.set(0.45, 0, 0.2); g.add(small);
+    return g;
+  },
+  candles() {
+    const g = new THREE.Group();
+    g.add(at(cyl(0.34, 0.38, 0.12, '#7c6a8f', 12), 0, 0.06, 0));
+    const flames = [];
+    [[0, 0, 0.55], [0.17, 0.08, 0.38], [-0.16, 0.1, 0.42], [0.04, -0.17, 0.3]].forEach(([x, z, h]) => {
+      g.add(at(cyl(0.06, 0.06, h, '#fff3e0', 8), x, 0.12 + h / 2, z));
+      const f = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), FLAME);
+      f.scale.set(1, 1.7, 1); f.position.set(x, 0.12 + h + 0.06, z);
+      g.add(f); flames.push(f);
+    });
+    g.userData.flicker = flames;
+    return g;
+  },
+  ghost() {
+    const g = new THREE.Group();
+    g.add(at(cyl(0.04, 0.05, 1.0, WOOD, 6), 0, 0.5, 0));
+    const ghost = new THREE.Group(); ghost.position.y = 1.15;
+    const head = sphere(0.32, '#ffffff', 14); head.position.y = 0.25; ghost.add(head);
+    // khăn trùm: rộng dần xuống dưới, mép lượn sóng
+    const robe = cone(0.42, 0.75, '#f7f4ff', 14); robe.position.y = -0.12; ghost.add(robe);
+    for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; ghost.add(at(sphere(0.09, '#f7f4ff', 8), Math.cos(a) * 0.36, -0.48, Math.sin(a) * 0.36)); }
+    for (const x of [-0.11, 0.11]) { const e = sphere(0.055, '#3b2a40', 8); e.scale.set(0.8, 1.2, 0.6); e.position.set(x, 0.3, 0.28); ghost.add(e); }
+    ghost.add(at(sphere(0.05, '#ffb3c6', 8), -0.18, 0.18, 0.27)); ghost.add(at(sphere(0.05, '#ffb3c6', 8), 0.18, 0.18, 0.27));
+    for (const sx of [-1, 1]) { const arm = capsule(0.07, 0.25, '#f7f4ff'); arm.rotation.z = sx * 1.1; arm.position.set(sx * 0.4, 0.02, 0); ghost.add(arm); }
+    g.add(ghost);
+    g.userData.float = ghost;
+    return g;
+  },
+  grave() {
+    const g = new THREE.Group();
+    g.add(at(rbox(0.9, 0.08, 0.6, '#8fbf72', 0.04), 0, 0.04, 0));
+    const stone = rbox(0.62, 0.8, 0.18, '#b8b4c4', 0.08); stone.position.y = 0.45; g.add(stone);
+    g.add(at(sphere(0.31, '#b8b4c4', 14), 0, 0.82, 0)); g.children[2].scale.set(1, 0.55, 0.29);
+    g.add(at(rbox(0.07, 0.34, 0.03, '#8d88a0', 0.01), 0, 0.62, 0.1));
+    g.add(at(rbox(0.22, 0.07, 0.03, '#8d88a0', 0.01), 0, 0.7, 0.1));
+    const p = pumpkinBall(0.13, true); p.position.set(0.35, 0.06, 0.22); g.add(p);
+    return g;
+  },
+  bats() {
+    const g = new THREE.Group();
+    g.add(at(cyl(0.05, 0.06, 1.9, '#5b4a73', 8), 0, 0.95, 0));
+    g.add(at(sphere(0.16, '#ffd36e', 10), 0, 1.98, 0));
+    g.children[1].material = GLOW;
+    const ring = new THREE.Group(); ring.position.y = 1.55;
+    ring.userData.bats = [];
+    for (let i = 0; i < 3; i++) { const b = bat(1.3); ring.userData.bats.push(b); const a = (i / 3) * Math.PI * 2; b.position.set(Math.cos(a) * 0.55, Math.sin(i * 2) * 0.15, Math.sin(a) * 0.55); b.rotation.y = -a; ring.add(b); }
+    g.add(ring);
+    g.userData.orbit = ring;
+    return g;
+  },
+  cauldron() {
+    const g = new THREE.Group();
+    for (let i = 0; i < 3; i++) { const a = (i / 3) * Math.PI * 2; const l = cyl(0.04, 0.04, 0.35, '#3d3550', 6); l.position.set(Math.cos(a) * 0.32, 0.17, Math.sin(a) * 0.32); g.add(l); }
+    for (const a of [0.4, 2.1, 3.9]) { const log = cyl(0.06, 0.06, 0.5, '#a87458', 6); log.rotation.z = Math.PI / 2; log.rotation.y = a; log.position.y = 0.06; g.add(log); }
+    const pot = sphere(0.45, '#3d3550', 16); pot.scale.set(1, 0.85, 1); pot.position.y = 0.62; g.add(pot);
+    g.add(at(torus(0.38, 0.06, '#5b5070'), 0, 0.95, 0)); g.children[g.children.length - 1].rotation.x = Math.PI / 2;
+    const brew = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.04, 16), BREW); brew.position.y = 0.95; g.add(brew);
+    const bubbles = [];
+    for (let i = 0; i < 4; i++) { const b = new THREE.Mesh(new THREE.SphereGeometry(0.07 + (i % 2) * 0.03, 8, 6), BREW); b.position.set((i - 1.5) * 0.12, 1.0, (i % 2 - 0.5) * 0.15); b.userData.phase = i * 1.7; g.add(b); bubbles.push(b); }
+    g.userData.bubbles = bubbles;
+    return g;
+  },
+  web() {
+    const g = new THREE.Group();
+    for (const x of [-1, 1]) g.add(at(cyl(0.08, 0.1, 2.1, '#6f5a4a', 8), x, 1.05, 0));
+    g.add(at(rbox(2.3, 0.14, 0.14, '#6f5a4a', 0.04), 0, 2.1, 0));
+    const silk = '#f2f0ff';
+    const cx = 0, cy = 1.35, R = 0.8;
+    for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; const s = cyl(0.012, 0.012, R, silk, 4); s.position.set(cx + Math.cos(a) * R / 2, cy + Math.sin(a) * R / 2, 0); s.rotation.z = a - Math.PI / 2; g.add(s); }
+    for (const rr of [0.3, 0.55, 0.78]) { const t = new THREE.Mesh(new THREE.TorusGeometry(rr, 0.012, 4, 8), torus(1, 0.01, silk).material); t.position.set(cx, cy, 0); t.rotation.z = Math.PI / 8; g.add(t); }
+    const spider = new THREE.Group(); spider.position.set(0.2, 1.1, 0.03);
+    spider.add(sphere(0.09, '#3d3550', 8));
+    for (const x of [-0.03, 0.03]) spider.add(at(sphere(0.02, '#ffffff', 6), x, 0.03, 0.08));
+    for (let i = 0; i < 4; i++) for (const sx of [-1, 1]) { const leg = cyl(0.01, 0.01, 0.16, '#3d3550', 3); leg.rotation.z = sx * (0.9 + i * 0.2); leg.position.set(sx * 0.1, 0.02 - i * 0.02, 0); spider.add(leg); }
+    g.add(spider);
+    g.userData.dangle = spider;
+    const p = pumpkinBall(0.2, true); p.position.set(-1.25, 0, 0.25); g.add(p);
+    return g;
+  },
+  pumpkinhouse() {
+    const g = new THREE.Group();
+    const house = pumpkinBall(1.0);
+    g.add(house);
+    g.add(at(rbox(0.5, 0.75, 0.1, '#6f4a3a', 0.12), 0, 0.42, 0.93));
+    g.add(at(sphere(0.04, '#ffd36e', 6), 0.15, 0.45, 0.99));
+    for (const x of [-0.5, 0.5]) { const w = new THREE.Mesh(new THREE.CircleGeometry(0.16, 12), GLOW); w.position.set(x, 1.15, 0.9); w.rotation.y = x * -0.5; g.add(w); }
+    const chim = cyl(0.12, 0.14, 0.5, '#8d88a0', 8); chim.position.set(-0.5, 1.95, -0.3); g.add(chim);
+    const hat = cone(0.5, 0.9, '#5b4a73', 10); hat.position.set(0.2, 2.25, 0); hat.rotation.z = -0.25; g.add(hat);
+    g.add(at(torus(0.42, 0.06, '#c79cf2'), 0.12, 1.85, 0)); g.children[g.children.length - 1].rotation.x = Math.PI / 2;
+    return g;
+  },
+});
 
 export function buildDecor(id) {
   const g = (BUILDERS[id] || BUILDERS.pot)();

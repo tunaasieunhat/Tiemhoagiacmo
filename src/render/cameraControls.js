@@ -7,11 +7,19 @@ const GROUND = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const TAP_MOVE_PX = 12; // ngón tay xê dịch dưới mức này vẫn tính là "chạm" (không phải kéo bản đồ)
 
 export class CameraControls {
-  constructor(camera, dom, { onTap, onHover } = {}) {
+  /**
+   * onDragStart(x, y) → true nếu game muốn tự xử lý cú kéo này (vd kéo đồ trang trí), khi đó không kéo bản đồ;
+   * onDrag(x, y) / onDragEnd(x, y) được gọi trong lúc kéo.
+   */
+  constructor(camera, dom, { onTap, onHover, onDragStart, onDrag, onDragEnd } = {}) {
     this.camera = camera;
     this.dom = dom;
     this.onTap = onTap;
     this.onHover = onHover;
+    this.onDragStart = onDragStart;
+    this.onDrag = onDrag;
+    this.onDragEnd = onDragEnd;
+    this.dragId = null;
     this.target = new THREE.Vector3(0, 0, 0);
     this.zoom = camera.zoom;
     this.pointers = new Map();
@@ -58,8 +66,10 @@ export class CameraControls {
     this.focusAnim = null;
     if (this.pointers.size === 1) {
       this.gesture = { moved: false, startX: e.clientX, startY: e.clientY, multi: false };
+      if (this.onDragStart?.(e.clientX, e.clientY)) this.dragId = e.pointerId;
     } else if (this.gesture) {
       this.gesture.multi = true;
+      if (this.dragId != null) { this.onDragEnd?.(e.clientX, e.clientY); this.dragId = null; }
     }
   }
 
@@ -72,7 +82,9 @@ export class CameraControls {
     if (this.pointers.size === 1) {
       const g = this.gesture;
       if (g && !g.moved && Math.hypot(e.clientX - g.startX, e.clientY - g.startY) > TAP_MOVE_PX) g.moved = true;
-      if (g?.moved) {
+      if (this.dragId === e.pointerId) {
+        if (g?.moved) this.onDrag?.(e.clientX, e.clientY);
+      } else if (g?.moved) {
         const a = this.groundPoint(prev.x, prev.y);
         const b = this.groundPoint(e.clientX, e.clientY);
         if (a && b) this.target.add(a.sub(b));
@@ -104,6 +116,11 @@ export class CameraControls {
     this.pointers.delete(e.pointerId);
     if (!had) return;
     const g = this.gesture;
+    if (this.dragId === e.pointerId) {
+      this.dragId = null;
+      this.onDragEnd?.(e.clientX, e.clientY);
+      if (g?.moved) { if (this.pointers.size === 0) this.gesture = null; return; }
+    }
     if (this.pointers.size === 0) {
       if (!cancelled && g && !g.moved && !g.multi) this.onTap?.(e.clientX, e.clientY);
       this.gesture = null;

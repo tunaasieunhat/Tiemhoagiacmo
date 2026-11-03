@@ -18,6 +18,7 @@ Công nghệ: Three.js + Vite, sau này dùng Supabase cho tài khoản online.
 - ✅ Giai đoạn 7 — bạn bè (tìm theo tên/mã, lời mời), thăm nông trại 3D của bạn (chỉ xem), tưới giúp 1 lần/ngày, tặng quà, sổ lưu bút — mọi giới hạn kiểm tra trên máy chủ.
 - ✅ Giai đoạn 8 — bảng xếp hạng (cấp độ, uy tín, cuộc thi; tuần/tổng; mọi người/bạn bè) có kiểm tra điểm trên máy chủ, cuộc thi hoa hằng tuần (Edge Function chấm điểm), nhiệm vụ ngày/tuần, tự động hóa (vòi tưới, máy bón phân, nhân viên), trang trí 12 món.
 - ✅ Giai đoạn 9 — thông báo "Có bản cập nhật", chơi được khi mất mạng & cài lên màn hình chính (PWA), tự giảm đồ họa khi máy chậm, hướng dẫn đưa lên mạng (Netlify), APK Android tự build bằng GitHub Actions.
+- ✅ Giai đoạn 10 — trang trí tự do (kéo để dời, xoay, cất), 8 món Halloween + Lễ hội Bí Ngô, sửa lỗi chạm không chính xác.
 
 **Cài đặt online:** xem [Hướng dẫn Supabase](docs/HUONG_DAN_SUPABASE.md). Chưa cài thì game vẫn chạy ở chế độ khách (lưu trên máy).
 

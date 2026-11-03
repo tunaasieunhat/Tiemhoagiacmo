@@ -524,7 +524,21 @@ h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
 .ct-icon { font-size: 40px; }
 .contest-result { background: #eef8e8; border: 2px solid #a6dd94; border-radius: 14px; padding: 8px 12px; font-weight: 700; margin: 6px 0; }
 .rewards { margin: 0; padding-left: 20px; font-weight: 700; font-size: 13px; display: flex; flex-direction: column; gap: 2px; }
-.decor-bar { position: absolute; left: 50%; bottom: calc(14px + var(--safe-bottom)); transform: translateX(-50%); width: min(480px, calc(100% - 16px)); display: flex; gap: 10px; align-items: center; justify-content: space-between; background: var(--card); border: 2px solid var(--pink); border-radius: 22px; padding: 10px 12px; box-shadow: var(--shadow); font-size: 14px; }
+.decor-bar { position: absolute; left: 50%; bottom: calc(10px + var(--safe-bottom)); transform: translateX(-50%); width: min(620px, calc(100% - 16px - var(--safe-left) - var(--safe-right))); display: flex; flex-direction: column; gap: 8px; background: var(--card); border: 2px solid var(--pink); border-radius: 22px; padding: 10px 12px; box-shadow: var(--shadow); font-size: 14px; }
+.decor-bar .db-row { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+.decor-bar .db-info { display: flex; flex-direction: column; min-width: 0; }
+.decor-bar .db-info small { font-size: 12px; color: var(--ink-soft); }
+.decor-bar .db-info small.ok { color: #3f9a55; font-weight: 800; }
+.decor-bar .db-info small.bad { color: #d0577a; font-weight: 800; }
+.decor-bar .db-btns { justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
+.decor-bar .db-btns .btn.disabled { opacity: .45; }
+.decor-bar .db-items { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+.decor-bar .db-item { flex: 0 0 auto; width: 74px; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 5px 4px; border-radius: 14px; background: #fff7f0; border: 2px solid var(--line); }
+.decor-bar .db-item span { font-size: 24px; line-height: 1.1; }
+.decor-bar .db-item small { font-size: 10.5px; font-weight: 700; text-align: center; line-height: 1.15; max-height: 2.3em; overflow: hidden; }
+.decor-bar .db-item b { font-size: 11px; color: var(--pink-deep); }
+.decor-bar .db-item.more { background: #eef8ff; border-color: #9fd6f0; }
+@media (max-height: 480px) { .decor-bar { padding: 7px 10px; gap: 5px; } .decor-bar .db-item { width: 64px; padding: 3px; } .decor-bar .db-item span { font-size: 20px; } }
 #hud.decorating .bottom, #hud.decorating .tutorial, #hud.decorating .tile-panel, #hud.decorating .nav-btns { display: none !important; }
 @media (max-height: 760px) { .nav-btns { display: grid; grid-template-columns: 1fr 1fr; } .nav-btns .round { width: 44px; height: 44px; font-size: 20px; } }
 
@@ -629,3 +643,4 @@ h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
 #force-update .fu-notes { text-align: left; margin: 6px 0; padding-left: 20px; font-size: 14px; }
 #force-update .fu-must { font-weight: 800; color: #d0577a; margin: 8px 0; }
 @media (max-height: 480px) { #force-update .fu-card { padding: 12px 16px 10px; } #force-update .fu-icon { font-size: 32px; } #force-update .fu-notes { font-size: 13px; } }
+.tag-open { display: inline-block; font-size: 11px; font-weight: 800; color: #fff; background: #ff9a3c; border-radius: 999px; padding: 1px 8px; vertical-align: middle; }

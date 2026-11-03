@@ -13,7 +13,11 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
 
 ## Tiến độ
 
-- ✅ GĐ1–9 xong (xem `README.md`) — hết kế hoạch ban đầu. Việc tiếp theo do người dùng quyết định.
+- ✅ GĐ1–10 xong (xem `README.md`). Kế hoạch đã thống nhất với người dùng (03/11/2026), mỗi GĐ xong thì DỪNG chờ đồng ý:
+  GĐ11 Làng (6 nhà, dân làng đi lại theo giờ, mở rộng bản đồ) → GĐ12 Quan hệ & cốt truyện có lựa chọn (tim 0–10, quà
+  thích/ghét, hội thoại nhánh) → GĐ13 Mua đất của dân làng (giá theo tim + tâm trạng trong ngày, có thể từ chối) →
+  GĐ14 6 hạt mới (cẩm chướng, mẫu đơn, ly, sao nhái, lan hồ điệp chỉ nhà kính, cúc vạn thọ), 3 bệnh mới, 5 thời tiết mới
+  → GĐ15 Vận May (gói Thường/Vàng bằng tiền & vé TRONG GAME, công khai tỉ lệ, bảo hiểm, mảnh; cây hiếm có hiệu ứng động).
 - Đưa lên mạng: Netlify (`netlify.toml`, `docs/HUONG_DAN_DUA_LEN_MANG.md`) — trang thật: https://tiem-hoa-giac-mo.netlify.app
   (Netlify đang deploy nhánh `ccr-845954e0-2hh7a1`; `main` chỉ có commit đầu tiên). APK: Capacitor + GitHub Actions
   (`.github/workflows/android.yml`, `android-keystore.yml`, `docs/HUONG_DAN_APK.md`); thư mục `android/` KHÔNG commit,
@@ -62,6 +66,14 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   (chơi offline). Trong code dùng `GAME_VERSION`/`BUILD_ID` từ `src/version.js`, không ghi cứng số phiên bản.
 - Máy chạy bản game cũ không được ghi đè save của bản mới: `push_save` trả `outdated`, CloudSync dừng đồng bộ
   và hiện banner yêu cầu cập nhật.
+- **Trang trí tự do** (GĐ10): `save.decor = { owned, placed: [{u,id,x,z,r(độ)}], nextUid }`; logic thuần ở `src/systems/decor.js`
+  (`checkPlace` theo vùng cấm `world.decorMap` = vòng tròn/hình chữ nhật/đường đi lấy từ `src/render/world.js`, lưới 0,5).
+  Chế độ 🎨: `game.decorEdit` (món đang dời) + `decorView.showGhost`; kéo món nhờ `onDragStart/onDrag` của CameraControls.
+  Ảnh chụp cho bạn bè: `snapshot.deco = [[id,x,z,r]]`, đọc bằng `placedFromSnapshot` (làm sạch, đọc được cả kiểu cũ
+  `snapshot.decor`). Đồ sự kiện có `event` (vd 'pumpkin' chỉ bán Mùa Thu, `DECOR_EVENTS`). Mô hình ở `src/models/decor.js`;
+  hiệu ứng động qua `userData` (spin, bob, float, orbit, dangle, flicker, bubbles) chạy trong `decorView.update`.
+- **Dò chạm** (0.9.7): `game.pickAt` bỏ qua vật ẩn (three.js không tự bỏ), chạm sát mặt đất / khe thì lấy ô dưới ngón tay
+  (`farmView.tileNear`).
 - **Âm thanh / intro** (bản 0.9.2): nhạc nền `public/audio/*.mp3` (đã nén 112 kbps), số liệu ở `data/audio.js`.
   Intro DREAMER GAMES (0.9.4) vẽ bằng CSS + canvas, KHÔNG dùng video (đã xóa `intro.mp4`). Code: `src/audio/audio.js` (MusicPlayer, Sfx tạo tiếng bằng Web Audio), `src/ui/tapFx.js` (cánh hoa khi
   chạm), `src/ui/intro.js` (trời đêm + chữ → bình minh + cánh hoa → tên game → tan vào nông trại; chạm để bỏ qua;
@@ -79,7 +91,7 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
 - Code chỉ dành cho app Android nằm ở `src/online/native.js` (kiểm tra `isNative()`); trên web các hàm không làm gì.
 - Đồ họa theo mức `GRAPHICS` trong `data/config.js` (`settings.quality`: auto/high/medium/low); bundle build thành
   1 file JS (`inlineDynamicImports`) để ghép được bản xem thử.
-- **Save có phiên bản** (hiện `SAVE_VERSION = 7`). Đổi cấu trúc save ⇒ tăng `SAVE_VERSION` và thêm
+- **Save có phiên bản** (hiện `SAVE_VERSION = 8`). Đổi cấu trúc save ⇒ tăng `SAVE_VERSION` và thêm
   `MIGRATIONS[phiên_bản_cũ]` trong `src/save/schema.js`; **không bao giờ làm mất tiến độ**. `fillDefaults` tự bổ sung
   trường thiếu (vì vậy số lượng hạt về 0 thì giữ khóa với giá trị 0, không xóa khóa).
 - **Mã vật phẩm**: hạt `"loài:màu"` (vd `rose:red`), hoa trong kho `"loài:màu|sao"` (vd `rose:red|3`).
