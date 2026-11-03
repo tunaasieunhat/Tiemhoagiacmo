@@ -4,6 +4,13 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.9.5',
+    notes: [
+      'App Android chơi toàn màn hình: ẩn thanh trạng thái và thanh điều hướng (vuốt từ mép màn hình để hiện tạm)',
+      'Nút trong game không bị "tai thỏ" / lỗ camera che khi cầm ngang',
+    ],
+  },
+  {
     version: '0.9.4',
     notes: [
       'Intro DREAMER GAMES mới: trời đêm đầy sao chuyển sang bình minh, sao hóa cánh hoa rồi vào thẳng nông trại',

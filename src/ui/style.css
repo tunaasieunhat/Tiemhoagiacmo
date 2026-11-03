@@ -10,8 +10,11 @@
   --yellow: #ffd34e;
   --line: #f2d5c8;
   --shadow: 0 4px 0 rgba(160, 110, 90, 0.18), 0 8px 22px rgba(120, 80, 70, 0.14);
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* vùng an toàn (tai thỏ / lỗ camera / thanh hệ thống). App Android: Capacitor còn gửi thêm --safe-area-inset-* */
+  --safe-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+  --safe-left: max(env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px));
+  --safe-right: max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px));
   font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: var(--ink);
 }
@@ -33,7 +36,7 @@ h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
 
 /* ---------- thanh trên ---------- */
 .topbar {
-  position: absolute; top: calc(8px + var(--safe-top)); left: 8px; right: 8px;
+  position: absolute; top: calc(8px + var(--safe-top)); left: calc(8px + var(--safe-left)); right: calc(8px + var(--safe-right));
   display: flex; align-items: center; gap: 8px; pointer-events: none;
 }
 .topbar > * { pointer-events: auto; }
@@ -57,9 +60,9 @@ h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
 }
 .round:active, .tool:active, .btn:active { transform: scale(0.93); }
 .round.sm { width: 38px; height: 38px; font-size: 16px; }
-.zoom-btns { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; }
+.zoom-btns { position: absolute; right: calc(10px + var(--safe-right)); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; }
 .saved-badge {
-  position: absolute; top: calc(64px + var(--safe-top)); right: 12px; background: var(--card); border-radius: 999px;
+  position: absolute; top: calc(64px + var(--safe-top)); right: calc(12px + var(--safe-right)); background: var(--card); border-radius: 999px;
   padding: 4px 12px; font-size: 13px; font-weight: 800; box-shadow: var(--shadow); opacity: 0; transition: opacity .3s;
 }
 .saved-badge.show { opacity: 1; }
@@ -276,10 +279,10 @@ h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
 @media (max-width: 380px) { .save-cards { grid-template-columns: 1fr; } }
 
 /* ---------- ví tiền & điều hướng ---------- */
-.wallet { position: absolute; top: calc(64px + var(--safe-top)); left: 8px; display: flex; gap: 6px; pointer-events: none; }
+.wallet { position: absolute; top: calc(64px + var(--safe-top)); left: calc(8px + var(--safe-left)); display: flex; gap: 6px; pointer-events: none; }
 .wchip { background: var(--card); border: 2px solid var(--line); border-radius: 999px; padding: 3px 10px; font-weight: 800; font-size: 14px; box-shadow: var(--shadow); font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 4px; }
 .wchip small { font-size: 13px; }
-.nav-btns { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; }
+.nav-btns { position: absolute; left: calc(10px + var(--safe-left)); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; }
 .nav-btns .round { position: relative; }
 .nav-btns .badge { top: -4px; right: -4px; }
 
@@ -381,7 +384,7 @@ h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
 /* ---------- lịch, thời tiết ---------- */
 .clock { cursor: pointer; }
 .wx-icon { font-size: 20px; }
-.alert-chip { position: absolute; top: calc(98px + var(--safe-top)); left: 8px; max-width: calc(100% - 16px); background: #eef8ff; border: 2px solid #9fd6f0; border-radius: 999px; padding: 4px 12px; font-weight: 800; font-size: 13px; box-shadow: var(--shadow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.alert-chip { position: absolute; top: calc(98px + var(--safe-top)); left: calc(8px + var(--safe-left)); max-width: calc(100% - 16px); background: #eef8ff; border: 2px solid #9fd6f0; border-radius: 999px; padding: 4px 12px; font-weight: 800; font-size: 13px; box-shadow: var(--shadow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .alert-chip.warn { background: #fff1e6; border-color: #f4a596; animation: nudge 2.5s ease-in-out infinite; }
 @keyframes nudge { 0%, 90%, 100% { transform: none; } 94% { transform: rotate(-2deg); } 97% { transform: rotate(2deg); } }
 .seasons-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }

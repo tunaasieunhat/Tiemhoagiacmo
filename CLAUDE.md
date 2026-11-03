@@ -70,6 +70,9 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
 - **Chỉ màn hình ngang** (0.9.3): app Android khóa `sensorLandscape` (`scripts/android-setup.mjs`), PWA `orientation: landscape`,
   web trên máy cảm ứng dựng dọc hiện lớp phủ `#rotate` (CSS `(orientation: portrait) and (pointer: coarse)`); intro chờ xoay ngang.
   Kiểm tra giao diện ở khổ 844×390 và 740×360 (không còn cần khổ dọc 390×800 cho điện thoại).
+- **App Android toàn màn hình** (0.9.5): `scripts/android-setup.mjs` viết lại `MainActivity.java` (ẩn status + navigation bar,
+  `BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE`, ẩn lại khi resume/focus) + `capacitor.config.json` `SystemBars.hidden: true`.
+  CSS dùng `--safe-top/bottom/left/right` = max(env(safe-area-inset-*), --safe-area-inset-* do Capacitor gửi) để né tai thỏ.
 - **App Android bắt buộc cập nhật** (0.9.3): `src/online/updater.js` hỏi `ONLINE.apkReleaseApi` (GitHub Releases), APK có số
   phiên bản cao hơn ⇒ sự kiện `app-update-required` ⇒ `hud.showForceUpdate()` che toàn màn hình. Vì vậy **mỗi lần muốn app
   nhận bản mới phải tăng `version`**; đẩy code mà không tăng version thì app không bị bắt cập nhật.
