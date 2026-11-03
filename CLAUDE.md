@@ -62,9 +62,10 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   (chơi offline). Trong code dùng `GAME_VERSION`/`BUILD_ID` từ `src/version.js`, không ghi cứng số phiên bản.
 - Máy chạy bản game cũ không được ghi đè save của bản mới: `push_save` trả `outdated`, CloudSync dừng đồng bộ
   và hiện banner yêu cầu cập nhật.
-- **Âm thanh / intro** (bản 0.9.2): nhạc nền `public/audio/*.mp3` (đã nén 112 kbps), video `public/intro.mp4`, số liệu ở
-  `data/audio.js`. Code: `src/audio/audio.js` (MusicPlayer, Sfx tạo tiếng bằng Web Audio), `src/ui/tapFx.js` (cánh hoa khi
-  chạm), `src/ui/intro.js` (bị chặn tự phát tiếng ⇒ hiện "Chạm để bắt đầu"). Lựa chọn âm thanh lưu trên máy
+- **Âm thanh / intro** (bản 0.9.2): nhạc nền `public/audio/*.mp3` (đã nén 112 kbps), số liệu ở `data/audio.js`.
+  Intro DREAMER GAMES (0.9.4) vẽ bằng CSS + canvas, KHÔNG dùng video (đã xóa `intro.mp4`). Code: `src/audio/audio.js` (MusicPlayer, Sfx tạo tiếng bằng Web Audio), `src/ui/tapFx.js` (cánh hoa khi
+  chạm), `src/ui/intro.js` (trời đêm + chữ → bình minh + cánh hoa → tên game → tan vào nông trại; chạm để bỏ qua;
+  muốn chụp từng cảnh thì đặt `AUDIO.intro.seconds` lớn trong trang thử). Lựa chọn âm thanh lưu trên máy
   (`localStorage` khóa `thgm:audio`), không nằm trong save. Service worker bỏ qua yêu cầu `Range` (nhạc/video không lưu offline trên web).
 - **Chỉ màn hình ngang** (0.9.3): app Android khóa `sensorLandscape` (`scripts/android-setup.mjs`), PWA `orientation: landscape`,
   web trên máy cảm ứng dựng dọc hiện lớp phủ `#rotate` (CSS `(orientation: portrait) and (pointer: coarse)`); intro chờ xoay ngang.

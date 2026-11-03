@@ -4,6 +4,13 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.9.4',
+    notes: [
+      'Intro DREAMER GAMES mới: trời đêm đầy sao chuyển sang bình minh, sao hóa cánh hoa rồi vào thẳng nông trại',
+      'Intro hiện ngay khi mở game, không cần chạm để bắt đầu',
+    ],
+  },
+  {
     version: '0.9.3',
     notes: [
       'Game chơi ở màn hình ngang',

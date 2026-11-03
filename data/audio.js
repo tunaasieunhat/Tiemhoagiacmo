@@ -27,10 +27,12 @@ export const AUDIO = {
   },
 
   intro: {
-    enabled: true,          // phát video intro khi mở game
-    file: 'intro.mp4',      // file trong thư mục public/
-    background: '#06090d',  // màu nền quanh video (khớp màu nền của video)
-    showSkipAfter: 0.8,     // hiện nút "Bỏ qua" sau bao nhiêu giây
-    maxWaitSeconds: 6,      // video không tải được sau bấy nhiêu giây thì bỏ qua để vào game
+    enabled: true,          // phát intro khi mở game (hiệu ứng vẽ trong game, không dùng file video)
+    brand: 'DREAMER',       // chữ lớn
+    sub: 'GAMES',           // chữ nhỏ bên dưới
+    title: 'Tiệm Hoa Giấc Mơ',
+    seconds: 5,             // tổng thời gian intro (giây)
+    showSkipAfter: 0.6,     // hiện nút "Bỏ qua" sau bao nhiêu giây (chạm vào màn hình cũng bỏ qua được)
+    stars: 80,              // số ngôi sao / cánh hoa bay
   },
 };
