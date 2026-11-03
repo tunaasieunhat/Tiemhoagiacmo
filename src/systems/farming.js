@@ -8,6 +8,7 @@ import { upgradeValue } from './progression.js';
 import { SEASON_EFFECT, DISEASE, DISEASES } from '../../data/seasons.js';
 import { protectUntil } from './weather.js';
 import { parseVkey, flowerKey, variantName } from './variants.js';
+import { formatDuration } from './time.js';
 
 export const TILE_STATES = ['untilled', 'tilled', 'growing', 'ready', 'dead'];
 export const STAGE_NAMES = ['Hạt giống', 'Nảy mầm', 'Ra nụ', 'Nở hoa'];
@@ -197,7 +198,7 @@ export function fertilize(tile, save) {
 }
 
 export function harvest(tile, save) {
-  if (tile.state !== 'ready') return fail(tile.state === 'growing' ? 'Hoa chưa nở' : 'Không có gì để thu hoạch');
+  if (tile.state !== 'ready') return fail(tile.state === 'growing' ? `Hoa chưa nở — còn ${formatDuration(remainingMinutes(tile))} nữa (giờ trong game)` : 'Không có gì để thu hoạch');
   const flower = tile.flower;
   const variant = tile.variant;
   const quality = qualityOf(tile);

@@ -17,6 +17,8 @@ const SOIL = {
   wet: '#7a4f3a', wetRidge: '#69432f',
 };
 const TILE_H = 0.22;
+const _tmp = new THREE.Vector3();
+export const TILE_TOP = TILE_H + 0.04;
 const PLANT_SCALE = 1.25; // phóng to cây cho dễ nhìn kiểu chibi
 const PLANT_TOP = { rose: 2.0, tulip: 1.95, sunflower: 2.75, daisy: 1.8, lavender: 1.95, hydrangea: 1.85 };
 
@@ -40,6 +42,20 @@ export class FarmView {
     const col = idx % plot.cols, row = Math.floor(idx / plot.cols);
     const s = this.step();
     return new THREE.Vector3((col - (plot.cols - 1) / 2) * s, 0, (row - (plot.rows - 1) / 2) * s);
+  }
+
+  /** Ô đất gần điểm (x, z) trên mặt đất nhất — dùng khi chạm trúng khe giữa các ô. null nếu không có ô nào đủ gần. */
+  tileNear(x, z) {
+    const half = FARM.tileSize / 2 + FARM.tileGap;
+    let best = null, bestD = Infinity;
+    this.plots.forEach((pv, pi) => pv.tiles.forEach((tv, ti) => {
+      const p = tv.group.getWorldPosition(_tmp);
+      const dx = Math.abs(p.x - x), dz = Math.abs(p.z - z);
+      if (dx > half || dz > half) return;
+      const d = dx * dx + dz * dz;
+      if (d < bestD) { bestD = d; best = { kind: 'tile', plot: pi, tile: ti }; }
+    }));
+    return best;
   }
 
   tileWorldPos(plotIdx, tileIdx) {

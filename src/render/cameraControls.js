@@ -4,7 +4,7 @@ import { CAMERA } from '../../data/config.js';
 import { CAM_OFFSET } from './stage.js';
 
 const GROUND = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-const TAP_MOVE_PX = 9;
+const TAP_MOVE_PX = 12; // ngón tay xê dịch dưới mức này vẫn tính là "chạm" (không phải kéo bản đồ)
 
 export class CameraControls {
   constructor(camera, dom, { onTap, onHover } = {}) {

@@ -31,7 +31,7 @@ import { submitContest } from './online/ranking.js';
 import { PAPERS as WRAP_PAPERS, RIBBONS as WRAP_RIBBONS } from '../data/wrapping.js';
 import * as farming from './systems/farming.js';
 import { clockOf } from './systems/time.js';
-import { FarmView } from './render/farmView.js';
+import { FarmView, TILE_TOP } from './render/farmView.js';
 import { Player } from './render/player.js';
 import { iconMaterial } from './render/icons.js';
 import { buildCharacter } from './models/character.js';
@@ -308,14 +308,25 @@ export class Game {
   pickAt(x, y) {
     this.raycaster.setFromCamera(this.controls.ndc(x, y), this.stage.camera);
     const hits = this.raycaster.intersectObjects(this.pickRoots, true);
+    // ô đất nằm ngay dưới ngón tay (chiếu xuống mặt ruộng)
+    const ground = new THREE.Vector3();
+    const under = !this.decorMode && this.raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -TILE_TOP), ground)
+      ? this.farmView.tileNear(ground.x, ground.z) : null;
     for (const h of hits) {
+      // three.js vẫn dò trúng vật đang ẨN (biểu tượng ⭐/💧 đã tắt, khách đã đi...) => bỏ qua, nếu không sẽ chọn nhầm
+      if (!isShown(h.object)) continue;
       let o = h.object;
       while (o) {
-        if (o.userData?.pick) return o.userData.pick;
+        if (o.userData?.pick) {
+          // trúng vách bên / mép của ô đất (sát mặt đất) => lấy ô dưới ngón tay; trúng cây, biểu tượng => giữ ô của cây đó
+          if (o.userData.pick.kind === 'tile' && under && h.point.y < TILE_TOP + 0.05) return under;
+          return o.userData.pick;
+        }
         o = o.parent;
       }
     }
-    return null;
+    // chạm trúng khe giữa các ô đất: lấy ô gần nhất
+    return under;
   }
 
   onHover(x, y) {
@@ -1050,4 +1061,10 @@ export class Game {
     const r = this.stage.renderer.domElement.getBoundingClientRect();
     return { x: r.left + ((v.x + 1) / 2) * r.width, y: r.top + ((1 - v.y) / 2) * r.height };
   }
+}
+
+/** Vật và mọi lớp cha đều đang hiện (three.js không tự kiểm tra khi dò chạm) */
+function isShown(o) {
+  while (o) { if (!o.visible) return false; o = o.parent; }
+  return true;
 }

@@ -4,6 +4,14 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.9.7',
+    notes: [
+      'Sửa lỗi chạm không chính xác / chạm không phản hồi ở một số chỗ trên ruộng',
+      'Chạm vào khe giữa các ô đất sẽ chọn ô gần nhất',
+      'Thông báo "Hoa chưa nở" cho biết còn bao lâu nữa hoa nở',
+    ],
+  },
+  {
     version: '0.9.6',
     notes: [
       'Bạt che và kính nhà kính trong mờ: phóng to để nhìn rõ hoa bên dưới',
