@@ -649,3 +649,25 @@ h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
 .vg-head { display: flex; gap: 12px; align-items: center; margin-bottom: 6px; }
 .vg-head h2 { margin: 0; }
 .vg-say { background: #fff7f0; border: 2px solid var(--line); border-radius: 16px; padding: 10px 12px; font-weight: 700; margin: 8px 0; position: relative; }
+.heart-bar { display: flex; gap: 1px; margin-top: 3px; line-height: 1; justify-content: flex-start; flex-wrap: nowrap; }
+.heart-bar .ht { font-style: normal; font-size: 14px; position: relative; }
+.tier { display: block; font-size: 11.5px; color: var(--pink-deep); font-weight: 800; margin-top: 1px; }
+.vg-acts { display: flex; gap: 8px; margin: 6px 0; }
+.vg-acts .btn { flex: 1; }
+.vg-acts .btn.disabled, .choices .btn.disabled { opacity: .5; }
+.btn.glow { box-shadow: 0 0 0 3px #ffe08a, 0 4px 0 rgba(160, 110, 90, .18); animation: glowPulse 1.6s ease-in-out infinite; }
+@keyframes glowPulse { 50% { box-shadow: 0 0 0 6px rgba(255, 224, 138, .5), 0 4px 0 rgba(160, 110, 90, .18); } }
+.choices { display: flex; flex-direction: column; gap: 6px; }
+.choices .choice { text-align: left; white-space: normal; padding: 9px 12px; }
+.vg-say.reply { background: #eef8ff; border-color: #9fd6f0; }
+.fp-chip { font-weight: 800; text-align: center; margin: 4px 0 8px; }
+.fp-chip.up { color: #d0577a; } .fp-chip.down { color: #7c6a8f; }
+.ev-title { margin: 0 0 6px; font-weight: 800; color: #b5651d; background: #fff4d6; border-radius: 12px; padding: 5px 10px; }
+.bday { background: #fff0f5; border: 2px dashed var(--pink); border-radius: 14px; padding: 6px 10px; font-size: 13.5px; }
+.likes { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12.5px; margin: 4px 0; }
+.likes span { background: #fff7f0; border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; }
+.lab-item .react { position: absolute; top: 2px; right: 4px; font-style: normal; }
+.lab-item { position: relative; }
+.rg-card { display: flex; gap: 10px; align-items: flex-start; background: #fff; border: 2px solid var(--line); border-radius: 18px; padding: 8px 10px; margin-bottom: 8px; }
+.rg-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 13px; }
+.rg-info small { font-size: 12px; }

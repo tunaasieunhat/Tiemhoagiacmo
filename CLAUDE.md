@@ -13,9 +13,8 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
 
 ## Tiến độ
 
-- ✅ GĐ1–11 xong (xem `README.md`). Kế hoạch đã thống nhất với người dùng (03/11/2026), mỗi GĐ xong thì DỪNG chờ đồng ý:
-  GĐ12 Quan hệ & cốt truyện có lựa chọn (tim 0–10, quà
-  thích/ghét, hội thoại nhánh) → GĐ13 Mua đất của dân làng (giá theo tim + tâm trạng trong ngày, có thể từ chối) →
+- ✅ GĐ1–12 xong (xem `README.md`). Kế hoạch đã thống nhất với người dùng (03/11/2026), mỗi GĐ xong thì DỪNG chờ đồng ý:
+  GĐ13 Mua đất của dân làng (giá theo tim + tâm trạng trong ngày, có thể từ chối) →
   GĐ14 6 hạt mới (cẩm chướng, mẫu đơn, ly, sao nhái, lan hồ điệp chỉ nhà kính, cúc vạn thọ), 3 bệnh mới, 5 thời tiết mới
   → GĐ15 Vận May (gói Thường/Vàng bằng tiền & vé TRONG GAME, công khai tỉ lệ, bảo hiểm, mảnh; cây hiếm có hiệu ứng động).
 - Đưa lên mạng: Netlify (`netlify.toml`, `docs/HUONG_DAN_DUA_LEN_MANG.md`) — trang thật: https://tiem-hoa-giac-mo.netlify.app
@@ -79,6 +78,13 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   nằm trên đất/đường làng); mô hình `src/models/village.js`; dân làng `src/render/villagers.js` (cửa sổ từng nhà là
   vật liệu riêng, sáng theo `glow.window` khi có người thức). Đảo = nhiều vòng tròn: `decorMap.islands`,
   `controls.regions`. Không đổi cấu trúc save (vị trí dân làng tính từ giờ game).
+- **Kết thân** (GĐ12): nội dung ở `data/stories.js` (`FRIEND` số liệu, `BONDS[id]`: birthday, gifts love/like/dislike/hate theo
+  'loài' | 'loài:màu' | 'tone:x' | 'meaning:x', giftLines, rewards theo mốc tim, talks, events nhiều cảnh với lựa chọn
+  `{t, fp, r, set, next}`, điều kiện `if: 'a|b&!c'`, chữ có điều kiện `{dấu?A|B}`). Save `save.village = { rel: {id: {fp,
+  talkDay, giftDay, done, known, claimed, evStep}}, flags }` (SAVE_VERSION 9). Logic thuần `src/systems/relations.js`;
+  sự kiện kể dở lưu `evStep` để kể tiếp (không chọn lại cảnh đầu để cày điểm). Game: `startTalk/talkChoose/giftTo/afterBond`
+  (XP thưởng qua `gainXp`); HUD: `openVillager/renderTalk/openGift/showBondRewards`; Sổ tay tab `village`.
+  GĐ13 (mua đất) dùng `relations.heartsOf(save, id)`.
 - **Dò chạm** (0.9.7): `game.pickAt` bỏ qua vật ẩn (three.js không tự bỏ), chạm sát mặt đất / khe thì lấy ô dưới ngón tay
   (`farmView.tileNear`).
 - **Âm thanh / intro** (bản 0.9.2): nhạc nền `public/audio/*.mp3` (đã nén 112 kbps), số liệu ở `data/audio.js`.
@@ -98,7 +104,7 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
 - Code chỉ dành cho app Android nằm ở `src/online/native.js` (kiểm tra `isNative()`); trên web các hàm không làm gì.
 - Đồ họa theo mức `GRAPHICS` trong `data/config.js` (`settings.quality`: auto/high/medium/low); bundle build thành
   1 file JS (`inlineDynamicImports`) để ghép được bản xem thử.
-- **Save có phiên bản** (hiện `SAVE_VERSION = 8`). Đổi cấu trúc save ⇒ tăng `SAVE_VERSION` và thêm
+- **Save có phiên bản** (hiện `SAVE_VERSION = 9`). Đổi cấu trúc save ⇒ tăng `SAVE_VERSION` và thêm
   `MIGRATIONS[phiên_bản_cũ]` trong `src/save/schema.js`; **không bao giờ làm mất tiến độ**. `fillDefaults` tự bổ sung
   trường thiếu (vì vậy số lượng hạt về 0 thì giữ khóa với giá trị 0, không xóa khóa).
 - **Mã vật phẩm**: hạt `"loài:màu"` (vd `rose:red`), hoa trong kho `"loài:màu|sao"` (vd `rose:red|3`).

@@ -7,6 +7,7 @@
 //  => Người chơi cũ không bị mất tiến độ.
 // =============================================================
 import { legacyToPlaced } from '../systems/decor.js';
+import { createVillageState, initVillageFromRegulars } from '../systems/relations.js';
 import { STARTER, TIME, FARM } from '../../data/config.js';
 import { createTile } from '../systems/farming.js';
 import { createShopState } from '../systems/shop.js';
@@ -22,7 +23,7 @@ import { createAutomationState } from '../systems/automation.js';
 
 const toVkeys = (obj) => Object.fromEntries(Object.entries(obj).map(([k, n]) => [k.includes(':') ? k : vkey(k), n]));
 
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 export function newId() {
   if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
@@ -84,6 +85,7 @@ export function createNewSave() {
     quests: createQuestState(),      // nhiệm vụ ngày/tuần (GĐ8)
     automation: createAutomationState(), // nhân viên (GĐ8)
     decor: { owned: {}, placed: [], nextUid: 1 },  // đồ trang trí: số lượng trong kho, đồ đã đặt tự do [{u,id,x,z,r}] (GĐ10)
+    village: createVillageState(),   // kết thân với dân làng: điểm tình thân, sự kiện đã xem, dấu cốt truyện (GĐ12)
     farm: {
       plots: [createPlot('plot-1')],
     },
@@ -174,6 +176,11 @@ export const MIGRATIONS = {
       for (const id of left) owned[id] = (owned[id] || 0) + 1;
     }
     s.decor = { owned, placed, nextUid: placed.length + 1 };
+    return s;
+  },
+  // v8 -> v9 (Giai đoạn 12): kết thân với dân làng — khách quen đã xong chương nào ở tiệm thì được tặng sẵn ít điểm
+  8: (s) => {
+    s.village = s.village || initVillageFromRegulars(s);
     return s;
   },
 };

@@ -30,6 +30,8 @@ import * as decorSys from './systems/decor.js';
 import { DecorView } from './render/decorView.js';
 import { VillagerView } from './render/villagers.js';
 import { VILLAGE } from '../data/village.js';
+import * as relations from './systems/relations.js';
+import { desiredState } from './systems/village.js';
 import { submitContest } from './online/ranking.js';
 import { PAPERS as WRAP_PAPERS, RIBBONS as WRAP_RIBBONS } from '../data/wrapping.js';
 import * as farming from './systems/farming.js';
@@ -898,6 +900,60 @@ export class Game {
   focusVillager(id) {
     const v = this.villagers.list.find((q) => q.id === id);
     if (v) this.controls.focusOn(new THREE.Vector3(v.x, 0, v.z), Math.max(this.controls.zoom, 1.5));
+  }
+
+  // ---------------- kết thân (GĐ12) ----------------
+  get today() { return dayOf(this.save.time.gameMinutes); }
+
+  /** Người đó có nói chuyện được lúc này không (đang ở làng và còn thức) */
+  canMeet(id) {
+    const d = desiredState(id, this.villageCtx());
+    if (d.absent) return { ok: false, reason: d.reason === 'shop' ? 'Người này đang ở tiệm hoa của bạn' : 'Người này đang đi xa' };
+    if (d.act === 'sleep') return { ok: false, reason: 'Đang ngủ rồi, mai hãy quay lại nhé 💤' };
+    return { ok: true };
+  }
+
+  /** Bắt đầu trò chuyện: trả về câu chuyện hôm nay (sự kiện tim hoặc chuyện thường) */
+  startTalk(id) {
+    const m = this.canMeet(id);
+    if (!m.ok) { this.toast(m.reason, 'info'); return null; }
+    if (!relations.canTalk(this.save, id, this.today)) { this.toast('Hôm nay đã trò chuyện rồi, mai ghé tiếp nhé!', 'info'); return null; }
+    return relations.todaysTalk(this.save, id, this.today);
+  }
+
+  talkChoose(id, talk, sceneIdx, optIdx) {
+    const res = relations.chooseOption(this.save, id, talk, sceneIdx, optIdx, this.today);
+    if (!res) return null;
+    this.afterBond(id, res);
+    if (talk.kind === 'event' && res.next == null) this.gainXp(15);
+    return res;
+  }
+
+  giftTo(id, flowerKey) {
+    const m = this.canMeet(id);
+    if (!m.ok) { this.toast(m.reason, 'info'); return null; }
+    const res = relations.giveGift(this.save, id, flowerKey, this.today);
+    if (res.error) { this.toast(res.error, 'warn'); return null; }
+    this.afterBond(id, res);
+    this.emitter.emit('inventory');
+    return res;
+  }
+
+  /** Sau khi điểm tình thân thay đổi: trao quà mốc tim, lưu, báo giao diện */
+  afterBond(id, res) {
+    for (const { hearts, reward } of res.rewards || []) {
+      relations.grantBondReward(this.save, reward);
+      if (reward.xp) this.gainXp(reward.xp);
+      this.emitter.emit('bond-reward', { id, hearts, reward });
+    }
+    if (res.after > res.before) this.particles.spawn('sparkle', this.villagerPos(id));
+    this.saveMgr.markDirty();
+    this.emitter.emit('bond', { id });
+  }
+
+  villagerPos(id) {
+    const v = this.villagers.list.find((q) => q.id === id);
+    return v ? new THREE.Vector3(v.x, 1.2, v.z) : this.player.root.position.clone();
   }
 
   goVillage() {

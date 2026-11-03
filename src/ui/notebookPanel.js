@@ -5,10 +5,13 @@ import { REGULARS } from '../../data/regulars.js';
 import * as variants from '../systems/variants.js';
 import { bookProgress } from '../systems/notebook.js';
 import { avatarSVG } from './avatar.js';
+import * as rel from '../systems/relations.js';
+import { villagerInfo } from '../systems/village.js';
+import { BONDS, REACTION, FRIEND } from '../../data/stories.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const SEASON_NAMES = { xuan: 'Xuân', ha: 'Hạ', thu: 'Thu', dong: 'Đông' };
-const TABS = [['flowers', '🌸 Bộ sưu tập'], ['meanings', '💬 Ngôn ngữ hoa'], ['regulars', '💌 Khách quen']];
+const TABS = [['flowers', '🌸 Bộ sưu tập'], ['meanings', '💬 Ngôn ngữ hoa'], ['regulars', '💌 Khách quen'], ['village', '🏘️ Dân làng']];
 
 export class NotebookPanel {
   constructor(hud) {
@@ -23,13 +26,36 @@ export class NotebookPanel {
 
   render() {
     const p = bookProgress(this.save);
-    const body = { flowers: this.flowers, meanings: this.meanings, regulars: this.regulars }[this.tab].call(this);
+    const body = { flowers: this.flowers, meanings: this.meanings, regulars: this.regulars, village: this.village }[this.tab].call(this);
     this.hud.openModal('notebook', `
       <h2>📖 Sổ tay thực vật</h2>
       <div class="book-prog"><div class="track"><i style="width:${p.pct}%;background:#f6a6b9"></i></div>
         <small>Đã sưu tầm ${p.found}/${p.total} màu hoa (${p.pct}%) · Biết ý nghĩa ${p.known}/${p.total}</small></div>
       <div class="mk-tabs">${TABS.map(([id, label]) => `<button class="${id === this.tab ? 'on' : ''}" data-nb="tab" data-id="${id}">${label}</button>`).join('')}</div>
       <div class="mk-body">${body}</div>`, 'wide');
+  }
+
+  village() {
+    const s = this.save;
+    const day = this.game.today;
+    const rows = rel.BOND_IDS.map((id) => {
+      const info = villagerInfo(id);
+      const b = BONDS[id];
+      const h = rel.heartsOf(s, id);
+      const r = rel.relOf(s, id);
+      const known = Object.entries(r.known);
+      const likes = known.filter(([, l]) => l === 'love' || l === 'like').map(([k]) => `${REACTION[r.known[k]].icon} ${variants.variantName(variants.parseVkey(k).species, variants.parseVkey(k).variant)}`);
+      const seen = (b.events || []).filter((e) => r.done[e.id]).length;
+      const next = rel.availableEvent(s, id);
+      return `<div class="rg-card"><div class="rg-av">${avatarSVG(info.look, 52)}</div><div class="rg-info">
+        <b>${esc(info.name)}</b> <small class="muted">${esc(info.role)}</small>
+        <div>${'❤️'.repeat(h)}${'🤍'.repeat(FRIEND.maxHearts - h)} <small class="muted">${esc(rel.tierName(h))}</small></div>
+        <small>🎂 Sinh nhật: ngày ${b.birthday.day} ${SEASON_NAMES[b.birthday.season] ? `Mùa ${SEASON_NAMES[b.birthday.season]}` : ''}${rel.isBirthday(id, day) ? ' — <b>HÔM NAY!</b>' : ''} · ✨ Sự kiện ${seen}/${b.events.length}${next ? ' · <b>có chuyện mới!</b>' : ''}</small>
+        <small>${likes.length ? `Đã biết thích: ${esc(likes.join(', '))}` : '💡 Tặng hoa để biết sở thích'}</small>
+        <small class="muted">${r.talkDay === day ? '💬 đã trò chuyện hôm nay' : '💬 chưa trò chuyện hôm nay'} · ${r.giftDay === day ? '🎁 đã tặng quà' : '🎁 chưa tặng quà'}</small>
+      </div></div>`;
+    }).join('');
+    return `<p class="muted small">Trò chuyện và tặng hoa mỗi ngày để kết thân. Đủ tim sẽ mở <b>sự kiện</b> (câu chuyện có lựa chọn) và nhận quà ở 3, 5, 7, 10 ❤️. Chạm vào dân làng ở 🏘️ Làng để gặp họ.</p>${rows}`;
   }
 
   flowers() {

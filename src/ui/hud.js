@@ -7,6 +7,9 @@ import { formatClock, periodName, isNight, formatDuration } from '../systems/tim
 import { avatarSVG } from './avatar.js';
 import { savePrefs } from '../audio/audio.js';
 import { villagerInfo, greeting, houseStatus } from '../systems/village.js';
+import * as rel from '../systems/relations.js';
+import { FRIEND, REACTION, BONDS } from '../../data/stories.js';
+import { DECOR as DECOR_ALL } from '../../data/decor.js';
 import { ACTIVITIES, HOUSES, LEAVES_AFTER_STORY } from '../../data/village.js';
 import { isNative, openExternal } from '../online/native.js';
 import { ONLINE } from '../../data/online.js';
@@ -91,6 +94,7 @@ export class Hud {
     em.on('decor-mode', (on) => { this.root.classList.toggle('decorating', on); $('.decor-bar', this.root).classList.toggle('hidden', !on); });
     em.on('decor-edit', () => this.renderDecorBar());
     em.on('villager', ({ id }) => this.openVillager(id));
+    em.on('bond-reward', (e) => { this.pendingRewards = [...(this.pendingRewards || []), e]; });
     em.on('house', ({ id }) => this.openHouse(id));
     em.on('inventory', () => { if (this.game.decorMode) this.renderDecorBar(); });
     em.on('xp', () => this.updateWallet());
@@ -186,6 +190,8 @@ export class Hud {
     if (qq) { this.quests.onAction(qq.dataset.q, qq); return; }
     const rk = e.target.closest('[data-rk]');
     if (rk) { this.rank.onAction(rk.dataset.rk, rk); return; }
+    const vg = e.target.closest('[data-vg]');
+    if (vg) { this.onVillagerAct(vg); return; }
     const db = e.target.closest('[data-db]');
     if (db) { this.onDecorBar(db); return; }
     const fr = e.target.closest('[data-fr]');
@@ -242,6 +248,7 @@ export class Hud {
       case 'go-lab': this.openLab(); break;
       case 'go-village': this.closeModal(); g.goVillage(); break;
       case 'see-villager': this.closeModal(); g.focusVillager(b.dataset.id); break;
+      case 'knock': this.openVillager(b.dataset.id); break;
       case 'friends': this.friends.open(); break;
       case 'quests': this.quests.open(); break;
       case 'rank': this.rank.open(); break;
@@ -434,6 +441,14 @@ export class Hud {
   }
 
   // ---------- làng (GĐ11) ----------
+  heartBar(id) {
+    const s = this.game.save;
+    const h = rel.heartsOf(s, id), f = rel.heartFrac(s, id);
+    let out = '';
+    for (let i = 0; i < FRIEND.maxHearts; i++) out += i < h ? '<i class="ht">❤️</i>' : i === h && f > 0 ? `<i class="ht" style="opacity:${(0.35 + f * 0.65).toFixed(2)}">💗</i>` : '<i class="ht">🤍</i>';
+    return `<div class="heart-bar" title="${h}/${FRIEND.maxHearts}">${out}</div><small class="tier">${esc(rel.tierName(h))} · ${h}/${FRIEND.maxHearts} tim</small>`;
+  }
+
   openVillager(id) {
     const g = this.game;
     const info = villagerInfo(id);
@@ -441,14 +456,149 @@ export class Hud {
     const ctx = g.villageCtx();
     const st = g.villagers.stateOf(id);
     const act = ACTIVITIES[st?.act] || null;
-    const hearts = info.regular ? (g.save.regulars?.[id]?.hearts || 0) : null;
+    const day = g.today;
+    const meet = g.canMeet(id);
+    const canTalk = rel.canTalk(g.save, id, day);
+    const canGift = rel.canGift(g.save, id, day);
+    const ev = rel.availableEvent(g.save, id);
+    const bday = rel.isBirthday(id, day);
+    const chapters = info.regular ? (g.save.regulars?.[id]?.hearts || 0) : null;
+    const hasFlowers = Object.values(g.save.inventory.flowers).some((n) => n > 0);
     this.openModal('villager', `
-      <div class="vg-head">${avatarSVG(info.look, 64)}<div><h2>${esc(info.name)}</h2><small class="muted">${esc(info.role)}${info.home ? ` · ${esc(HOUSES[info.home].name)}` : ''}</small></div></div>
+      <div class="vg-head">${avatarSVG(info.look, 64)}<div><h2>${esc(info.name)}${bday ? ' 🎂' : ''}</h2><small class="muted">${esc(info.role)}${info.home ? ` · ${esc(HOUSES[info.home].name)}` : ''}</small>${this.heartBar(id)}</div></div>
       <p class="vg-say">“${esc(greeting(id, ctx))}”</p>
+      ${bday ? `<p class="bday">🎂 Hôm nay là <b>sinh nhật</b> của ${esc(info.name)}! Tặng quà được gấp đôi tình thân.</p>` : ''}
+      <div class="vg-acts">
+        <button class="btn ${ev ? 'primary glow' : 'primary'} ${!meet.ok || !canTalk ? 'disabled' : ''}" data-vg="talk" data-id="${id}">${ev ? `✨ ${esc(ev.title)}` : '💬 Trò chuyện'}${canTalk ? '' : ' ✓'}</button>
+        <button class="btn ${!meet.ok || !canGift || !hasFlowers ? 'disabled' : ''}" data-vg="gift" data-id="${id}">🎁 Tặng hoa${canGift ? '' : ' ✓'}</button>
+      </div>
+      ${!meet.ok ? `<p class="muted small">${esc(meet.reason)}</p>` : !canTalk && !canGift ? '<p class="muted small">Hôm nay đã trò chuyện và tặng quà rồi — mai ghé tiếp nhé!</p>' : ''}
       <div class="kv"><span>📍 Bây giờ</span><b>${act ? `${act.icon} ${esc(act.name)}` : '—'}${st?.walking ? ' (đang đi tới)' : ''}</b></div>
-      ${hearts != null ? `<div class="kv"><span>🌷 Khách quen của tiệm</span><b>${'❤️'.repeat(hearts)}${'🤍'.repeat(Math.max(0, 5 - hearts))}</b></div>` : ''}
-      <p class="muted small">${esc(info.bio)}</p>
-      <p class="muted small">✨ Sắp có: trò chuyện chọn câu trả lời, tặng quà và kết thân với ${esc(info.self)} ${esc(info.name.split(' ').slice(1).join(' '))}.</p>`);
+      ${chapters != null ? `<div class="kv"><span>🌷 Chuyện ở tiệm hoa</span><b>${chapters}/5 chương</b></div>` : ''}
+      ${this.likesLine(id)}
+      <p class="muted small">${esc(info.bio)}</p>`);
+  }
+
+  /** Các loại hoa đã biết người này thích/ghét (từ những lần tặng trước) */
+  likesLine(id) {
+    const known = rel.relOf(this.game.save, id).known;
+    const by = (lvl) => Object.entries(known).filter(([, l]) => l === lvl).map(([k]) => { const v = variants.parseVkey(k); return variants.variantName(v.species, v.variant); });
+    const parts = [['love', by('love')], ['like', by('like')], ['dislike', [...by('dislike'), ...by('hate')]]].filter(([, l]) => l.length);
+    if (!parts.length) return '<p class="muted small">💡 Tặng hoa để biết người này thích loài nào.</p>';
+    return `<div class="likes">${parts.map(([lvl, l]) => `<span>${REACTION[lvl].icon} ${esc(l.join(', '))}</span>`).join('')}</div>`;
+  }
+
+  onVillagerAct(el) {
+    const g = this.game;
+    const id = el.dataset.id || this.talk?.id || this.giftFor;
+    switch (el.dataset.vg) {
+      case 'talk': {
+        if (el.classList.contains('disabled')) { if (!g.canMeet(id).ok) g.toast(g.canMeet(id).reason, 'info'); else g.toast('Hôm nay đã trò chuyện rồi, mai ghé tiếp nhé!', 'info'); return; }
+        const t = g.startTalk(id);
+        if (!t) return;
+        this.talk = { id, talk: t, scene: t.start || 0, result: null };
+        this.renderTalk();
+        break;
+      }
+      case 'choose': {
+        const tk = this.talk;
+        if (!tk || tk.result) return;
+        const res = g.talkChoose(tk.id, tk.talk, tk.scene, +el.dataset.i);
+        if (!res) return;
+        tk.result = res;
+        this.renderTalk();
+        break;
+      }
+      case 'next': {
+        const tk = this.talk;
+        if (!tk?.result || tk.result.next == null) return;
+        tk.scene = tk.result.next; tk.result = null;
+        this.renderTalk();
+        break;
+      }
+      case 'done': this.talk = null; this.giftFor = null; if (!this.showBondRewards()) this.openVillager(id); break;
+      case 'gift':
+        if (el.classList.contains('disabled')) { const m = g.canMeet(id); g.toast(!m.ok ? m.reason : !rel.canGift(g.save, id, g.today) ? 'Hôm nay đã tặng quà rồi' : 'Kho chưa có hoa — thu hoạch hoa rồi quay lại nhé', 'info'); return; }
+        this.giftFor = id; this.openGift(id); break;
+      case 'give': {
+        const res = g.giftTo(this.giftFor, el.dataset.key);
+        if (res) this.showGiftResult(this.giftFor, res);
+        break;
+      }
+    }
+  }
+
+  renderTalk() {
+    const g = this.game;
+    const tk = this.talk;
+    const info = villagerInfo(tk.id);
+    const flags = g.save.village.flags;
+    const sc = tk.talk.scenes[tk.scene];
+    const title = tk.talk.title ? `<p class="ev-title">✨ Sự kiện tình thân: ${esc(tk.talk.title)} <small>(${tk.scene + 1}/${tk.talk.scenes.length})</small></p>` : '';
+    let foot;
+    if (tk.result) {
+      const d = tk.result.delta;
+      foot = `<p class="vg-say reply">“${esc(tk.result.reply)}”</p>
+        <p class="fp-chip ${d > 0 ? 'up' : d < 0 ? 'down' : ''}">${d > 0 ? `+${d}` : d} điểm tình thân ${d > 0 ? '💗' : d < 0 ? '💔' : ''}${tk.result.after > tk.result.before ? ` · lên ${tk.result.after} ❤️!` : ''}</p>
+        ${tk.result.next != null ? '<button class="btn primary wide" data-vg="next">Tiếp tục ›</button>' : `<button class="btn primary wide" data-vg="done" data-id="${tk.id}">Xong</button>`}`;
+    } else {
+      foot = `<div class="choices">${sc.ch.map((c, i) => `<button class="btn choice" data-vg="choose" data-i="${i}">${esc(rel.fmt(c.t, flags))}</button>`).join('')}</div>`;
+    }
+    this.openModal('talk', `
+      ${title}
+      <div class="vg-head">${avatarSVG(info.look, 56)}<div><b>${esc(info.name)}</b>${this.heartBar(tk.id)}</div></div>
+      <p class="vg-say">“${esc(rel.fmt(sc.say, flags))}”</p>
+      ${foot}`);
+  }
+
+  openGift(id) {
+    const g = this.game;
+    const info = villagerInfo(id);
+    const stacks = Object.entries(g.save.inventory.flowers).filter(([, n]) => n > 0)
+      .sort((a, b) => variants.parseFlowerKey(b[0]).q - variants.parseFlowerKey(a[0]).q);
+    const bday = rel.isBirthday(id, g.today);
+    this.openModal('gift', `
+      <h2>🎁 Tặng hoa cho ${esc(info.name)}</h2>
+      ${bday ? '<p class="bday">🎂 Sinh nhật hôm nay: tình thân nhận được × 2!</p>' : ''}
+      <p class="muted small">Mỗi ngày tặng 1 bông. Hoa nhiều ⭐ được quý hơn. ${esc(REACTION.love.icon)} = đã biết người này rất thích.</p>
+      <div class="lab-list">${stacks.map(([k, n]) => {
+        const f = variants.parseFlowerKey(k);
+        const known = rel.knownReaction(g.save, id, k);
+        return `<button class="lab-item" data-vg="give" data-key="${esc(k)}"><span class="vdot big" style="--c:${variants.variantData(f.species, f.variant).petal}"></span>
+          <small>${esc(variants.variantName(f.species, f.variant))}</small><b>${'★'.repeat(f.q)} ×${n}</b>${known ? `<em class="react">${REACTION[known].icon}</em>` : ''}</button>`;
+      }).join('') || '<p class="muted">Kho chưa có hoa.</p>'}</div>
+      <button class="btn wide" data-vg="done" data-id="${id}">Quay lại</button>`);
+  }
+
+  showGiftResult(id, res) {
+    const info = villagerInfo(id);
+    const r = REACTION[res.level];
+    this.openModal('gift', `
+      <div class="vg-head">${avatarSVG(info.look, 56)}<div><b>${esc(info.name)}</b> ${r.icon} <small>${esc(r.name)}</small>${this.heartBar(id)}</div></div>
+      <p class="vg-say">“${esc(res.line)}”</p>
+      <p class="fp-chip ${res.delta > 0 ? 'up' : 'down'}">${res.delta > 0 ? `+${res.delta}` : res.delta} điểm tình thân${res.birthday && res.delta > 0 ? ' (🎂 × 2)' : ''}${res.after > res.before ? ` · lên ${res.after} ❤️!` : ''}</p>
+      <button class="btn primary wide" data-vg="done" data-id="${id}">Xong</button>`);
+  }
+
+  /** Quà khi đạt mốc tim (hiện sau khi nói chuyện / tặng quà xong) */
+  showBondRewards() {
+    const e = (this.pendingRewards || []).shift();
+    if (!e) return false;
+    const info = villagerInfo(e.id);
+    const rw = e.reward;
+    const items = [];
+    if (rw.coins) items.push(`+${rw.coins} 💰`);
+    if (rw.xp) items.push(`+${rw.xp} XP`);
+    Object.entries(rw.seeds || {}).forEach(([k, n]) => { const v = variants.parseVkey(k); items.push(`${n} hạt ${variants.variantName(v.species, v.variant)}`); });
+    Object.entries(rw.items || {}).forEach(([k, n]) => items.push(`${n} ${{ fertilizer: '🧪 phân bón', cover: '⛺ bạt che', medicine: '💊 thuốc' }[k] || k}`));
+    Object.entries(rw.papers || {}).forEach(([k, n]) => items.push(`${n} ${PAPERS[k]?.name || k}`));
+    Object.entries(rw.decor || {}).forEach(([k, n]) => items.push(`${n} ${DECOR_ALL[k]?.icon || ''} ${DECOR_ALL[k]?.name || k} (vào kho trang trí 🎨)`));
+    this.openModal('bondreward', `<div class="story">
+      <div class="story-av">${avatarSVG(info.look, 72)}</div><h2>${esc(info.name)}</h2>${this.heartBar(e.id)}
+      <p class="story-text">🎉 Đạt ${e.hearts} ❤️ — ${esc(rw.msg || '')}</p>
+      <h3>🎁 Quà tặng</h3><ul class="unlocks">${items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>
+      <button class="btn primary wide" data-vg="done" data-id="${e.id}">Cảm ơn!</button></div>`);
+    return true;
   }
 
   openHouse(id) {
@@ -469,8 +619,10 @@ export class Hud {
       else if (hs.atHome) line = d.act === 'sleep' ? `💤 ${esc(o.name)} đang ngủ, nhẹ nhàng thôi nhé.` : `🏠 ${esc(o.name)} đang ở nhà.`;
       else line = `🚶 Chủ nhà đi vắng — ${hs.act ? `${hs.act.icon} ${esc(hs.act.name.toLowerCase())}` : 'đang ở ngoài'}.`;
       const canSee = !d.absent && !hs.atHome && !ACTIVITIES[d.act]?.indoor; // đang ở trong trường / nhà khác thì không thấy
+      const canKnock = !d.absent && hs.atHome && d.act !== 'sleep';
       body = `<div class="vg-head">${avatarSVG(o.look, 56)}<div><b>${esc(o.name)}</b><br><small class="muted">${esc(o.role)}</small></div></div>
-        <p>${line}</p>${canSee ? `<button class="btn wide" data-act="see-villager" data-id="${esc(o.id)}">📍 Tìm ${esc(o.name)}</button>` : ''}`;
+        <p>${line}</p>${canSee ? `<button class="btn wide" data-act="see-villager" data-id="${esc(o.id)}">📍 Tìm ${esc(o.name)}</button>` : ''}
+        ${canKnock ? `<button class="btn primary wide" data-act="knock" data-id="${esc(o.id)}">🚪 Gõ cửa hỏi thăm</button>` : ''}`;
     }
     this.openModal('house', `<h2>🏡 ${esc(hs.house.name)}</h2>${body}`);
   }

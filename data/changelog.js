@@ -4,6 +4,15 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.12.0',
+    notes: [
+      '💞 Kết thân với 6 dân làng: thanh tình thân 10 ❤️, trò chuyện và tặng hoa mỗi ngày',
+      'Chọn câu trả lời khéo thì tăng tình thân, nói sai thì giảm; mỗi người có hoa thích / ghét riêng và ngày sinh nhật (quà × 2)',
+      '✨ 24 sự kiện tình thân có lựa chọn rẽ nhánh — giúp thầy Duy tỏ tình với cô Mai, sửa quán cho cô Ngân, ra biển cùng Ông Ba...',
+      'Quà khi đạt 3, 5, 7, 10 ❤️ (hạt quý, đồ trang trí); gõ cửa hỏi thăm khi chủ nhà ở nhà; Sổ tay có thêm tab Dân làng',
+    ],
+  },
+  {
     version: '0.11.0',
     notes: [
       '🏘️ Làng Hoa: đảo mở rộng về phía nam với 6 ngôi nhà, trường làng, quảng trường có giếng, quán cà phê Mây và cầu tàu',
