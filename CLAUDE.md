@@ -17,7 +17,10 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
 - Đưa lên mạng: Netlify (`netlify.toml`, `docs/HUONG_DAN_DUA_LEN_MANG.md`) — trang thật: https://tiem-hoa-giac-mo.netlify.app
   (Netlify đang deploy nhánh `ccr-845954e0-2hh7a1`; `main` chỉ có commit đầu tiên). APK: Capacitor + GitHub Actions
   (`.github/workflows/android.yml`, `android-keystore.yml`, `docs/HUONG_DAN_APK.md`); thư mục `android/` KHÔNG commit,
-  được tạo trong CI bằng `npx cap add android` + `scripts/android-setup.mjs`.
+  được tạo trong CI bằng `npx cap add android` + `scripts/android-setup.mjs`. Làm giống repo Ôn Luyện Nha Khoa: 1 secret
+  `ANDROID_KEYSTORE_B64` (PKCS12, mật khẩu cố định `tiemhoagiacmo`, alias `tiemhoa`); build đã ký thì tự đăng Releases
+  (tag `apk-<version>-<run>`, ghi chú từ `data/changelog.js`), link tải cố định
+  `releases/latest/download/TiemHoaGiacMo.apk`. Repo GitHub là **công khai**.
 - Supabase **chưa được người dùng cài**: chưa có URL/khóa trong `data/online.js` → game đang chạy chế độ khách.
   Hướng dẫn cài: `docs/HUONG_DAN_SUPABASE.md`.
 

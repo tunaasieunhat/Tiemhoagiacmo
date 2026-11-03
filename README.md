@@ -1,6 +1,9 @@
 # 🌷 Tiệm Hoa Giấc Mơ
 
-🎮 **Chơi ngay:** https://tiem-hoa-giac-mo.netlify.app
+| Cách chơi | Link |
+|---|---|
+| **Chơi trên web** (điện thoại, máy tính) | https://tiem-hoa-giac-mo.netlify.app |
+| **App Android** (mở file và cho phép cài; có bản mới app tự báo) | [TiemHoaGiacMo.apk](https://github.com/tunaasieunhat/Tiemhoagiacmo/releases/latest/download/TiemHoaGiacMo.apk) |
 
 Game 3D chibi trồng hoa & bán hoa, chạy trên trình duyệt (điện thoại + máy tính).
 Công nghệ: Three.js + Vite, sau này dùng Supabase cho tài khoản online.

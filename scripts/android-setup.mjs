@@ -23,9 +23,8 @@ if (!xml.includes(`android:scheme="${SCHEME}"`)) {
   writeFileSync(mf, xml);
 }
 
-const [ma, mi, pa] = pkg.version.split('.').map((n) => parseInt(n, 10) || 0);
-const run = parseInt(process.env.GITHUB_RUN_NUMBER || '0', 10) % 100;
-const versionCode = ma * 1000000 + mi * 10000 + pa * 100 + run;
+// Số bản (versionCode) phải LUÔN TĂNG để cài đè được bản cũ: 1.000.000 + số phút tính từ 01/01/2026.
+const versionCode = 1000000 + Math.floor((Date.now() - Date.UTC(2026, 0, 1)) / 60000);
 const gf = 'android/app/build.gradle';
 let gradle = readFileSync(gf, 'utf8');
 gradle = gradle.replace(/versionCode\s+\d+/, `versionCode ${versionCode}`).replace(/versionName\s+"[^"]*"/, `versionName "${pkg.version}"`);

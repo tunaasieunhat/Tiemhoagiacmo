@@ -1,67 +1,65 @@
 # Ứng dụng Android (APK)
 
-APK được **GitHub tự đóng gói** (GitHub Actions) — bạn không cần cài Android Studio hay gì trên máy.
-Game trong APK chứa sẵn toàn bộ file, chơi được khi mất mạng.
+APK được **GitHub tự đóng gói** (GitHub Actions), giống cách làm của dự án Ôn Luyện Nha Khoa.
+Bạn không cần cài Android Studio hay gì trên máy. Game trong APK có sẵn toàn bộ file, chơi được khi mất mạng.
+
+**Link tải (luôn là bản mới nhất):**
+https://github.com/tunaasieunhat/Tiemhoagiacmo/releases/latest/download/TiemHoaGiacMo.apk
+
+> Repo này **công khai**, nên ai có link cũng tải được APK. Link chỉ chạy được sau khi làm xong bước 1 bên dưới.
 
 ---
 
-## 1. Lấy APK bản thử (không cần làm gì thêm)
+## 1. Tạo khóa ký (làm 1 lần duy nhất)
 
-Mỗi lần code game thay đổi và được đẩy lên GitHub, APK tự được tạo:
+Khóa ký giúp các bản APK sau **cài đè lên bản cũ**, giữ nguyên dữ liệu. Có khóa thì GitHub mới tự đăng APK
+lên trang **Releases**.
 
-1. Vào repo trên GitHub → tab **Actions** → chọn **Đóng gói APK Android** ở cột trái.
-2. Bấm vào lượt chạy mới nhất có dấu ✅ (mất khoảng 5–8 phút).
-3. Kéo xuống mục **Artifacts** → bấm **TiemHoaGiacMo-apk** → được file `.zip` → giải nén ra file `.apk`.
-4. Gửi file `.apk` sang điện thoại (Zalo, Google Drive, cáp USB...) → mở file → cho phép
-   **"Cài ứng dụng không rõ nguồn gốc"** khi được hỏi → Cài đặt.
-
-Muốn chạy ngay mà không đợi: tab **Actions** → **Đóng gói APK Android** → **Run workflow** → chọn nhánh → **Run workflow**.
-
-> ⚠️ Bản thử được ký bằng khóa tạm, mỗi lần build khác nhau ⇒ cài bản mới phải **gỡ app cũ trước**
-> (tiến độ lưu trên máy sẽ mất, nhưng nếu đã đăng nhập thì tiến độ trên mạng vẫn còn).
-> Làm bước 2 để hết phiền này.
-
-## 2. Tạo khóa ký chính thức (làm 1 lần)
-
-Khóa ký giúp các bản APK sau **cài đè lên bản cũ**, giữ nguyên dữ liệu.
-
-1. Tab **Actions** → chọn **Tạo khóa ký APK** → **Run workflow** → **Run workflow**.
-2. Đợi ~1 phút → bấm vào lượt chạy → **Artifacts** → tải **khoa-ky-apk** → giải nén.
-3. Mở file `HUONG_DAN.txt` trong đó và làm theo: vào **Settings → Secrets and variables → Actions →
-   tab Secrets → New repository secret**, tạo đủ **4 secret**:
-   `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
-4. Cất 1 bản sao file `release.jks` + mật khẩu ở nơi an toàn, rồi **xóa** thư mục vừa tải khỏi máy.
+1. Vào repo trên GitHub → tab **Actions** → cột trái chọn **Tạo khóa ký APK** → bấm **Run workflow** → **Run workflow**.
+2. Đợi ~1 phút, bấm vào lượt chạy (dấu ✅) → kéo xuống mục **Artifacts** → tải **khoa-ky-apk** → giải nén.
+3. Mở file `ANDROID_KEYSTORE_B64.txt` → chọn tất cả → sao chép.
+4. Vào **Settings** (của repo) → **Secrets and variables** → **Actions** → tab **Secrets** → **New repository secret**:
+   - **Name**: `ANDROID_KEYSTORE_B64`
+   - **Secret**: dán nội dung vừa sao chép → **Add secret**.
+5. Cất 1 bản sao file `release.p12` ở nơi an toàn (USB, Google Drive riêng tư), rồi xóa thư mục vừa tải khỏi máy.
    (File trên GitHub tự xóa sau 1 ngày.)
-5. Từ lần build sau, APK được ký chính thức. Gỡ bản thử cũ 1 lần, cài bản mới — các lần sau cài đè thoải mái.
 
-⚠️ **Đừng làm mất khóa** và **đừng chạy lại** "Tạo khóa ký APK" (sẽ ra khóa khác ⇒ người chơi lại phải gỡ app).
+⚠️ **Đừng làm mất khóa.** Quy trình tự chặn không cho tạo khóa thứ hai khi đã có secret.
 
-## 3. Phát hành bản cho mọi người tải
+## 2. Phát hành APK
 
-1. Tăng `"version"` trong `package.json` và ghi chú trong `data/changelog.js`.
-2. Trên GitHub: **Releases** (cột phải trang repo) → **Draft a new release** → **Choose a tag** → gõ `v0.9.0`
-   (đúng số phiên bản) → **Create new tag** → **Publish release**.
-3. Khoảng 8 phút sau, file `TiemHoaGiacMo-0.9.0.apk` tự xuất hiện trong release đó.
-   Link tải cố định: `https://github.com/<tên-bạn>/Tiemhoagiacmo/releases/latest`
-   (repo riêng tư thì chỉ người có quyền vào repo mới tải được — muốn chia sẻ rộng thì đưa file lên Google Drive).
+Sau khi có khóa, **mỗi lần code game được đẩy lên GitHub**, khoảng 8 phút sau APK mới tự xuất hiện ở trang
+**Releases** (cột phải trang repo), tên file luôn là `TiemHoaGiacMo.apk` ⇒ link tải ở trên luôn đúng.
 
-## 4. Để app Android biết có bản mới & đăng nhập được
+Muốn build ngay mà không đợi: tab **Actions** → **Đóng gói APK Android** → **Run workflow** → **Run workflow**.
 
-Vào **Settings → Secrets and variables → Actions → tab Variables → New repository variable**:
+Nếu lượt chạy bị ❌: bấm vào lượt chạy, dòng chữ đỏ ở mục *Annotations* cho biết lý do
+(thường gặp: dán secret thiếu ký tự ⇒ xóa secret rồi dán lại toàn bộ file).
 
-| Name | Value |
-|---|---|
-| `SITE_URL` | địa chỉ web của game (xem HUONG_DAN_DUA_LEN_MANG.md) |
-| `APK_URL` | link trang tải APK (vd `https://github.com/<tên>/Tiemhoagiacmo/releases/latest`) |
-| `SUPABASE_URL` | Project URL của Supabase |
-| `SUPABASE_ANON_KEY` | khóa anon public / publishable (KHÔNG dùng khóa secret) |
+## 3. App tự báo có bản mới
 
-App sẽ hỏi trang web xem có phiên bản mới không; nếu có, hiện nút **Tải bản mới** mở trang tải APK.
+Khi phát hành bản mới (tăng `"version"` trong `package.json` + ghi chú trong `data/changelog.js`):
+- Trang web cập nhật, app trên điện thoại so số phiên bản với trang web và hiện nút **Tải bản mới**.
+- Bấm nút ⇒ tải `TiemHoaGiacMo.apk` ⇒ mở file ⇒ **Cập nhật** (cài đè, giữ nguyên tiến độ).
 
-Đăng nhập trong app (Supabase → **Authentication → URL Configuration → Redirect URLs**): thêm
-`vn.tiemhoagiacmo.game://auth`. Đăng nhập Google trong app sẽ mở trình duyệt điện thoại rồi tự quay về game.
+Ghi chú trong `data/changelog.js` cũng được dùng làm mô tả trên trang Releases.
 
-## 5. Lên Google Play (sau này)
+## 4. Cài lên điện thoại
+
+1. Mở link tải trên điện thoại (Chrome) → tải file `TiemHoaGiacMo.apk`.
+2. Mở file → nếu được hỏi, cho phép **"Cài ứng dụng không rõ nguồn gốc"** → **Cài đặt**.
+
+> Bản thử trước khi có khóa (tải ở mục Artifacts) được ký tạm ⇒ khi chuyển sang bản chính thức phải **gỡ app cũ 1 lần**.
+
+## 5. Đăng nhập trong app (khi đã cài Supabase)
+
+Supabase → **Authentication → URL Configuration → Redirect URLs**: thêm `vn.tiemhoagiacmo.game://auth`.
+Đăng nhập Google trong app sẽ mở trình duyệt điện thoại rồi tự quay về game.
+
+Nếu Supabase được gắn bằng biến môi trường (không điền thẳng vào `data/online.js`), vào **Settings → Secrets and
+variables → Actions → tab Variables** thêm `SUPABASE_URL` và `SUPABASE_ANON_KEY` (khóa công khai, KHÔNG dùng khóa secret).
+
+## 6. Lên Google Play (sau này)
 
 Cần tài khoản nhà phát triển Google Play (phí 25 USD một lần) và file dạng **AAB**. Khi bạn sẵn sàng, nhắn để
 thêm bước tạo AAB vào quy trình build.
