@@ -25,6 +25,8 @@ body { position: fixed; inset: 0; user-select: none; -webkit-user-select: none; 
 #hud > * { pointer-events: auto; }
 #hud .toasts, #hud .floaters, #hud .saved-badge { pointer-events: none; }
 #hud .toasts, #hud .floaters { z-index: 20; }
+/* khi đang mở bảng: thông báo hiện ở dưới để không che tiêu đề */
+#hud:has(.modal-wrap:not(.hidden)) .toasts { top: auto; bottom: calc(18px + var(--safe-bottom)); flex-direction: column-reverse; }
 button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
 h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
 .hidden { display: none !important; }
@@ -339,3 +341,39 @@ h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
   .preview { width: 100%; }
   .wallet { top: calc(62px + var(--safe-top)); }
 }
+
+/* ---------- cấp độ ---------- */
+.lvchip { gap: 5px; }
+.xpbar { width: 34px; height: 6px; background: #f3e6dd; border-radius: 4px; overflow: hidden; }
+.xpbar i { display: block; height: 100%; width: 0; background: #f4b42a; border-radius: 4px; transition: width .4s; }
+.lvup { text-align: center; display: flex; flex-direction: column; gap: 8px; }
+.lvup h2 { margin: 0; color: #c86682; }
+.lvup p { margin: 0; }
+.lvup-star { position: relative; font-size: 84px; line-height: 1; animation: bob 1.4s ease-in-out infinite; }
+.lvup-star b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 30px; color: #8a5a2b; padding-top: 8px; }
+.unlocks { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.unlocks li { background: #fff; border: 2px solid var(--line); border-radius: 12px; padding: 4px 10px; font-weight: 700; font-size: 13px; }
+
+/* ---------- khu chợ ---------- */
+.mk-wallet { display: flex; gap: 12px; font-weight: 700; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+.mk-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.mk-tabs button { flex: none; padding: 8px 12px; border-radius: 14px; font-weight: 800; font-size: 13px; background: #f6e8df; }
+.mk-tabs button.on { background: #fff; box-shadow: inset 0 0 0 2px var(--pink); }
+.mk-body { display: flex; flex-direction: column; gap: 8px; }
+.mk-body h3 { margin: 8px 0 0; }
+.mk-item { display: flex; align-items: center; gap: 10px; background: #fff; border: 2px solid var(--line); border-radius: 18px; padding: 10px; }
+.mk-item.locked { opacity: .6; }
+.mk-icon { font-size: 30px; width: 40px; text-align: center; flex: none; }
+.mk-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mk-info b { font-size: 15px; }
+.mk-info small { color: var(--ink-soft); font-weight: 700; font-size: 12px; }
+.mk-info small b { font-size: 12px; color: var(--ink); }
+.mk-info .owned { color: var(--ink); }
+.mk-buy { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none; }
+.mk-buy .btn { padding: 6px 12px; font-size: 13px; }
+.price { font-weight: 800; font-size: 14px; white-space: nowrap; }
+.lock, .maxed { font-weight: 800; font-size: 13px; color: var(--ink-soft); white-space: nowrap; }
+.tiers { display: inline-flex; gap: 3px; vertical-align: middle; margin-left: 4px; }
+.tiers i { width: 8px; height: 8px; border-radius: 50%; background: #f3e6dd; }
+.tiers i.on { background: #f4b42a; }
+@media (max-width: 420px) { .wallet .wchip { font-size: 13px; padding: 3px 8px; } .xpbar { width: 26px; } }

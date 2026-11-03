@@ -7,6 +7,7 @@ Công nghệ: Three.js + Vite, sau này dùng Supabase cho tài khoản online.
 - ✅ Giai đoạn 1 — bản đồ, camera, 1 lô đất, 3 loài hoa, trồng → thu hoạch, ngày đêm, lưu trên máy.
 - ✅ Giai đoạn 2 — tài khoản (email, quên mật khẩu, Google), hồ sơ + avatar chibi, lưu game lên mạng, chơi khi mất mạng rồi tự đồng bộ, bảo mật RLS.
 - ✅ Giai đoạn 3 — Tiệm Hoa: khách chibi xếp hàng, yêu cầu 1 cành / nhiều cành / bó hoa, gói hoa (giấy + ruy băng), chấm điểm, tiền, uy tín, tiền bo, bán sỉ.
+- ✅ Giai đoạn 4 — Khu Chợ (hạt giống, vật tư, nâng cấp, mở rộng đất, bán sỉ), cấp độ + XP + thưởng lên cấp, 3 loài hoa mới (cúc họa mi, oải hương, cẩm tú cầu).
 
 **Cài đặt online:** xem [Hướng dẫn Supabase](docs/HUONG_DAN_SUPABASE.md). Chưa cài thì game vẫn chạy ở chế độ khách (lưu trên máy).
 
@@ -42,7 +43,9 @@ Thanh công cụ dưới: ✋ Xem · 🪏 Xới · 🌱 Gieo · 💧 Tưới · 
 - `data/flowers.js` — từng loài hoa (thời gian lớn, số lần tưới/ngày, phân bón, giá...)
 - `data/config.js` — tốc độ ngày đêm, mức héo, đồ khởi đầu, camera, bật/tắt công cụ thử nghiệm (`DEV_TOOLS`)
 - `data/shop.js` — giờ mở cửa, tần suất khách, độ kiên nhẫn, giá theo sao, tiền bo, uy tín, các dịp tặng hoa
-- `data/wrapping.js` — giấy gói, ruy băng (màu, tông, giá, số lượng khởi đầu)
+- `data/wrapping.js` — giấy gói, ruy băng (màu, tông, giá, cấp mở khóa, số lượng khởi đầu)
+- `data/market.js` — giá phân bón, các nâng cấp (giá, cấp cần, tác dụng), giá & cấp mở rộng đất
+- `data/levels.js` — XP cần cho mỗi cấp, XP mỗi việc, thưởng lên cấp
 - `data/customers.js` — tên, ngoại hình, câu nói của khách
 - `data/online.js` — địa chỉ & khóa công khai Supabase, tần suất đồng bộ
 - `data/badwords.js` — từ cấm (bản chính nằm trong bảng `banned_words` trên Supabase)

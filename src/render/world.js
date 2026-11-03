@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { rbox, cyl, sphere, at, textSprite, mesh } from '../models/primitives.js';
 import { mat } from '../models/materials.js';
+import { buildCharacter } from '../models/character.js';
 import {
   tree, bush, rock, grassTuft, fence, lampPost, flowerShop, marketStall, toolShed, crate, pond, scarecrow, signPost, rng,
 } from '../models/environment.js';
@@ -78,8 +79,8 @@ export function buildWorld(scene) {
 
   // bù nhìn + biển báo lô bị khóa
   const sc = scarecrow();
-  sc.position.set(fc.x + 4.6, 0, fc.z + 4.4);
-  sc.rotation.y = 0.8;
+  sc.position.set(fc.x - fx - 1.0, 0, fc.z + 3.6); // bên ngoài hàng rào phía tây
+  sc.rotation.y = 1.2;
   world.add(sc);
 
   const lockedSlots = [];
@@ -126,6 +127,16 @@ export function buildWorld(scene) {
   stallB.rotation.y = -0.5;
   marketG.add(stallB);
   [[-1.6, 1.8], [-1.0, 2.2], [1.5, 2.1]].forEach(([x, z]) => { const c = crate(); c.position.set(x, 0, z); c.rotation.y = rand(); marketG.add(c); });
+  // người bán hàng chibi
+  const vendor = (look, parent, x, z) => {
+    const v = buildCharacter(look).root;
+    v.position.set(x, 0, z);
+    v.scale.setScalar(0.92);
+    parent.add(v);
+  };
+  vendor({ skin: '#f8cfae', hair: '#6b4433', outfit: '#9fd6f0', hat: '#ffffff' }, stallA, 0, -0.95);
+  vendor({ skin: '#ffe0c7', hair: '#2f2a2a', outfit: '#c8b4f0', hat: null, bun: true }, stallB, 0, -0.95);
+  vendor({ skin: '#e8b48f', hair: '#3b3b3b', outfit: '#a6dd94', hat: '#c9a27e' }, shed, -0.2, 1.9);
   marketG.position.copy(ZONES.market.center);
   marketG.userData.pick = { kind: 'zone', zone: 'market' };
   world.add(marketG);
@@ -230,7 +241,7 @@ export function buildWorld(scene) {
   const labels = [
     { text: 'Nông Trại', sub: '', pos: new THREE.Vector3(fc.x - fx, 2.6, fc.z - fz) },
     { text: 'Tiệm Hoa Giấc Mơ', sub: 'Chạm để mở quầy bán hoa', pos: ZONES.shop.center.clone().setY(5.6) },
-    { text: 'Khu Chợ', sub: 'Dụng cụ · Hạt giống · Nâng cấp', pos: ZONES.market.center.clone().setY(4.4) },
+    { text: 'Khu Chợ', sub: 'Chạm để mua hạt giống, vật tư, nâng cấp', pos: ZONES.market.center.clone().setY(4.4) },
   ];
   for (const l of labels) {
     const sp = textSprite(l.text, { sub: l.sub, scale: 1.1 });

@@ -12,6 +12,21 @@ function flowerSVG(id, x, y, s) {
   if (id === 'tulip') {
     return `<path d="M${x - s * 0.7} ${y - s * 0.5} Q${x - s * 0.8} ${y + s * 0.8} ${x} ${y + s * 0.8} Q${x + s * 0.8} ${y + s * 0.8} ${x + s * 0.7} ${y - s * 0.5} L${x + s * 0.35} ${y - s * 0.1} L${x} ${y - s * 0.7} L${x - s * 0.35} ${y - s * 0.1}Z" fill="${c.petal}" stroke="${c.petalDark}" stroke-width="1.5"/>`;
   }
+  if (id === 'daisy') {
+    let p = '';
+    for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; p += `<ellipse cx="${x + Math.cos(a) * s * 0.6}" cy="${y + Math.sin(a) * s * 0.6}" rx="${s * 0.38}" ry="${s * 0.16}" transform="rotate(${(a * 180) / Math.PI} ${x + Math.cos(a) * s * 0.6} ${y + Math.sin(a) * s * 0.6})" fill="#fff" stroke="#e6ddd0" stroke-width=".8"/>`; }
+    return p + `<circle cx="${x}" cy="${y}" r="${s * 0.3}" fill="${c.center}"/>`;
+  }
+  if (id === 'lavender') {
+    let p = '';
+    for (let i = 0; i < 6; i++) p += `<ellipse cx="${x + (i % 2 ? 2 : -2)}" cy="${y + s * 0.6 - i * s * 0.35}" rx="${s * 0.28}" ry="${s * 0.22}" fill="${i % 2 ? c.petal : c.petalDark}"/>`;
+    return p;
+  }
+  if (id === 'hydrangea') {
+    let p = `<circle cx="${x}" cy="${y}" r="${s * 0.95}" fill="${c.petal}"/>`;
+    for (let i = 0; i < 9; i++) { const a = i * 2.4; const r = (i / 9) * s * 0.75; p += `<circle cx="${x + Math.cos(a) * r}" cy="${y + Math.sin(a) * r}" r="${s * 0.22}" fill="${i % 2 ? c.petalDark : '#d8e9fb'}"/>`; }
+    return p;
+  }
   // hoa hồng
   return `<circle cx="${x}" cy="${y}" r="${s * 0.85}" fill="${c.petal}"/>
     <circle cx="${x}" cy="${y}" r="${s * 0.55}" fill="${c.petalDark}"/>

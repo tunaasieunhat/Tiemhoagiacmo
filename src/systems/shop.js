@@ -6,6 +6,7 @@ import { FLOWERS } from '../../data/flowers.js';
 import { SHOP, REP_TIERS, REQUEST_MIX, REQUEST_SIZE, QUALITY_DEMAND, TONES, OCCASIONS } from '../../data/shop.js';
 import { PAPERS, RIBBONS } from '../../data/wrapping.js';
 import { CUSTOMERS, REACTIONS } from '../../data/customers.js';
+import { upgradeValue } from './progression.js';
 
 export const SHOP_REP = SHOP.rep;
 
@@ -68,7 +69,7 @@ export function spawnCustomer(save, rng, flowerIds) {
     spot,
     request: generateRequest(rng, tier, flowerIds),
     arrivedAt: save.time.gameMinutes,
-    patience: Math.round(randRange(rng, SHOP.patience) * (1 + tier * SHOP.patienceBonusPerTier)),
+    patience: Math.round(randRange(rng, SHOP.patience) * (1 + tier * SHOP.patienceBonusPerTier) * (save.upgrades ? upgradeValue(save, 'sign') : 1)),
   };
   sh.customers.push(c);
   return c;
@@ -95,7 +96,8 @@ export function shopTick(save, { offline = false, rng = Math.random, hourFloat, 
     if (now >= sh.nextSpawnAt) sh.nextSpawnAt = now + 5;
     return events;
   }
-  if (now >= sh.nextSpawnAt && sh.customers.length < SHOP.maxQueue) {
+  const maxQueue = save.upgrades ? upgradeValue(save, 'counter') : SHOP.maxQueue;
+  if (now >= sh.nextSpawnAt && sh.customers.length < maxQueue) {
     events.push({ type: 'arrive', customer: spawnCustomer(save, rng, flowerIds) });
     sh.nextSpawnAt = now + randRange(rng, SHOP.spawnEvery) * (1 - SHOP.spawnFasterPerTier) ** tier;
   } else if (now >= sh.nextSpawnAt) {

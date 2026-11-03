@@ -69,12 +69,18 @@ export function buildPlant(flowerId, stage, { wilted = false, dead = false } = {
   }
 
   // từ giai đoạn 2 trở đi: thân + lá + nụ/hoa
-  const h = { rose: 0.75, tulip: 0.7, sunflower: 1.15 }[def.model] ?? 0.8;
+  const h = { rose: 0.75, tulip: 0.7, sunflower: 1.15, daisy: 0.6, lavender: 0.55, hydrangea: 0.5 }[def.model] ?? 0.8;
   const H = stage === 2 ? h * 0.8 : h;
   const r = def.model === 'sunflower' ? 0.055 : 0.04;
   sway.add(stem(H, C.stem, r));
-  const leafLen = def.model === 'sunflower' ? 0.42 : def.model === 'tulip' ? 0.38 : 0.26;
-  if (def.model === 'tulip') {
+  const leafLen = def.model === 'sunflower' ? 0.42 : def.model === 'tulip' ? 0.38 : def.model === 'hydrangea' ? 0.36 : 0.26;
+  if (def.model === 'hydrangea') {
+    for (let i = 0; i < 4; i++) sway.add(leaf(C.leaf, leafLen, i * 1.57 + 0.4, 0.55, H * 0.45));
+  } else if (def.model === 'lavender') {
+    sway.add(leaf(C.leaf, 0.3, 0.5, 1.1, 0.04));
+    sway.add(leaf(C.leaf, 0.3, 2.6, 1.1, 0.04));
+    sway.add(leaf(C.leaf, 0.28, 4.4, 1.1, 0.04));
+  } else if (def.model === 'tulip') {
     sway.add(leaf(C.leaf, leafLen, 0.6, 1.0, 0.05));
     sway.add(leaf(C.leaf, leafLen, 0.6 + Math.PI, 1.05, 0.05));
   } else {
@@ -103,6 +109,12 @@ export function buildPlant(flowerId, stage, { wilted = false, dead = false } = {
     buildTulip(head, C);
   } else if (def.model === 'sunflower') {
     buildSunflower(head, C, dead);
+  } else if (def.model === 'daisy') {
+    buildDaisy(head, sway, C, H);
+  } else if (def.model === 'lavender') {
+    buildLavender(head, sway, C, H);
+  } else if (def.model === 'hydrangea') {
+    buildHydrangea(head, C);
   }
 
   if (dead) {
@@ -189,6 +201,76 @@ function buildSunflower(head, C, dead) {
     smile.position.set(0, -0.025, 0.045);
     face.add(smile);
   }
+}
+
+function daisyHead(C, size = 1) {
+  const g = new THREE.Group();
+  const face = new THREE.Group();
+  face.lookAt(new THREE.Vector3(1, 1.6, 1));
+  g.add(face);
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    const p = sphere(0.06, C.petal, 6);
+    p.scale.set(0.5, 1.6, 0.25);
+    p.position.set(Math.cos(a) * 0.12, Math.sin(a) * 0.12, 0);
+    p.rotation.z = a - Math.PI / 2;
+    face.add(p);
+  }
+  const c = cyl(0.07, 0.07, 0.05, C.center, 12);
+  c.rotation.x = Math.PI / 2;
+  face.add(c);
+  g.scale.setScalar(size);
+  return g;
+}
+
+function buildDaisy(head, sway, C, H) {
+  // 3 bông nhỏ trên 3 nhánh
+  head.add(at(daisyHead(C, 1.15), 0, 0.04, 0));
+  for (const [ang, hh] of [[0.9, 0.72], [-1.2, 0.6]]) {
+    const branch = new THREE.Group();
+    branch.position.y = H * 0.4;
+    branch.rotation.z = 0.5 * Math.sign(ang);
+    branch.rotation.y = ang;
+    const len = H * hh;
+    branch.add(at(cyl(0.022, 0.026, len, C.stem, 6), 0, len / 2, 0));
+    branch.add(at(daisyHead(C, 0.9), 0, len, 0));
+    sway.add(branch);
+  }
+}
+
+function buildLavender(head, sway, C, H) {
+  // vài nhánh mảnh, đầu là bông dài nhiều hạt tím
+  const spike = (parent, x, z, tilt, h) => {
+    const g = new THREE.Group();
+    g.position.set(x, 0, z);
+    g.rotation.z = tilt;
+    g.add(at(cyl(0.016, 0.02, h, C.stem, 5), 0, h / 2, 0));
+    for (let i = 0; i < 7; i++) {
+      const s = sphere(0.045 - i * 0.003, i % 2 ? C.petal : C.petalDark, 6);
+      s.scale.set(1, 1.3, 1);
+      s.position.set(Math.sin(i * 2.1) * 0.02, h + i * 0.055, Math.cos(i * 2.1) * 0.02);
+      g.add(s);
+    }
+    parent.add(g);
+  };
+  spike(sway, 0, 0, 0, H + 0.1);
+  spike(sway, 0.07, 0.04, -0.25, H);
+  spike(sway, -0.07, 0.03, 0.28, H - 0.05);
+  spike(sway, 0.02, -0.07, 0.15, H - 0.1);
+}
+
+function buildHydrangea(head, C) {
+  // quả cầu hoa lớn gồm nhiều chùm nhỏ
+  const n = 22;
+  for (let i = 0; i < n; i++) {
+    const y = 1 - (i / (n - 1)) * 1.4;
+    const r = Math.sqrt(Math.max(0, 1 - y * y));
+    const a = i * 2.4;
+    const s = sphere(0.075, i % 3 ? C.petal : C.petalDark, 7);
+    s.position.set(Math.cos(a) * r * 0.24, 0.17 + y * 0.2, Math.sin(a) * r * 0.24);
+    head.add(s);
+  }
+  head.add(at(sphere(0.2, C.petal, 10), 0, 0.16, 0));
 }
 
 /** Hạt giống (hiển thị nhỏ trong giao diện, không dùng 3D) */

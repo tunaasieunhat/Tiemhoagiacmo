@@ -6,7 +6,7 @@
 export const SHOP = {
   openHour: 7,              // giờ mở cửa
   closeHour: 21,            // giờ đóng cửa (khách đang chờ vẫn được phục vụ)
-  maxQueue: 3,              // số khách chờ tối đa
+  maxQueue: 3,              // số khách chờ tối đa (nâng cấp Quầy hàng ở Khu Chợ để tăng)
   firstCustomerDelay: 15,   // khách đầu tiên đến sau bao lâu kể từ lần thu hoạch đầu
   spawnEvery: [60, 100],    // khoảng cách giữa 2 khách (ngẫu nhiên trong khoảng) khi uy tín thấp nhất
   spawnFasterPerTier: 0.15, // mỗi bậc uy tín: khách đến nhanh hơn 15%

@@ -7,6 +7,9 @@ import { formatClock, periodName, isNight, formatDuration } from '../systems/tim
 import { avatarSVG } from './avatar.js';
 import { TUTORIAL } from '../game.js';
 import { ShopPanel } from './shopPanel.js';
+import { MarketPanel } from './marketPanel.js';
+import { levelProgress } from '../systems/progression.js';
+import { waterCapacity } from '../systems/farming.js';
 import { PAPERS, RIBBONS } from '../../data/wrapping.js';
 import { wholesalePrice, tierInfo } from '../systems/shop.js';
 import { ZONES, PLOT_SLOTS } from '../render/world.js';
@@ -37,12 +40,19 @@ export class Hud {
     em.on('tool', () => this.updateToolbar());
     em.on('select', (p) => this.showTile(p));
     em.on('refresh', () => { this.updateTilePanel(); if (this.modal === 'shop') this.shopPanel.refresh(); });
-    em.on('inventory', () => { this.updateToolbar(); this.updateProfile(); if (this.modal === 'inventory') this.openInventory(); });
+    em.on('inventory', () => {
+      this.updateToolbar(); this.updateProfile();
+      if (this.modal === 'inventory') this.openInventory();
+      if (this.modal === 'market') this.marketPanel.render(true);
+    });
     em.on('toast', (t) => this.toast(t.text, t.type));
     em.on('float', (f) => this.floatText(f));
     em.on('tutorial', () => this.updateTutorial());
     em.on('shop', () => { this.updateWallet(); if (this.modal === 'shop') this.shopPanel.refresh(); });
     em.on('open-shop', ({ customerId }) => this.openShop(customerId));
+    em.on('open-market', ({ tab }) => this.openMarket(tab));
+    em.on('xp', () => this.updateWallet());
+    em.on('levelup', (ups) => this.showLevelUp(ups));
     em.on('saved', (s) => this.flashSaved(s));
     em.on('sync', (s) => this.updateSync(s));
     this.updateClock(game.clock);
@@ -51,6 +61,7 @@ export class Hud {
     this.updateTutorial();
     this.updateSync({ status: game.account?.cloud?.status });
     this.shopPanel = new ShopPanel(this);
+    this.marketPanel = new MarketPanel(this);
     this.updateWallet();
   }
 
@@ -71,12 +82,14 @@ export class Hud {
         </div>
       </div>
       <div class="wallet">
+        <span class="wchip lvchip" title="Cấp độ">⭐ <b class="w-lv">1</b><span class="xpbar"><i></i></span></span>
         <span class="wchip" title="Tiền">💰 <b class="w-coins">0</b></span>
         <span class="wchip" title="Uy tín">💗 <b class="w-rep">0</b><small class="w-tier"></small></span>
       </div>
       <div class="nav-btns">
         <button class="round" data-act="go-farm" aria-label="Về nông trại">🌱</button>
         <button class="round" data-act="go-shop" aria-label="Tiệm hoa">🏪<span class="badge hidden nav-badge"></span></button>
+        <button class="round" data-act="go-market" aria-label="Khu chợ">🧺</button>
       </div>
       <div class="saved-badge">💾 Đã lưu</div>
       <div class="zoom-btns">
@@ -100,6 +113,8 @@ export class Hud {
   }
 
   onClick(e) {
+    const mk = e.target.closest('[data-mk]');
+    if (mk) { this.marketPanel.onAction(mk.dataset.mk, mk); return; }
     const sp = e.target.closest('[data-sp]');
     if (sp) { if (!sp.classList.contains('disabled') || sp.dataset.sp === 'deliver') this.shopPanel.onAction(sp.dataset.sp, sp); return; }
     const b = e.target.closest('[data-act],[data-tool],[data-seed],[data-do]');
@@ -131,6 +146,7 @@ export class Hud {
       case 'login': this.login(); break;
       case 'go-farm': g.controls.focusOn(PLOT_SLOTS[0].clone().add({ x: 1.2, y: 0, z: -0.6 })); this.closeModal(); break;
       case 'go-shop': this.openShop(); break;
+      case 'go-market': this.openMarket(); break;
       case 'sell': {
         if (!b.dataset.armed) {
           b.dataset.armed = '1';
@@ -184,10 +200,36 @@ export class Hud {
     const t = tierInfo(p.reputation);
     $('.w-tier', this.root).textContent = t.icon;
     $('.w-tier', this.root).title = t.name;
+    $('.w-lv', this.root).textContent = p.level;
+    const lp = levelProgress(p);
+    $('.xpbar i', this.root).style.width = `${Math.round(lp.frac * 100)}%`;
+    $('.lvchip', this.root).title = `Cấp ${p.level} · ${lp.cur}/${lp.need} XP`;
     const n = this.game.save.shop.customers.length;
     const badge = $('.nav-badge', this.root);
     badge.classList.toggle('hidden', !n);
     badge.textContent = n;
+  }
+
+  openMarket(tab) {
+    this.game.controls.focusOn(ZONES.market.center.clone().add({ x: 1, y: 0, z: 3 }));
+    this.game.select(null);
+    this.marketPanel.open(tab);
+  }
+
+  showLevelUp(ups) {
+    const last = ups[ups.length - 1];
+    const coins = ups.reduce((a, u) => a + u.reward.coins, 0);
+    const fert = ups.reduce((a, u) => a + u.reward.fertilizer, 0);
+    const unlocks = ups.flatMap((u) => u.unlocks);
+    this.openModal('levelup', `
+      <div class="lvup">
+        <div class="lvup-star">⭐<b>${last.level}</b></div>
+        <h2>Lên cấp ${last.level}!</h2>
+        <p class="muted">Phần thưởng: <b>+${coins} 💰</b> · <b>+${fert} 🧪 phân bón</b></p>
+        ${unlocks.length ? `<h3>Vừa mở khóa</h3><ul class="unlocks">${unlocks.map((u) => `<li>${esc(u)}</li>`).join('')}</ul>
+        <button class="btn primary wide" data-act="go-market">🧺 Đến Khu Chợ</button>` : ''}
+        <button class="btn wide" data-act="close-modal">Tuyệt vời!</button>
+      </div>`);
   }
 
   openShop(customerId = null) {
@@ -232,7 +274,7 @@ export class Hud {
     const bar = $('.seedbar', this.root);
     bar.classList.toggle('hidden', g.tool !== 'plant');
     if (g.tool !== 'plant') return;
-    bar.innerHTML = FLOWER_IDS.map((id) => {
+    bar.innerHTML = this.game.unlockedFlowers().map((id) => {
       const f = FLOWERS[id];
       const n = g.save.inventory.seeds[id] || 0;
       return `<button class="seed ${g.seed === id ? 'active' : ''} ${n ? '' : 'empty'}" data-seed="${id}">
@@ -281,25 +323,25 @@ export class Hud {
     const bars = [];
     if (['growing', 'ready'].includes(tile.state)) {
       bars.push(bar('🌱 Lớn', farming.progressOf(tile), '#8fd18b'));
-      bars.push(bar('💧 Nước', tile.water, tile.water < CARE.thirstyBelow ? '#f29a8a' : '#6fbbe8'));
+      bars.push(bar('💧 Nước', tile.water / waterCapacity(g.save), tile.water < CARE.thirstyBelow ? '#f29a8a' : '#6fbbe8'));
       bars.push(bar('❤️ Sức khỏe', tile.health / 100, tile.health < CARE.wiltBelow ? '#f29a8a' : '#f6a6b9'));
       bars.push(`<div class="kv"><span>🧪 Phân bón</span><b>${tile.fert}/${def.fertilizerNeeded}</b></div>`);
       bars.push(`<div class="kv"><span>⭐ Chất lượng dự kiến</span><b class="stars">${'★'.repeat(farming.qualityOf(tile))}${'☆'.repeat(3 - farming.qualityOf(tile))}</b></div>`);
       bars.push(`<div class="hint">Cần tưới ${def.waterPerDay} lần/ngày · ${def.growHours} giờ để nở · Ý nghĩa: ${esc(def.meaning)}</div>`);
     } else if (tile.state === 'tilled') {
-      bars.push(bar('💧 Độ ẩm', tile.water, '#6fbbe8'));
+      bars.push(bar('💧 Độ ẩm', tile.water / waterCapacity(g.save), '#6fbbe8'));
     }
 
     const actions = farming.availableActions(tile).map((a) => {
       if (a === 'plant') {
-        return `<div class="seed-row">${FLOWER_IDS.map((id) => {
+        return `<div class="seed-row">${g.unlockedFlowers().map((id) => {
           const n = g.save.inventory.seeds[id] || 0;
           return `<button class="btn seedbtn ${n ? '' : 'disabled'}" data-seed="${id}" data-do="plant">${FLOWERS[id].icon} ${FLOWERS[id].name} <b>×${n}</b></button>`;
         }).join('')}</div>`;
       }
       let disabled = false;
       if (a === 'fertilize') disabled = !farming.canFertilize(tile) || !(g.save.inventory.items.fertilizer > 0);
-      if (a === 'water') disabled = tile.water >= 0.9;
+      if (a === 'water') disabled = tile.water >= waterCapacity(g.save) - 0.1;
       const [ic, lb] = ACTION_LABEL[a];
       const label = a === 'till' && tile.state === 'dead' ? 'Dọn & xới' : lb;
       return `<button class="btn primary ${disabled ? 'disabled' : ''}" data-do="${a}">${ic} ${label}</button>`;
@@ -315,7 +357,7 @@ export class Hud {
   // ---------- kho đồ ----------
   openInventory() {
     const s = this.game.save;
-    const seeds = FLOWER_IDS.map((id) => `<div class="cell"><span>${FLOWERS[id].icon}</span><small>Hạt ${FLOWERS[id].name}</small><b>×${s.inventory.seeds[id] || 0}</b></div>`).join('');
+    const seeds = FLOWER_IDS.filter((id) => FLOWERS[id].unlockLevel <= s.player.level || s.inventory.seeds[id] > 0).map((id) => `<div class="cell"><span>${FLOWERS[id].icon}</span><small>Hạt ${FLOWERS[id].name}</small><b>×${s.inventory.seeds[id] || 0}</b></div>`).join('');
     const flowers = Object.entries(s.inventory.flowers).filter(([, n]) => n > 0).map(([k, n]) => {
       const [id, q] = k.split('|');
       return `<div class="cell"><span>${FLOWERS[id]?.icon ?? '🌼'}</span><small>${FLOWERS[id]?.name ?? id} <i class="stars">${'★'.repeat(+q)}</i></small><b>×${n}</b>
@@ -336,7 +378,7 @@ export class Hud {
         <div class="cell"><span>🚿</span><small>Bình tưới</small><b>${s.tools.wateringCan ? '✔' : '—'}</b></div>
       </div>
       ${DEV_TOOLS ? '<button class="btn primary wide" data-act="free-seeds">🎁 Nhận gói hạt giống miễn phí (1 lần/ngày game)</button>' : ''}
-      <p class="muted small">Hạt giống, giấy gói và ruy băng sẽ mua được ở Khu Chợ (Giai đoạn 4).</p>
+      <button class="btn wide" data-act="go-market">🧺 Mua thêm ở Khu Chợ</button>
     `);
   }
 

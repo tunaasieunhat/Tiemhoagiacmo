@@ -10,8 +10,9 @@ import { STARTER, TIME, FARM } from '../../data/config.js';
 import { createTile } from '../systems/farming.js';
 import { createShopState } from '../systems/shop.js';
 import { STARTER_WRAPS } from '../../data/wrapping.js';
+import { levelFromXp } from '../systems/progression.js';
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 export function newId() {
   if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
@@ -62,10 +63,11 @@ export function createNewSave() {
       ribbons: { ...STARTER_WRAPS.ribbons },
     },
     shop: createShopState(),
+    upgrades: { can: 0, shoes: 0, gloves: 0, counter: 0, sign: 0 }, // bậc nâng cấp (GĐ4)
     farm: {
       plots: [createPlot('plot-1')],
     },
-    stats: { harvested: 0, playMinutes: 0, lastFreePackDay: 0, served: 0, sold: 0, coinsEarned: 0, tips: 0, bouquets: 0 },
+    stats: { harvested: 0, playMinutes: 0, lastFreePackDay: 0, served: 0, sold: 0, coinsEarned: 0, tips: 0, bouquets: 0, spent: 0 },
     tutorial: { step: 0, done: false },
     settings: { sound: true, shadows: true },
   };
@@ -88,6 +90,16 @@ export const MIGRATIONS = {
     s.inventory.papers = s.inventory.papers || { ...STARTER_WRAPS.papers };
     s.inventory.ribbons = s.inventory.ribbons || { ...STARTER_WRAPS.ribbons };
     if (s.tutorial?.done && s.tutorial.step >= 5) { s.tutorial.done = false; s.tutorial.step = 5; }
+    return s;
+  },
+  // v3 -> v4 (Giai đoạn 4): nâng cấp + tính lại XP từ những gì đã làm (không tặng thưởng lên cấp)
+  3: (s) => {
+    s.upgrades = s.upgrades || { can: 0, shoes: 0, gloves: 0, counter: 0, sign: 0 };
+    const st = s.stats || {};
+    const xp = (st.harvested || 0) * 8 + (st.served || 0) * 10 + Math.floor((st.coinsEarned || 0) / 10);
+    s.player.xp = Math.max(s.player.xp || 0, xp);
+    s.player.level = Math.max(s.player.level || 1, levelFromXp(s.player.xp));
+    if (s.tutorial?.done && s.tutorial.step >= 6) { s.tutorial.done = false; s.tutorial.step = 6; }
     return s;
   },
 };

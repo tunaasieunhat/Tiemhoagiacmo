@@ -4,6 +4,7 @@
 // =============================================================
 import { FLOWERS } from '../../data/flowers.js';
 import { CARE } from '../../data/config.js';
+import { upgradeValue } from './progression.js';
 
 export const TILE_STATES = ['untilled', 'tilled', 'growing', 'ready', 'dead'];
 export const STAGE_NAMES = ['Hạt giống', 'Nảy mầm', 'Ra nụ', 'Nở hoa'];
@@ -154,11 +155,17 @@ export function plant(tile, flowerId, save, nowMin) {
   return { ok: true, msg: `Đã gieo ${def.name}` };
 }
 
+/** Lượng nước sau 1 lần tưới (nâng cấp bình tưới thì nhiều hơn 1) */
+export function waterCapacity(save) {
+  return save?.upgrades ? upgradeValue(save, 'can') : 1;
+}
+
 export function water(tile, save) {
   if (!save.tools.wateringCan) return fail('Bạn cần bình tưới!');
   if (!['tilled', 'growing', 'ready'].includes(tile.state)) return fail(tile.state === 'dead' ? 'Cây đã héo khô, hãy dùng xẻng dọn' : 'Hãy xới đất trước');
-  if (tile.water >= 0.9) return fail('Đất vẫn còn đủ ẩm');
-  tile.water = 1;
+  const cap = waterCapacity(save);
+  if (tile.water >= cap - 0.1) return fail('Đất vẫn còn đủ ẩm');
+  tile.water = cap;
   return { ok: true, msg: 'Đã tưới nước' };
 }
 

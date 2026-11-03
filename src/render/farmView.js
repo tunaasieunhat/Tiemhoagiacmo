@@ -16,7 +16,7 @@ const SOIL = {
 };
 const TILE_H = 0.22;
 const PLANT_SCALE = 1.25; // phóng to cây cho dễ nhìn kiểu chibi
-const PLANT_TOP = { rose: 2.0, tulip: 1.95, sunflower: 2.75 };
+const PLANT_TOP = { rose: 2.0, tulip: 1.95, sunflower: 2.75, daisy: 1.8, lavender: 1.95, hydrangea: 1.85 };
 
 export class FarmView {
   constructor(scene) {

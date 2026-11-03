@@ -18,7 +18,9 @@ function shopFrame() {
 
 export function spotPosition(i) {
   const { door, front, side } = shopFrame();
-  return door.clone().addScaledVector(front, 1.5).addScaledVector(side, (i - 1) * 1.35);
+  // 3 chỗ hàng đầu, 2 chỗ hàng sau (khi nâng cấp quầy)
+  if (i < 3) return door.clone().addScaledVector(front, 1.5).addScaledVector(side, (i - 1) * 1.35);
+  return door.clone().addScaledVector(front, 2.9).addScaledVector(side, (i - 3.5) * 1.35);
 }
 
 export class CustomersView {
@@ -190,7 +192,8 @@ function drawEmote(v, mood) {
 
 function flower(x, cx, cy, r, color) {
   x.fillStyle = color;
-  for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; x.beginPath(); x.arc(cx + Math.cos(a) * r * 0.6, cy + Math.sin(a) * r * 0.6, r * 0.55, 0, 7); x.fill(); }
+  x.strokeStyle = 'rgba(120,90,70,.35)'; x.lineWidth = 1.5;
+  for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; x.beginPath(); x.arc(cx + Math.cos(a) * r * 0.6, cy + Math.sin(a) * r * 0.6, r * 0.55, 0, 7); x.fill(); x.stroke(); }
   x.fillStyle = '#ffe17a'; x.beginPath(); x.arc(cx, cy, r * 0.35, 0, 7); x.fill();
 }
 function stem(x, cx, y1, y2) { x.strokeStyle = '#5fae63'; x.lineWidth = 5; x.beginPath(); x.moveTo(cx, y1); x.lineTo(cx, y2); x.stroke(); }

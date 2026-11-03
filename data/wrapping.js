@@ -2,7 +2,8 @@
 //  GIẤY GÓI & RUY BĂNG
 //  tones : hợp với tông màu nào (dùng khi chấm điểm bó hoa)
 //  free  : miễn phí, không giới hạn
-//  price : giá mua (Khu Chợ, Giai đoạn 4) — cũng được cộng vào giá bó hoa
+//  price : giá mua ở Khu Chợ — cũng được cộng vào giá bó hoa
+//  unlockLevel : cấp cần đạt để mua (mặc định 1)
 // =============================================================
 export const PAPERS = {
   kraft: { name: 'Giấy kraft', color: '#d9b48a', tones: ['natural', 'warm'], free: true, price: 0 },
@@ -10,6 +11,8 @@ export const PAPERS = {
   pink: { name: 'Giấy hồng phấn', color: '#f8c6d4', tones: ['pastel', 'warm'], price: 8 },
   sky: { name: 'Giấy xanh nhạt', color: '#bfe0f5', tones: ['cool', 'pastel'], price: 8 },
   red: { name: 'Giấy đỏ', color: '#e86a6a', tones: ['warm'], price: 10 },
+  lilac: { name: 'Giấy tím lilac', color: '#d9c8f5', tones: ['cool', 'pastel'], price: 12, unlockLevel: 3 },
+  lace: { name: 'Giấy ren trắng', color: '#fdfbf7', tones: ['pastel', 'cool', 'natural'], price: 18, unlockLevel: 5 },
 };
 
 export const RIBBONS = {
@@ -18,6 +21,8 @@ export const RIBBONS = {
   pink: { name: 'Ruy băng hồng', color: '#f47a93', tones: ['warm', 'pastel'], price: 5 },
   purple: { name: 'Ruy băng tím', color: '#a674dc', tones: ['cool'], price: 5 },
   gold: { name: 'Ruy băng vàng', color: '#f4c430', tones: ['warm'], price: 6 },
+  mint: { name: 'Ruy băng bạc hà', color: '#9fe0c4', tones: ['cool', 'natural'], price: 8, unlockLevel: 3 },
+  velvet: { name: 'Ruy băng nhung đỏ', color: '#b8354a', tones: ['warm'], price: 14, unlockLevel: 5 },
 };
 
 // Số lượng khởi đầu cho người chơi

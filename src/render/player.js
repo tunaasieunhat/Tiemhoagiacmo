@@ -19,6 +19,8 @@ export class Player {
     this.actT = 0;
     this.heading = 0;
     this.toolMesh = null;
+    this.speedMult = 1;  // nâng cấp giày
+    this.actionMult = 1; // nâng cấp găng tay
     // bóng tròn dưới chân
     const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.38, 20), new THREE.MeshBasicMaterial({ color: '#000', transparent: true, opacity: 0.12, depthWrite: false }));
     shadow.rotation.x = -Math.PI / 2;
@@ -77,11 +79,11 @@ export class Player {
       if (d < 0.05) {
         this.startAct();
       } else {
-        const step = Math.min(d, PLAYER.walkSpeed * dt);
+        const step = Math.min(d, PLAYER.walkSpeed * this.speedMult * dt);
         pos.x += ((to.x - pos.x) / d) * step;
         pos.z += ((to.z - pos.z) / d) * step;
         this.faceTowards(to.x - pos.x, to.z - pos.z, dt);
-        const w = this.t * 14;
+        const w = this.t * 14 * Math.sqrt(this.speedMult);
         m.legL.position.z = Math.sin(w) * 0.1;
         m.legR.position.z = -Math.sin(w) * 0.1;
         m.armL.rotation.x = -Math.sin(w) * 0.6;
@@ -90,7 +92,7 @@ export class Player {
       }
     } else if (this.phase === 'act' && this.job) {
       this.actT += dt;
-      const k = this.actT / PLAYER.actionSeconds;
+      const k = this.actT / (PLAYER.actionSeconds / this.actionMult);
       const lp = this.job.lookAt;
       this.faceTowards(lp.x - this.root.position.x, lp.z - this.root.position.z, dt);
       m.armR.rotation.x = -1.2 - Math.sin(k * Math.PI * 2) * 0.5;
