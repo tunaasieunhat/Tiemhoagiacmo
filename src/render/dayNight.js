@@ -32,6 +32,8 @@ export class DayNight {
     const T = {
       rain: [0.55, 0.88, '#9aa7b8', 0.45], storm: [0.35, 0.75, '#6f7a8c', 0.6],
       snow: [0.85, 1, '#e6eef5', 0.35], frost: [0.9, 1, '#dfe9f5', 0.3], heat: [1.12, 1.05, '#ffd9a0', 0.25],
+      hail: [0.45, 0.8, '#8d98a8', 0.55], wind: [0.85, 0.95, '#b9c8d6', 0.3], fog: [0.6, 1.05, '#dde3e8', 0.7],
+      rainbow: [1.05, 1.05, '#bfe4ff', 0.3], meteor: [1, 1, '#2a2f6b', 0.12],
     }[type] || [1, 1, '#ffffff', 0];
     Object.assign(this.wxTarget, { sun: T[0], hemi: T[1], skyAmt: T[3] });
     this.wxTarget.sky.set(T[2]);

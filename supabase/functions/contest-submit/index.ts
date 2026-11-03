@@ -100,6 +100,43 @@ var VARIANTS = {
     purple: { name: "t\xEDm", petal: "#b796e6", petalDark: "#9a74d6", tones: ["cool"], meanings: ["respect", "gratitude"], rarity: "uncommon", breed: [["blue", "pink", 0.35]] },
     white: { name: "tr\u1EAFng", petal: "#f7f7f2", petalDark: "#e4e8e0", tones: ["natural", "pastel"], meanings: ["purity", "congrats"], rarity: "uncommon", breed: [["purple", "pink", 0.25]] },
     mint: { name: "xanh ng\u1ECDc", petal: "#8fe0c8", petalDark: "#62c7a9", tones: ["cool", "natural"], meanings: ["health", "hope"], rarity: "rare", breed: [["white", "blue", 0.07]] }
+  },
+  // ---------------- GĐ14 ----------------
+  cosmos: {
+    pink: { name: "h\u1ED3ng", petal: "#f78fb3", petalDark: "#e5679a", tones: ["warm", "pastel"], meanings: ["joy", "friendship"], rarity: "common", default: true },
+    white: { name: "tr\u1EAFng", petal: "#ffffff", petalDark: "#f1e8ef", tones: ["pastel", "natural"], meanings: ["purity"], rarity: "common", breed: [["pink", "pink", 0.25]] },
+    orange: { name: "cam", petal: "#ffa64d", petalDark: "#f2862b", tones: ["warm", "natural"], meanings: ["congrats", "joy"], rarity: "uncommon", breed: [["pink", "white", 0.2]] },
+    chocolate: { name: "s\xF4-c\xF4-la", petal: "#8a3b3b", petalDark: "#6b2a2a", tones: ["warm", "natural"], meanings: ["longing"], rarity: "rare", breed: [["orange", "orange", 0.08]] }
+  },
+  carnation: {
+    pink: { name: "h\u1ED3ng", petal: "#f7a1b8", petalDark: "#e47995", tones: ["warm", "pastel"], meanings: ["gratitude", "love"], rarity: "common", default: true },
+    red: { name: "\u0111\u1ECF", petal: "#e33d55", petalDark: "#b9233c", tones: ["warm"], meanings: ["love", "respect"], rarity: "common", breed: [["pink", "pink", 0.22]] },
+    white: { name: "tr\u1EAFng", petal: "#ffffff", petalDark: "#ece4e8", tones: ["cool", "pastel", "natural"], meanings: ["purity", "apology"], rarity: "uncommon", breed: [["pink", "red", 0.18]] },
+    yellow: { name: "v\xE0ng", petal: "#ffd75e", petalDark: "#f1b830", tones: ["warm"], meanings: ["farewell"], rarity: "uncommon", breed: [["white", "pink", 0.15]] },
+    purple: { name: "t\xEDm m\u1ED9ng m\u01A1", petal: "#b48be0", petalDark: "#9168c4", tones: ["cool", "pastel"], meanings: ["longing", "respect"], rarity: "rare", breed: [["white", "red", 0.07]] }
+  },
+  marigold: {
+    orange: { name: "cam", petal: "#ff9f2e", petalDark: "#f27f12", tones: ["warm", "natural"], meanings: ["health", "congrats"], rarity: "common", default: true },
+    yellow: { name: "v\xE0ng", petal: "#ffd34e", petalDark: "#f4b42a", tones: ["warm", "natural"], meanings: ["joy", "health"], rarity: "common", breed: [["orange", "orange", 0.25]] },
+    red: { name: "\u0111\u1ECF nhung", petal: "#d9472b", petalDark: "#b33018", tones: ["warm"], meanings: ["loyalty", "health"], rarity: "rare", breed: [["orange", "yellow", 0.08]] }
+  },
+  lily: {
+    white: { name: "tr\u1EAFng", petal: "#ffffff", petalDark: "#f3e7f0", tones: ["cool", "pastel", "natural"], meanings: ["purity", "respect"], rarity: "common", default: true },
+    pink: { name: "h\u1ED3ng", petal: "#ffb6d0", petalDark: "#f08cb3", tones: ["warm", "pastel"], meanings: ["love", "joy"], rarity: "uncommon", breed: [["white", "white", 0.2]] },
+    orange: { name: "cam", petal: "#ffa15c", petalDark: "#f07f34", tones: ["warm"], meanings: ["congrats", "hope"], rarity: "uncommon", breed: [["white", "pink", 0.15]] },
+    yellow: { name: "v\xE0ng chanh", petal: "#fff07a", petalDark: "#f5d742", tones: ["warm", "pastel"], meanings: ["joy", "friendship"], rarity: "rare", breed: [["orange", "pink", 0.07]] }
+  },
+  peony: {
+    pink: { name: "h\u1ED3ng ph\u1EA5n", petal: "#f9a8c9", petalDark: "#ec7fab", tones: ["warm", "pastel"], meanings: ["congrats", "joy"], rarity: "common", default: true },
+    white: { name: "tr\u1EAFng", petal: "#fff9f5", petalDark: "#f2e4dc", tones: ["pastel", "natural"], meanings: ["purity", "respect"], rarity: "uncommon", breed: [["pink", "pink", 0.18]] },
+    red: { name: "\u0111\u1ECF th\u1EAFm", petal: "#d93a5c", petalDark: "#b0213f", tones: ["warm"], meanings: ["love", "congrats"], rarity: "uncommon", breed: [["pink", "pink", 0.15]] },
+    coral: { name: "san h\xF4", petal: "#ff8a73", petalDark: "#f2664d", tones: ["warm"], meanings: ["joy", "hope"], rarity: "rare", breed: [["red", "white", 0.07]] }
+  },
+  orchid: {
+    purple: { name: "t\xEDm", petal: "#c98be0", petalDark: "#a865c7", tones: ["cool", "pastel"], meanings: ["love", "respect"], rarity: "common", default: true },
+    white: { name: "tr\u1EAFng", petal: "#ffffff", petalDark: "#f0e6f5", tones: ["cool", "pastel", "natural"], meanings: ["purity", "congrats"], rarity: "uncommon", breed: [["purple", "purple", 0.18]] },
+    pink: { name: "h\u1ED3ng", petal: "#ff9fcf", petalDark: "#f079b5", tones: ["warm", "pastel"], meanings: ["love", "joy"], rarity: "uncommon", breed: [["purple", "white", 0.15]] },
+    yellow: { name: "v\xE0ng ho\xE0ng kim", petal: "#ffd84d", petalDark: "#f2b630", tones: ["warm"], meanings: ["hope", "congrats"], rarity: "rare", breed: [["pink", "white", 0.06]] }
   }
 };
 
@@ -142,6 +179,7 @@ var FLOWERS = {
     name: "H\u01B0\u1EDBng d\u01B0\u01A1ng",
     icon: "\u{1F33B}",
     model: "sunflower",
+    tall: true,
     growHours: 10,
     waterPerDay: 2,
     fertilizerNeeded: 1,
@@ -202,6 +240,106 @@ var FLOWERS = {
     meaning: "L\xF2ng bi\u1EBFt \u01A1n, s\u1EF1 ch\xE2n th\xE0nh",
     tones: ["cool", "pastel"],
     colors: { petal: "#9cc7f2", petalDark: "#b9a3ef", stem: "#5fa565", leaf: "#6fbb72" }
+  },
+  // ---------------- GĐ14: 6 loài mới ----------------
+  cosmos: {
+    id: "cosmos",
+    name: "Sao nh\xE1i",
+    icon: "\u{1F338}",
+    model: "cosmos",
+    growHours: 3,
+    // lớn rất nhanh, rẻ — hợp để bán sỉ / bó hoa đồng nội
+    waterPerDay: 2,
+    fertilizerNeeded: 1,
+    seasons: ["ha", "thu"],
+    basePrice: 12,
+    seedPrice: 4,
+    unlockLevel: 2,
+    meaning: "S\u1EF1 h\u1ED3n nhi\xEAn, ni\u1EC1m vui gi\u1EA3n d\u1ECB",
+    tones: ["warm", "natural"],
+    colors: { petal: "#f78fb3", petalDark: "#e5679a", center: "#ffd34e", stem: "#6fb66f", leaf: "#8fd18b" }
+  },
+  carnation: {
+    id: "carnation",
+    name: "C\u1EA9m ch\u01B0\u1EDBng",
+    icon: "\u{1F4AE}",
+    model: "carnation",
+    growHours: 6,
+    waterPerDay: 2,
+    fertilizerNeeded: 1,
+    seasons: ["xuan", "dong"],
+    basePrice: 26,
+    seedPrice: 10,
+    unlockLevel: 3,
+    meaning: "T\xECnh m\u1EB9, l\xF2ng bi\u1EBFt \u01A1n",
+    tones: ["warm", "pastel"],
+    colors: { petal: "#f7a1b8", petalDark: "#e47995", stem: "#6aa98a", leaf: "#8cbfa6" }
+  },
+  marigold: {
+    id: "marigold",
+    name: "C\xFAc v\u1EA1n th\u1ECD",
+    icon: "\u{1F3F5}\uFE0F",
+    model: "marigold",
+    growHours: 6,
+    waterPerDay: 2,
+    fertilizerNeeded: 1,
+    seasons: ["thu", "dong"],
+    basePrice: 22,
+    seedPrice: 8,
+    unlockLevel: 3,
+    meaning: "S\u1ED1ng l\xE2u, b\xECnh an",
+    tones: ["warm", "natural"],
+    colors: { petal: "#ff9f2e", petalDark: "#f27f12", stem: "#5f9e57", leaf: "#77b86a" }
+  },
+  lily: {
+    id: "lily",
+    name: "Hoa ly",
+    icon: "\u{1FAB7}",
+    model: "lily",
+    tall: true,
+    growHours: 11,
+    waterPerDay: 2,
+    fertilizerNeeded: 2,
+    seasons: ["ha", "thu"],
+    basePrice: 60,
+    seedPrice: 24,
+    unlockLevel: 6,
+    meaning: "S\u1EF1 cao qu\xFD, thu\u1EA7n khi\u1EBFt",
+    tones: ["cool", "pastel"],
+    colors: { petal: "#ffffff", petalDark: "#f3e7f0", center: "#f2b33d", stem: "#5ea765", leaf: "#74bd76" }
+  },
+  peony: {
+    id: "peony",
+    name: "M\u1EABu \u0111\u01A1n",
+    icon: "\u{1F33A}",
+    model: "peony",
+    growHours: 14,
+    waterPerDay: 3,
+    fertilizerNeeded: 2,
+    seasons: ["xuan"],
+    basePrice: 75,
+    seedPrice: 30,
+    unlockLevel: 7,
+    meaning: "Ph\xFA qu\xFD, h\u1EA1nh ph\xFAc vi\xEAn m\xE3n",
+    tones: ["warm", "pastel"],
+    colors: { petal: "#f9a8c9", petalDark: "#ec7fab", stem: "#5c9f62", leaf: "#71b672" }
+  },
+  orchid: {
+    id: "orchid",
+    name: "Lan h\u1ED3 \u0111i\u1EC7p",
+    icon: "\u{1FABB}",
+    model: "orchid",
+    greenhouseOnly: true,
+    growHours: 18,
+    waterPerDay: 1,
+    fertilizerNeeded: 2,
+    seasons: ["xuan", "ha", "thu", "dong"],
+    basePrice: 130,
+    seedPrice: 50,
+    unlockLevel: 8,
+    meaning: "Sang tr\u1ECDng, t\xECnh y\xEAu \u0111\u1EB9p",
+    tones: ["cool", "pastel"],
+    colors: { petal: "#c98be0", petalDark: "#a865c7", center: "#ffd34e", stem: "#4f8f5a", leaf: "#5fa86a" }
   }
 };
 var FLOWER_IDS = Object.keys(FLOWERS);

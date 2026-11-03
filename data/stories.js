@@ -30,7 +30,7 @@ export const BONDS = {
   // ---------------------------------------------------------------- BÀ TƯ
   ba_tu: {
     birthday: { season: 'dong', day: 5 },
-    gifts: { love: ['tulip:purple', 'lavender'], like: ['daisy', 'hydrangea:white', 'tone:pastel'], dislike: ['sunflower'], hate: ['meaning:farewell'] },
+    gifts: { love: ['tulip:purple', 'lavender', 'carnation'], like: ['daisy', 'hydrangea:white', 'tone:pastel'], dislike: ['sunflower'], hate: ['meaning:farewell'] },
     giftLines: {
       love: 'Trời ơi, đúng loại hoa ông nhà bà hay hái tặng bà ngày xưa... Cảm ơn con nhiều lắm.',
       like: 'Xinh quá! Bà cắm ngay vào cái lọ sứ trên bàn.',
@@ -120,7 +120,7 @@ export const BONDS = {
   // ---------------------------------------------------------------- ANH DUY
   anh_duy: {
     birthday: { season: 'ha', day: 3 },
-    gifts: { love: ['sunflower'], like: ['tulip', 'rose:yellow', 'tone:warm'], dislike: ['lavender'], hate: ['meaning:jealousy'] },
+    gifts: { love: ['sunflower', 'peony'], like: ['tulip', 'rose:yellow', 'tone:warm'], dislike: ['lavender'], hate: ['meaning:jealousy'] },
     giftLines: {
       love: 'Hướng dương! Luôn hướng về mặt trời, giống như mình luôn... à không có gì! Cảm ơn bạn nha!',
       like: 'Đẹp quá, mình để trên bàn giáo viên cho lớp học tươi hơn.',
@@ -211,7 +211,7 @@ export const BONDS = {
   // ---------------------------------------------------------------- CÔ MAI
   co_mai: {
     birthday: { season: 'xuan', day: 6 },
-    gifts: { love: ['daisy:white', 'hydrangea'], like: ['lavender', 'tone:pastel', 'meaning:purity'], dislike: ['rose:red'], hate: ['meaning:farewell'] },
+    gifts: { love: ['daisy:white', 'hydrangea', 'lily'], like: ['lavender', 'tone:pastel', 'meaning:purity'], dislike: ['rose:red'], hate: ['meaning:farewell'] },
     giftLines: {
       love: 'Ôi, đúng loài hoa mình thích nhất! Bạn tinh ý ghê, làm mình muốn làm thơ tặng bạn luôn.',
       like: 'Dịu dàng quá, mình để bên cửa sổ lớp học.',
@@ -291,7 +291,7 @@ export const BONDS = {
   // ---------------------------------------------------------------- BÉ SU
   be_su: {
     birthday: { season: 'thu', day: 2 },
-    gifts: { love: ['tulip', 'daisy:pink'], like: ['sunflower', 'tone:warm', 'meaning:joy'], dislike: ['rose'], hate: ['meaning:farewell'] },
+    gifts: { love: ['tulip', 'daisy:pink', 'cosmos'], like: ['sunflower', 'tone:warm', 'meaning:joy'], dislike: ['rose'], hate: ['meaning:farewell'] },
     giftLines: {
       love: 'Oaaa! Hoa đẹp quá chị ơi! Su đem về cắm cạnh giường mẹ!',
       like: 'Cảm ơn chị! Su thích lắm luôn!',
@@ -371,7 +371,7 @@ export const BONDS = {
   // ---------------------------------------------------------------- CÔ NGÂN
   co_ngan: {
     birthday: { season: 'ha', day: 6 },
-    gifts: { love: ['tone:natural', 'daisy'], like: ['lavender', 'sunflower', 'hydrangea:mint'], dislike: ['hydrangea:pink', 'rose:red'], hate: ['meaning:jealousy'] },
+    gifts: { love: ['tone:natural', 'daisy'], like: ['lavender', 'sunflower', 'hydrangea:mint'], dislike: ['hydrangea:pink', 'rose:red', 'orchid'], hate: ['meaning:jealousy'] },
     giftLines: {
       love: 'Mộc mạc mà đẹp, đúng gu của cô! Cô cắm ngay vào chai thủy tinh trên quầy.',
       like: 'Xinh ghê, quán cô lại thêm sắc màu rồi.',
@@ -449,7 +449,7 @@ export const BONDS = {
   // ---------------------------------------------------------------- ÔNG BA
   ong_ba: {
     birthday: { season: 'dong', day: 2 },
-    gifts: { love: ['sunflower'], like: ['tone:natural', 'hydrangea:blue', 'meaning:health'], dislike: ['tulip', 'tone:pastel'], hate: ['rose:black', 'meaning:jealousy'] },
+    gifts: { love: ['sunflower', 'marigold'], like: ['tone:natural', 'hydrangea:blue', 'meaning:health'], dislike: ['tulip', 'tone:pastel'], hate: ['rose:black', 'meaning:jealousy'] },
     giftLines: {
       love: 'Hừm... hướng dương. Bà nhà tôi ngày xưa trồng đầy sân. (Ông quay đi, mắt hơi đỏ.) Cảm ơn cháu.',
       like: 'Được, được. Để tôi cắm vào cái bình gỗ tôi đẽo.',

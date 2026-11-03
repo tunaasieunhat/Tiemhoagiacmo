@@ -13,6 +13,8 @@
 //  meaning          : ý nghĩa loài hoa (GĐ6 sẽ cho khám phá dần)
 //  tones            : tông màu của hoa (ấm/mát/pastel/mộc mạc) — dùng chấm điểm bó hoa
 //  colors           : màu mô hình 3D (mã màu HEX)
+//  greenhouseOnly   : true = chỉ trồng được trong lô có nhà kính (GĐ14)
+//  tall             : cây cao, dễ bị gió lớn làm gãy (GĐ14)
 // =============================================================
 
 export const FLOWERS = {
@@ -53,6 +55,7 @@ export const FLOWERS = {
     name: 'Hướng dương',
     icon: '🌻',
     model: 'sunflower',
+    tall: true,
     growHours: 10,
     waterPerDay: 2,
     fertilizerNeeded: 1,
@@ -111,6 +114,50 @@ export const FLOWERS = {
     meaning: 'Lòng biết ơn, sự chân thành',
     tones: ['cool', 'pastel'],
     colors: { petal: '#9cc7f2', petalDark: '#b9a3ef', stem: '#5fa565', leaf: '#6fbb72' },
+  },
+  // ---------------- GĐ14: 6 loài mới ----------------
+  cosmos: {
+    id: 'cosmos', name: 'Sao nhái', icon: '🌸', model: 'cosmos',
+    growHours: 3,              // lớn rất nhanh, rẻ — hợp để bán sỉ / bó hoa đồng nội
+    waterPerDay: 2, fertilizerNeeded: 1,
+    seasons: ['ha', 'thu'], basePrice: 12, seedPrice: 4, unlockLevel: 2,
+    meaning: 'Sự hồn nhiên, niềm vui giản dị', tones: ['warm', 'natural'],
+    colors: { petal: '#f78fb3', petalDark: '#e5679a', center: '#ffd34e', stem: '#6fb66f', leaf: '#8fd18b' },
+  },
+  carnation: {
+    id: 'carnation', name: 'Cẩm chướng', icon: '💮', model: 'carnation',
+    growHours: 6, waterPerDay: 2, fertilizerNeeded: 1,
+    seasons: ['xuan', 'dong'], basePrice: 26, seedPrice: 10, unlockLevel: 3,
+    meaning: 'Tình mẹ, lòng biết ơn', tones: ['warm', 'pastel'],
+    colors: { petal: '#f7a1b8', petalDark: '#e47995', stem: '#6aa98a', leaf: '#8cbfa6' },
+  },
+  marigold: {
+    id: 'marigold', name: 'Cúc vạn thọ', icon: '🏵️', model: 'marigold',
+    growHours: 6, waterPerDay: 2, fertilizerNeeded: 1,
+    seasons: ['thu', 'dong'], basePrice: 22, seedPrice: 8, unlockLevel: 3,
+    meaning: 'Sống lâu, bình an', tones: ['warm', 'natural'],
+    colors: { petal: '#ff9f2e', petalDark: '#f27f12', stem: '#5f9e57', leaf: '#77b86a' },
+  },
+  lily: {
+    id: 'lily', name: 'Hoa ly', icon: '🪷', model: 'lily', tall: true,
+    growHours: 11, waterPerDay: 2, fertilizerNeeded: 2,
+    seasons: ['ha', 'thu'], basePrice: 60, seedPrice: 24, unlockLevel: 6,
+    meaning: 'Sự cao quý, thuần khiết', tones: ['cool', 'pastel'],
+    colors: { petal: '#ffffff', petalDark: '#f3e7f0', center: '#f2b33d', stem: '#5ea765', leaf: '#74bd76' },
+  },
+  peony: {
+    id: 'peony', name: 'Mẫu đơn', icon: '🌺', model: 'peony',
+    growHours: 14, waterPerDay: 3, fertilizerNeeded: 2,
+    seasons: ['xuan'], basePrice: 75, seedPrice: 30, unlockLevel: 7,
+    meaning: 'Phú quý, hạnh phúc viên mãn', tones: ['warm', 'pastel'],
+    colors: { petal: '#f9a8c9', petalDark: '#ec7fab', stem: '#5c9f62', leaf: '#71b672' },
+  },
+  orchid: {
+    id: 'orchid', name: 'Lan hồ điệp', icon: '🪻', model: 'orchid', greenhouseOnly: true,
+    growHours: 18, waterPerDay: 1, fertilizerNeeded: 2,
+    seasons: ['xuan', 'ha', 'thu', 'dong'], basePrice: 130, seedPrice: 50, unlockLevel: 8,
+    meaning: 'Sang trọng, tình yêu đẹp', tones: ['cool', 'pastel'],
+    colors: { petal: '#c98be0', petalDark: '#a865c7', center: '#ffd34e', stem: '#4f8f5a', leaf: '#5fa86a' },
   },
 };
 

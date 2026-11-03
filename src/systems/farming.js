@@ -5,7 +5,7 @@
 import { FLOWERS } from '../../data/flowers.js';
 import { CARE } from '../../data/config.js';
 import { upgradeValue } from './progression.js';
-import { SEASON_EFFECT, DISEASE, DISEASES } from '../../data/seasons.js';
+import { SEASON_EFFECT, DISEASE, DISEASES, WEATHER } from '../../data/seasons.js';
 import { protectUntil } from './weather.js';
 import { parseVkey, flowerKey, variantName } from './variants.js';
 import { formatDuration } from './time.js';
@@ -25,7 +25,7 @@ export function createTile() {
     fert: 0,        // số lần đã bón
     lastFertStage: -1,
     plantedAt: 0,
-    sick: null,       // 'aphid' | 'fungus' khi bị bệnh (GĐ5)
+    sick: null,       // mã bệnh trong DISEASES (data/seasons.js) khi bị bệnh (GĐ5, GĐ14)
     guardUntil: 0,    // đã phun thuốc phòng đến phút game này
     offSeason: false, // gieo trái mùa (không có nhà kính)
   };
@@ -122,9 +122,11 @@ function stepTile(tile, d, { offline = false, env = {} }) {
   tile.water = Math.max(0, tile.water - decay * d);
 
   let event = null;
-  if (tile.state === 'growing' && !tile.sick) {
+  const dis = tile.sick ? DISEASES[tile.sick] : null;
+  const sickGrow = dis ? (dis.growMult ?? 0) : 1; // bệnh làm cây ngừng / chậm lớn
+  if (tile.state === 'growing' && sickGrow > 0) {
     const growMin = CARE.growWhenDry ? d : wetMin;
-    tile.growth += growMin * growSpeed(tile) * growMult;
+    tile.growth += growMin * growSpeed(tile) * growMult * sickGrow;
     if (tile.growth >= growMinutes(tile.flower)) {
       tile.growth = growMinutes(tile.flower);
       tile.state = 'ready';
@@ -132,7 +134,7 @@ function stepTile(tile, d, { offline = false, env = {} }) {
     }
   }
   const factor = offline ? CARE.offlineDryFactor : 1;
-  if (tile.sick) tile.health = Math.max(0, tile.health - (d / 60) * DISEASE.healthLossPerHour * factor);
+  if (dis) tile.health = Math.max(0, tile.health - (d / 60) * (dis.healthLoss ?? DISEASE.healthLossPerHour) * factor);
   if (dryMin > 0) tile.health = Math.max(0, tile.health - (dryMin / 60) * CARE.dryHealthLossPerHour * factor);
   if (tile.sick || dryMin > 0) {
     if (tile.health <= 0) {
@@ -156,13 +158,14 @@ export function till(tile, save) {
   return fail('Ô này không cần xới');
 }
 
-/** seedKey: mã hạt có màu, vd "rose:red" (hoặc "rose" = màu mặc định) */
-export function plant(tile, seedKey, save, nowMin) {
+/** seedKey: mã hạt có màu, vd "rose:red" (hoặc "rose" = màu mặc định). opts.plot: lô đất (kiểm tra hoa chỉ trồng nhà kính) */
+export function plant(tile, seedKey, save, nowMin, opts = {}) {
   if (tile.state !== 'tilled') return fail(tile.state === 'untilled' ? 'Hãy xới đất trước khi gieo hạt' : 'Ô này đã có cây');
   const { species, variant, vkey } = parseVkey(seedKey);
   const def = FLOWERS[species];
   if (!def) return fail('Không rõ loại hạt');
   const name = variantName(species, variant);
+  if (def.greenhouseOnly && opts.plot && !opts.plot.greenhouse) return fail(`${def.name} chỉ trồng được trong lô có 🏠 nhà kính`);
   if (!(save.inventory.seeds[vkey] > 0)) return fail(`Hết hạt ${name}!`);
   save.inventory.seeds[vkey] -= 1;
   Object.assign(tile, {
@@ -186,6 +189,16 @@ export function water(tile, save) {
 }
 
 export function fertilize(tile, save) {
+  // bệnh vàng lá: bón phân là khỏi (kể cả khi cây đã đủ phân)
+  if (tile.sick && DISEASES[tile.sick]?.fertCures && (tile.state === 'growing' || tile.state === 'ready')) {
+    if (!(save.inventory.items.fertilizer > 0)) return fail('Hết phân bón!');
+    save.inventory.items.fertilizer -= 1;
+    const cured = DISEASES[tile.sick].name;
+    tile.sick = null;
+    let more = '';
+    if (canFertilize(tile)) { tile.fert += 1; tile.lastFertStage = stageOf(tile); more = ` (${tile.fert}/${FLOWERS[tile.flower].fertilizerNeeded})`; }
+    return { ok: true, msg: `Đã bón phân, khỏi ${cured}${more}` };
+  }
   if (tile.state !== 'growing') return fail(tile.state === 'ready' ? 'Hoa đã nở, hãy thu hoạch' : 'Chỉ bón phân cho cây đang lớn');
   const def = FLOWERS[tile.flower];
   if (tile.fert >= def.fertilizerNeeded) return fail('Cây đã đủ phân rồi');
@@ -197,16 +210,23 @@ export function fertilize(tile, save) {
   return { ok: true, msg: `Đã bón phân (${tile.fert}/${def.fertilizerNeeded})` };
 }
 
-export function harvest(tile, save) {
+/** opts.rng: hàm ngẫu nhiên (cầu vồng có thể tặng thêm 1⭐) */
+export function harvest(tile, save, opts = {}) {
   if (tile.state !== 'ready') return fail(tile.state === 'growing' ? `Hoa chưa nở — còn ${formatDuration(remainingMinutes(tile))} nữa (giờ trong game)` : 'Không có gì để thu hoạch');
   const flower = tile.flower;
   const variant = tile.variant;
-  const quality = qualityOf(tile);
+  let quality = qualityOf(tile);
+  let note = '';
+  const dis = tile.sick ? DISEASES[tile.sick] : null;
+  if (dis?.qPenalty && quality > 1) { quality = Math.max(1, quality - dis.qPenalty); note = ` (${dis.icon} −${dis.qPenalty}⭐)`; }
+  const W = WEATHER[save.weather?.today?.type];
+  let bonus = false;
+  if (W?.bonusStarChance && quality < 3 && (opts.rng || Math.random)() < W.bonusStarChance) { quality += 1; bonus = true; note += ` ${W.icon} +1⭐`; }
   const key = flowerKey(flower, variant, quality);
   save.inventory.flowers[key] = (save.inventory.flowers[key] || 0) + 1;
   save.stats.harvested = (save.stats.harvested || 0) + 1;
   Object.assign(tile, createTile());
-  return { ok: true, msg: `Thu hoạch ${variantName(flower, variant)} ${'★'.repeat(quality)}`, flower, variant: parseVkey(key.split('|')[0]).variant, quality };
+  return { ok: true, msg: `Thu hoạch ${variantName(flower, variant)} ${'★'.repeat(quality)}${note}`, flower, variant: parseVkey(key.split('|')[0]).variant, quality, bonus };
 }
 
 /** Phun thuốc: chữa bệnh, hoặc phòng bệnh đến hết ngày mai */
@@ -227,8 +247,8 @@ export function availableActions(tile) {
   switch (tile.state) {
     case 'untilled': return ['till'];
     case 'tilled': return ['plant', 'water'];
-    case 'growing': return tile.sick ? ['treat', 'water', 'fertilize'] : ['water', 'fertilize', 'treat'];
-    case 'ready': return tile.sick ? ['harvest', 'treat', 'water'] : ['harvest', 'water'];
+    case 'growing': return tile.sick ? (DISEASES[tile.sick]?.fertCures ? ['fertilize', 'treat', 'water'] : ['treat', 'water', 'fertilize']) : ['water', 'fertilize', 'treat'];
+    case 'ready': return tile.sick ? ['harvest', 'treat', 'water', ...(DISEASES[tile.sick]?.fertCures ? ['fertilize'] : [])] : ['harvest', 'water'];
     case 'dead': return ['till'];
     default: return [];
   }

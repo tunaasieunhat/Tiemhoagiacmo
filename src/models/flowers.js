@@ -70,13 +70,22 @@ export function buildPlant(flowerId, stage, { wilted = false, dead = false, vari
   }
 
   // từ giai đoạn 2 trở đi: thân + lá + nụ/hoa
-  const h = { rose: 0.75, tulip: 0.7, sunflower: 1.15, daisy: 0.6, lavender: 0.55, hydrangea: 0.5 }[def.model] ?? 0.8;
+  const h = { rose: 0.75, tulip: 0.7, sunflower: 1.15, daisy: 0.6, lavender: 0.55, hydrangea: 0.5, cosmos: 0.7, carnation: 0.62, marigold: 0.45, lily: 1.0, peony: 0.58, orchid: 0.18 }[def.model] ?? 0.8;
   const H = stage === 2 ? h * 0.8 : h;
   const r = def.model === 'sunflower' ? 0.055 : 0.04;
   sway.add(stem(H, C.stem, r));
   const leafLen = def.model === 'sunflower' ? 0.42 : def.model === 'tulip' ? 0.38 : def.model === 'hydrangea' ? 0.36 : 0.26;
   if (def.model === 'hydrangea') {
     for (let i = 0; i < 4; i++) sway.add(leaf(C.leaf, leafLen, i * 1.57 + 0.4, 0.55, H * 0.45));
+  } else if (def.model === 'orchid') {
+    // lan: 3 lá to dày nằm sát gốc
+    for (let i = 0; i < 3; i++) { const lf = leaf(C.leaf, 0.42, i * 2.1 + 0.3, 1.35, 0.04); lf.scale.set(1.8, 1, 1.4); sway.add(lf); }
+  } else if (def.model === 'lily') {
+    for (let i = 0; i < 6; i++) sway.add(leaf(C.leaf, 0.28, i * 1.1, 0.9, 0.1 + i * H * 0.12));
+  } else if (def.model === 'cosmos') {
+    for (let i = 0; i < 4; i++) { const lf = leaf(C.leaf, 0.2, i * 1.6, 0.8, 0.08 + i * 0.1); lf.scale.x = 0.45; sway.add(lf); }
+  } else if (def.model === 'marigold') {
+    for (let i = 0; i < 5; i++) sway.add(leaf(C.leaf, 0.2, i * 1.26, 0.75, 0.05 + (i % 2) * 0.1));
   } else if (def.model === 'lavender') {
     sway.add(leaf(C.leaf, 0.3, 0.5, 1.1, 0.04));
     sway.add(leaf(C.leaf, 0.3, 2.6, 1.1, 0.04));
@@ -116,6 +125,18 @@ export function buildPlant(flowerId, stage, { wilted = false, dead = false, vari
     buildLavender(head, sway, C, H);
   } else if (def.model === 'hydrangea') {
     buildHydrangea(head, C);
+  } else if (def.model === 'cosmos') {
+    buildCosmos(head, sway, C, H);
+  } else if (def.model === 'carnation') {
+    buildCarnation(head, C);
+  } else if (def.model === 'marigold') {
+    buildMarigold(head, sway, C, H);
+  } else if (def.model === 'lily') {
+    buildLily(head, C);
+  } else if (def.model === 'peony') {
+    buildPeony(head, C);
+  } else if (def.model === 'orchid') {
+    buildOrchid(head, sway, C, H);
   }
 
   if (dead) {
@@ -272,6 +293,172 @@ function buildHydrangea(head, C) {
     head.add(s);
   }
   head.add(at(sphere(0.2, C.petal, 10), 0, 0.16, 0));
+}
+
+// ---------------- GĐ14 ----------------
+const FACE = new THREE.Vector3(1, 1.4, 1); // hướng mặt hoa về phía camera
+
+/** Sao nhái: 3 bông 8 cánh trên cành mảnh */
+function cosmosHead(C, size = 1) {
+  const g = new THREE.Group();
+  const face = new THREE.Group();
+  face.lookAt(FACE);
+  g.add(face);
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const p = sphere(0.075, i % 2 ? C.petal : C.petalDark, 7);
+    p.scale.set(0.85, 1.35, 0.22);
+    p.position.set(Math.cos(a) * 0.12, Math.sin(a) * 0.12, 0);
+    p.rotation.z = a - Math.PI / 2;
+    face.add(p);
+  }
+  const c = cyl(0.05, 0.05, 0.05, C.center, 10);
+  c.rotation.x = Math.PI / 2;
+  face.add(c);
+  g.scale.setScalar(size);
+  return g;
+}
+function buildCosmos(head, sway, C, H) {
+  head.add(at(cosmosHead(C, 1.1), 0, 0.03, 0));
+  for (const [ang, hh, tilt] of [[1.1, 0.85, 0.45], [-1.6, 0.7, -0.5]]) {
+    const b = new THREE.Group();
+    b.position.y = H * 0.35;
+    b.rotation.z = tilt;
+    b.rotation.y = ang;
+    const len = H * hh;
+    b.add(at(cyl(0.016, 0.02, len, C.stem, 5), 0, len / 2, 0));
+    b.add(at(cosmosHead(C, 0.9), 0, len, 0));
+    sway.add(b);
+  }
+}
+
+/** Cẩm chướng: bông xù nhiều lớp cánh viền răng cưa */
+function buildCarnation(head, C) {
+  head.add(at(cyl(0.05, 0.07, 0.12, C.leaf, 8), 0, 0.02, 0)); // đài hoa
+  for (let ring = 0; ring < 3; ring++) {
+    const n = 7 + ring * 2;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + ring * 0.5;
+      const r = 0.05 + ring * 0.055;
+      const p = sphere(0.07, (i + ring) % 2 ? C.petal : C.petalDark, 6);
+      p.scale.set(1, 0.45, 0.8);
+      p.position.set(Math.cos(a) * r, 0.17 - ring * 0.035 + Math.sin(i * 3.1) * 0.015, Math.sin(a) * r);
+      p.rotation.set(Math.sin(i) * 0.4, -a, 0.3 + ring * 0.25);
+      head.add(p);
+    }
+  }
+  head.add(at(sphere(0.06, C.petalDark, 8), 0, 0.19, 0));
+}
+
+/** Cúc vạn thọ: bông tròn đặc như quả cầu */
+function marigoldBall(C, size = 1) {
+  const g = new THREE.Group();
+  g.add(at(sphere(0.12, C.petalDark, 10), 0, 0.1, 0));
+  const n = 26;
+  for (let i = 0; i < n; i++) {
+    const y = 1 - (i / (n - 1)) * 1.3;
+    const r = Math.sqrt(Math.max(0, 1 - y * y));
+    const a = i * 2.4;
+    const p = sphere(0.055, i % 2 ? C.petal : C.petalDark, 6);
+    p.scale.set(1, 0.6, 1);
+    p.position.set(Math.cos(a) * r * 0.13, 0.1 + y * 0.11, Math.sin(a) * r * 0.13);
+    g.add(p);
+  }
+  g.scale.setScalar(size);
+  return g;
+}
+function buildMarigold(head, sway, C, H) {
+  head.add(marigoldBall(C, 1.1));
+  const b = new THREE.Group();
+  b.position.y = H * 0.4; b.rotation.z = -0.55; b.rotation.y = 0.8;
+  const len = H * 0.7;
+  b.add(at(cyl(0.02, 0.024, len, C.stem, 5), 0, len / 2, 0));
+  b.add(at(marigoldBall(C, 0.75), 0, len, 0));
+  sway.add(b);
+}
+
+/** Hoa ly: 6 cánh dài loe như ngôi sao, nhụy cam */
+function buildLily(head, C) {
+  const bloom = new THREE.Group();
+  bloom.position.y = 0.05;
+  bloom.lookAt(new THREE.Vector3(1, 2.2, 1));
+  bloom.rotateX(Math.PI / 2);
+  head.add(bloom);
+  for (let i = 0; i < 6; i++) {
+    const hold = new THREE.Group();
+    hold.rotation.y = (i / 6) * Math.PI * 2;
+    const p = sphere(0.1, i % 2 ? C.petal : C.petalDark, 8);
+    p.scale.set(0.55, 0.25, 1.9);
+    p.position.set(0, 0.08, 0.17);
+    p.rotation.x = -0.55;
+    hold.add(p);
+    const tip = sphere(0.05, C.petal, 6); tip.scale.set(0.6, 0.3, 1); tip.position.set(0, 0.2, 0.33); tip.rotation.x = -1.0;
+    hold.add(tip);
+    bloom.add(hold);
+  }
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2;
+    const st = cyl(0.008, 0.008, 0.16, '#cfe8b0', 4);
+    st.position.set(Math.cos(a) * 0.03, 0.12, Math.sin(a) * 0.03);
+    st.rotation.set(Math.sin(a) * 0.3, 0, Math.cos(a) * 0.3);
+    bloom.add(st);
+    bloom.add(at(sphere(0.022, C.center || '#f2b33d', 5), Math.cos(a) * 0.055, 0.2, Math.sin(a) * 0.055));
+  }
+  // 1 nụ bên cạnh
+  const bud = sphere(0.06, C.petalDark, 8); bud.scale.set(0.8, 1.8, 0.8); bud.position.set(-0.12, -0.08, 0.05); bud.rotation.z = 0.6;
+  head.add(bud);
+}
+
+/** Mẫu đơn: bông to nhiều lớp cánh tròn */
+function buildPeony(head, C) {
+  head.add(at(sphere(0.12, C.petalDark, 12), 0, 0.17, 0));
+  const rings = [[6, 0.1, 0.2, 0.1, 0.2], [8, 0.17, 0.15, 0.12, 0.5], [10, 0.24, 0.08, 0.13, 0.85]];
+  rings.forEach(([n, r, y, size, tilt], k) => {
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + k * 0.4;
+      const p = sphere(size, (i + k) % 2 ? C.petal : C.petalDark, 9);
+      p.scale.set(1, 0.7, 0.45);
+      p.position.set(Math.cos(a) * r, y, Math.sin(a) * r);
+      p.rotation.y = -a + Math.PI / 2;
+      p.rotation.x = -tilt;
+      head.add(p);
+    }
+  });
+  const sepal = cone(0.14, 0.08, C.leaf, 6); sepal.rotation.x = Math.PI; head.add(sepal);
+}
+
+/** Lan hồ điệp: cành cong mang 4 bông hình cánh bướm */
+function orchidFlower(C, size = 1) {
+  const g = new THREE.Group();
+  const f = new THREE.Group();
+  f.lookAt(FACE);
+  g.add(f);
+  for (const sx of [-1, 1]) {
+    const w = sphere(0.075, C.petal, 8); w.scale.set(1.15, 1, 0.25); w.position.set(sx * 0.07, 0.01, 0); f.add(w);
+    const sep = sphere(0.045, C.petalDark, 6); sep.scale.set(0.6, 1.5, 0.2); sep.position.set(sx * 0.05, -0.07, -0.01); sep.rotation.z = sx * 0.6; f.add(sep);
+  }
+  const top = sphere(0.045, C.petalDark, 6); top.scale.set(0.6, 1.5, 0.2); top.position.set(0, 0.08, -0.01); f.add(top);
+  const lip = sphere(0.035, C.center || '#ffd34e', 6); lip.scale.set(1, 1.2, 0.6); lip.position.set(0, -0.02, 0.025); f.add(lip);
+  g.scale.setScalar(size);
+  return g;
+}
+function buildOrchid(head, sway, C, H) {
+  // cành cong vươn lên rồi rủ xuống
+  const pts = [];
+  for (let i = 0; i <= 8; i++) { const t = i / 8; pts.push(new THREE.Vector3(Math.sin(t * 1.6) * 0.32, H + Math.sin(t * Math.PI * 0.85) * 0.62, 0)); }
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1];
+    const len = a.distanceTo(b);
+    const seg = cyl(0.014, 0.016, len, C.stem, 5);
+    seg.position.copy(a).add(b).multiplyScalar(0.5);
+    seg.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+    sway.add(seg);
+  }
+  [[3, 0.85], [5, 1], [6, 0.95], [8, 0.8]].forEach(([i, sz]) => {
+    const p = pts[i];
+    sway.add(at(orchidFlower(C, sz * 1.15), p.x, p.y - 0.06, p.z + 0.02));
+  });
+  head.visible = false;
 }
 
 /** Hạt giống (hiển thị nhỏ trong giao diện, không dùng 3D) */

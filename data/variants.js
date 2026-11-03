@@ -64,6 +64,43 @@ export const VARIANTS = {
     white: { name: 'trắng', petal: '#f7f7f2', petalDark: '#e4e8e0', tones: ['natural', 'pastel'], meanings: ['purity', 'congrats'], rarity: 'uncommon', breed: [['purple', 'pink', 0.25]] },
     mint: { name: 'xanh ngọc', petal: '#8fe0c8', petalDark: '#62c7a9', tones: ['cool', 'natural'], meanings: ['health', 'hope'], rarity: 'rare', breed: [['white', 'blue', 0.07]] },
   },
+  // ---------------- GĐ14 ----------------
+  cosmos: {
+    pink: { name: 'hồng', petal: '#f78fb3', petalDark: '#e5679a', tones: ['warm', 'pastel'], meanings: ['joy', 'friendship'], rarity: 'common', default: true },
+    white: { name: 'trắng', petal: '#ffffff', petalDark: '#f1e8ef', tones: ['pastel', 'natural'], meanings: ['purity'], rarity: 'common', breed: [['pink', 'pink', 0.25]] },
+    orange: { name: 'cam', petal: '#ffa64d', petalDark: '#f2862b', tones: ['warm', 'natural'], meanings: ['congrats', 'joy'], rarity: 'uncommon', breed: [['pink', 'white', 0.2]] },
+    chocolate: { name: 'sô-cô-la', petal: '#8a3b3b', petalDark: '#6b2a2a', tones: ['warm', 'natural'], meanings: ['longing'], rarity: 'rare', breed: [['orange', 'orange', 0.08]] },
+  },
+  carnation: {
+    pink: { name: 'hồng', petal: '#f7a1b8', petalDark: '#e47995', tones: ['warm', 'pastel'], meanings: ['gratitude', 'love'], rarity: 'common', default: true },
+    red: { name: 'đỏ', petal: '#e33d55', petalDark: '#b9233c', tones: ['warm'], meanings: ['love', 'respect'], rarity: 'common', breed: [['pink', 'pink', 0.22]] },
+    white: { name: 'trắng', petal: '#ffffff', petalDark: '#ece4e8', tones: ['cool', 'pastel', 'natural'], meanings: ['purity', 'apology'], rarity: 'uncommon', breed: [['pink', 'red', 0.18]] },
+    yellow: { name: 'vàng', petal: '#ffd75e', petalDark: '#f1b830', tones: ['warm'], meanings: ['farewell'], rarity: 'uncommon', breed: [['white', 'pink', 0.15]] },
+    purple: { name: 'tím mộng mơ', petal: '#b48be0', petalDark: '#9168c4', tones: ['cool', 'pastel'], meanings: ['longing', 'respect'], rarity: 'rare', breed: [['white', 'red', 0.07]] },
+  },
+  marigold: {
+    orange: { name: 'cam', petal: '#ff9f2e', petalDark: '#f27f12', tones: ['warm', 'natural'], meanings: ['health', 'congrats'], rarity: 'common', default: true },
+    yellow: { name: 'vàng', petal: '#ffd34e', petalDark: '#f4b42a', tones: ['warm', 'natural'], meanings: ['joy', 'health'], rarity: 'common', breed: [['orange', 'orange', 0.25]] },
+    red: { name: 'đỏ nhung', petal: '#d9472b', petalDark: '#b33018', tones: ['warm'], meanings: ['loyalty', 'health'], rarity: 'rare', breed: [['orange', 'yellow', 0.08]] },
+  },
+  lily: {
+    white: { name: 'trắng', petal: '#ffffff', petalDark: '#f3e7f0', tones: ['cool', 'pastel', 'natural'], meanings: ['purity', 'respect'], rarity: 'common', default: true },
+    pink: { name: 'hồng', petal: '#ffb6d0', petalDark: '#f08cb3', tones: ['warm', 'pastel'], meanings: ['love', 'joy'], rarity: 'uncommon', breed: [['white', 'white', 0.2]] },
+    orange: { name: 'cam', petal: '#ffa15c', petalDark: '#f07f34', tones: ['warm'], meanings: ['congrats', 'hope'], rarity: 'uncommon', breed: [['white', 'pink', 0.15]] },
+    yellow: { name: 'vàng chanh', petal: '#fff07a', petalDark: '#f5d742', tones: ['warm', 'pastel'], meanings: ['joy', 'friendship'], rarity: 'rare', breed: [['orange', 'pink', 0.07]] },
+  },
+  peony: {
+    pink: { name: 'hồng phấn', petal: '#f9a8c9', petalDark: '#ec7fab', tones: ['warm', 'pastel'], meanings: ['congrats', 'joy'], rarity: 'common', default: true },
+    white: { name: 'trắng', petal: '#fff9f5', petalDark: '#f2e4dc', tones: ['pastel', 'natural'], meanings: ['purity', 'respect'], rarity: 'uncommon', breed: [['pink', 'pink', 0.18]] },
+    red: { name: 'đỏ thắm', petal: '#d93a5c', petalDark: '#b0213f', tones: ['warm'], meanings: ['love', 'congrats'], rarity: 'uncommon', breed: [['pink', 'pink', 0.15]] },
+    coral: { name: 'san hô', petal: '#ff8a73', petalDark: '#f2664d', tones: ['warm'], meanings: ['joy', 'hope'], rarity: 'rare', breed: [['red', 'white', 0.07]] },
+  },
+  orchid: {
+    purple: { name: 'tím', petal: '#c98be0', petalDark: '#a865c7', tones: ['cool', 'pastel'], meanings: ['love', 'respect'], rarity: 'common', default: true },
+    white: { name: 'trắng', petal: '#ffffff', petalDark: '#f0e6f5', tones: ['cool', 'pastel', 'natural'], meanings: ['purity', 'congrats'], rarity: 'uncommon', breed: [['purple', 'purple', 0.18]] },
+    pink: { name: 'hồng', petal: '#ff9fcf', petalDark: '#f079b5', tones: ['warm', 'pastel'], meanings: ['love', 'joy'], rarity: 'uncommon', breed: [['purple', 'white', 0.15]] },
+    yellow: { name: 'vàng hoàng kim', petal: '#ffd84d', petalDark: '#f2b630', tones: ['warm'], meanings: ['hope', 'congrats'], rarity: 'rare', breed: [['pink', 'white', 0.06]] },
+  },
 };
 
 export const RARITY = {

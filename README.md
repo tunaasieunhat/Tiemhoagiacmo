@@ -22,6 +22,7 @@ Công nghệ: Three.js + Vite, sau này dùng Supabase cho tài khoản online.
 - ✅ Giai đoạn 11 — Làng Hoa: 6 nhà + trường làng, dân làng đi lại & làm việc theo giờ, mở rộng bản đồ.
 - ✅ Giai đoạn 12 — kết thân với dân làng: tình thân 10 ❤️, trò chuyện có lựa chọn, tặng hoa theo sở thích, sinh nhật, 24 sự kiện rẽ nhánh, quà mốc tim. Dân làng nhờ việc với 7 mini game (xỏ kim, câu cá, đóng đinh, pha cà phê, chấm toán, ghép vần thơ, lật thẻ).
 - ✅ Giai đoạn 13 — mua đất của dân làng: 4 mảnh đất, giá theo tình thân & tâm trạng mỗi ngày, trả giá, có thể bị từ chối.
+- ✅ Giai đoạn 14 — 6 hoa mới (lan hồ điệp chỉ trồng nhà kính), 3 bệnh mới (sâu đục nụ, vàng lá, ốc sên), 5 thời tiết mới (mưa đá, gió lớn, sương mù, cầu vồng, mưa sao băng).
 
 **Cài đặt online:** xem [Hướng dẫn Supabase](docs/HUONG_DAN_SUPABASE.md). Chưa cài thì game vẫn chạy ở chế độ khách (lưu trên máy).
 

@@ -79,7 +79,7 @@ export function runGardener(save, now) {
     }
     if (tile.state === 'untilled' || tile.state === 'dead') { if (farming.till(tile, save).ok) res.tilled++; }
     if (replant && tile.state === 'tilled' && save.inventory.seeds[replant] > 0) {
-      if (farming.plant(tile, replant, save, now).ok) res.planted++;
+      if (farming.plant(tile, replant, save, now, { plot }).ok) res.planted++;
     }
   }));
   return res;

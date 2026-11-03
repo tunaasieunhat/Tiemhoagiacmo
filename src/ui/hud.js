@@ -35,7 +35,7 @@ import { REGULARS } from '../../data/regulars.js';
 import { levelProgress } from '../systems/progression.js';
 import { waterCapacity } from '../systems/farming.js';
 import * as calendar from '../systems/calendar.js';
-import { protectUntil, isProtected } from '../systems/weather.js';
+import { protectUntil, isProtected, outbreakHourOf } from '../systems/weather.js';
 import { WEATHER, DISEASES, PROTECTION, SEASONS } from '../../data/seasons.js';
 import { PAPERS, RIBBONS } from '../../data/wrapping.js';
 import { wholesalePrice, tierInfo } from '../systems/shop.js';
@@ -880,13 +880,13 @@ export class Hud {
         <small>${label} · ${c.season.name} ngày ${c.dayOfSeason}/7</small>
         <div class="fc-main"><span class="fc-icon">${W.icon}</span><b>${W.name}</b></div>
         ${W.desc ? `<p>${W.desc}</p>` : ''}
-        ${d.disease ? `<p class="bad">${DISEASES[d.disease].icon} <b>${DISEASES[d.disease].name}</b> lúc 10:00 — ${DISEASES[d.disease].desc}</p>` : ''}
+        ${d.disease ? `<p class="bad">${DISEASES[d.disease].icon} <b>${DISEASES[d.disease].name}</b> lúc ${String(outbreakHourOf(d.disease)).padStart(2, '0')}:00 — ${DISEASES[d.disease].desc}</p>` : ''}
         ${fest ? `<p class="fest">${fest.icon} <b>${fest.name}</b>: khách mua nhiều ${fest.flowers.map((f) => FLOWERS[f].icon).join('')} và trả giá ×${fest.priceMult}</p>` : ''}
       </div>`;
     };
     // việc nên làm
     const tm = w.tomorrow;
-    const needCover = WEATHER[tm.type].disaster || WEATHER[w.today.type].disaster;
+    const needCover = WEATHER[tm.type].disaster || WEATHER[w.today.type].disaster || DISEASES[tm.disease]?.coverSafe || DISEASES[w.today.disease]?.coverSafe;
     const needMed = !!(tm.disease || w.today.disease) || s.farm.plots.some((p) => p.tiles.some((t) => t.sick && (t.state === 'growing' || t.state === 'ready')));
     const unprotected = s.farm.plots.filter((p) => !isProtected(p, protectUntil(g.now))).length;
     const sick = s.farm.plots.reduce((a, p) => a + p.tiles.filter((t) => t.sick && (t.state === 'growing' || t.state === 'ready')).length, 0);
@@ -924,7 +924,7 @@ export class Hud {
     const w = this.game.save.weather?.today;
     // ban đêm: trăng (trừ khi mưa/bão/tuyết); ban ngày: biểu tượng thời tiết
     const wxIcon = w ? WEATHER[w.type].icon : '☀️';
-    const calm = !w || w.type === 'sunny' || w.type === 'heat';
+    const calm = !w || ['sunny', 'heat', 'rainbow', 'fog'].includes(w.type);
     let icon = isNight(c.hourFloat) ? (calm ? '🌙' : wxIcon) : wxIcon;
     if (calm && !isNight(c.hourFloat) && (c.hourFloat < 7 || c.hourFloat > 17.5)) icon = '🌅';
     $('.clock-icon', this.root).textContent = icon;
@@ -964,7 +964,7 @@ export class Hud {
       const { species, variant } = variants.parseVkey(k);
       const n = g.save.inventory.seeds[k] || 0;
       return `<button class="seed ${g.seed === k ? 'active' : ''} ${n ? '' : 'empty'}" data-seed="${k}" title="${esc(variants.variantName(species, variant))}">
-        <span>${FLOWERS[species].icon}${vdot(species, variant)}</span><small>${esc(variants.variantName(species, variant))}</small><b>${n}</b></button>`;
+        <span>${FLOWERS[species].icon}${vdot(species, variant)}</span><small>${FLOWERS[species].greenhouseOnly ? '🏠' : ''}${esc(variants.variantName(species, variant))}</small><b>${n}</b></button>`;
     }).join('');
   }
 
@@ -1018,7 +1018,7 @@ export class Hud {
     const plot = g.save.farm.plots[g.selected.plot];
     const now = g.now;
     const notes = [];
-    if (tile.sick && ['growing', 'ready'].includes(tile.state)) notes.push(`<div class="note bad">${DISEASES[tile.sick].icon} ${DISEASES[tile.sick].name}: cây ngừng lớn và yếu dần — hãy phun 💊 thuốc!</div>`);
+    if (tile.sick && ['growing', 'ready'].includes(tile.state)) notes.push(`<div class="note bad">${DISEASES[tile.sick].icon} ${DISEASES[tile.sick].name}: ${DISEASES[tile.sick].desc} — hãy phun 💊 thuốc${DISEASES[tile.sick].fertCures ? ' hoặc bón 🧪 phân' : ''}!</div>`);
     if ((tile.guardUntil || 0) >= now && !tile.sick && tile.state !== 'untilled') notes.push('<div class="note good">💊 Đã phun thuốc phòng bệnh đến hết ngày mai</div>');
     if (plot.greenhouse) notes.push('<div class="note good">🏠 Lô có nhà kính: an toàn trước thiên tai</div>');
     else if ((plot.coverUntil || 0) >= now) notes.push('<div class="note good">⛺ Lô đang được che bạt đến hết ngày mai</div>');
@@ -1050,7 +1050,7 @@ export class Hud {
         }).join('')}</div>`;
       }
       let disabled = false;
-      if (a === 'fertilize') disabled = !farming.canFertilize(tile) || !(g.save.inventory.items.fertilizer > 0);
+      if (a === 'fertilize') disabled = !(farming.canFertilize(tile) || DISEASES[tile.sick]?.fertCures) || !(g.save.inventory.items.fertilizer > 0);
       if (a === 'water') disabled = tile.water >= waterCapacity(g.save) - 0.1;
       if (a === 'treat') disabled = !(g.save.inventory.items.medicine > 0) || (!tile.sick && (tile.guardUntil || 0) >= protectUntil(now));
       const [ic, lb] = ACTION_LABEL[a];

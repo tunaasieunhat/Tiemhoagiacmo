@@ -20,7 +20,7 @@ const TILE_H = 0.22;
 const _tmp = new THREE.Vector3();
 export const TILE_TOP = TILE_H + 0.04;
 const PLANT_SCALE = 1.25; // phóng to cây cho dễ nhìn kiểu chibi
-const PLANT_TOP = { rose: 2.0, tulip: 1.95, sunflower: 2.75, daisy: 1.8, lavender: 1.95, hydrangea: 1.85 };
+const PLANT_TOP = { rose: 2.0, tulip: 1.95, sunflower: 2.75, daisy: 1.8, lavender: 1.95, hydrangea: 1.85, cosmos: 1.95, carnation: 1.8, marigold: 1.55, lily: 2.5, peony: 1.85, orchid: 1.75 };
 
 export class FarmView {
   constructor(scene) {

@@ -13,9 +13,8 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
 
 ## Tiến độ
 
-- ✅ GĐ1–13 xong (xem `README.md`). Kế hoạch đã thống nhất với người dùng (03/11/2026), mỗi GĐ xong thì DỪNG chờ đồng ý:
-  GĐ14 6 hạt mới (cẩm chướng, mẫu đơn, ly, sao nhái, lan hồ điệp chỉ nhà kính, cúc vạn thọ), 3 bệnh mới, 5 thời tiết mới
-  → GĐ15 Vận May (gói Thường/Vàng bằng tiền & vé TRONG GAME, công khai tỉ lệ, bảo hiểm, mảnh; cây hiếm có hiệu ứng động).
+- ✅ GĐ1–14 xong (xem `README.md`). Kế hoạch đã thống nhất với người dùng (03/11/2026), mỗi GĐ xong thì DỪNG chờ đồng ý:
+  còn GĐ15 Vận May (gói Thường/Vàng bằng tiền & vé TRONG GAME, công khai tỉ lệ, bảo hiểm, mảnh; cây hiếm có hiệu ứng động).
 - Đưa lên mạng: Netlify (`netlify.toml`, `docs/HUONG_DAN_DUA_LEN_MANG.md`) — trang thật: https://tiem-hoa-giac-mo.netlify.app
   (Netlify đang deploy nhánh `ccr-845954e0-2hh7a1`; `main` chỉ có commit đầu tiên). APK: Capacitor + GitHub Actions
   (`.github/workflows/android.yml`, `android-keystore.yml`, `docs/HUONG_DAN_APK.md`); thư mục `android/` KHÔNG commit,
@@ -95,6 +94,13 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   Logic `src/systems/land.js` (quote cố định theo ngày bằng hash, bargain 1 lần/ngày lưu `save.land.deals`, buyParcel).
   Bản đồ: biển + dây quanh mảnh đất `world.parcels[id]` (pick 'parcel'), vùng cấm đặt đồ; cây cũ trên mảnh đất bị bỏ khi dựng.
   Mua xong trả đồ trang trí trong mảnh đất về kho. Ảnh chụp bạn bè: plots có `sl`/`pc` (tối đa 8 lô).
+- **Hoa/bệnh/thời tiết GĐ14**: thêm loài = `data/flowers.js` (+`greenhouseOnly`, `tall`) + `data/variants.js` + mô hình
+  `src/models/flowers.js` (bảng `h`, hàm build riêng) + `PLANT_TOP` (farmView) + `flowerSVG` (`src/ui/bouquetPreview.js`).
+  `farming.plant(..., { plot })` chặn hoa chỉ trồng nhà kính. Bệnh/thời tiết hoàn toàn theo trường số liệu trong `data/seasons.js`
+  (`hour`, `onlyWeather`, `coverSafe`, `growMult`, `healthLoss`, `qPenalty`, `fertCures`, `waters`, `waterMult`, `tallOnly`,
+  `blowsCover`, `spawnMult`, `bonusStarChance`, `giftHour`) — logic ở `src/systems/weather.js` / `farming.js`, không ghi cứng tên.
+  Hiệu ứng `src/render/weatherFx.js`: Points dùng `sizeAttenuation: false` (camera trực giao ⇒ kích thước tính bằng px);
+  cầu vồng & sao băng vẽ theo khung camera (`depthTest: false`) vì nhìn xuống không thấy trời.
 - **Dò chạm** (0.9.7): `game.pickAt` bỏ qua vật ẩn (three.js không tự bỏ), chạm sát mặt đất / khe thì lấy ô dưới ngón tay
   (`farmView.tileNear`).
 - **Âm thanh / intro** (bản 0.9.2): nhạc nền `public/audio/*.mp3` (đã nén 112 kbps), số liệu ở `data/audio.js`.

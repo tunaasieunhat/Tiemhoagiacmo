@@ -4,6 +4,8 @@
 // =============================================================
 import { WEATHER, DISEASES, DISEASE, SEASON_EFFECT, PROTECTION } from '../../data/seasons.js';
 import { calendarOf, dayOf, endOfDay, festivalOn } from './calendar.js';
+import { FLOWERS } from '../../data/flowers.js';
+import { VARIANTS } from '../../data/variants.js';
 
 export function createWeatherState() {
   return { today: null, tomorrow: null };
@@ -21,7 +23,10 @@ export function rollDay(rng, day) {
   const si = calendarOf(day).seasonIndex;
   const type = pickWeighted(rng, Object.entries(WEATHER).map(([k, w]) => [k, w.chance[si]]));
   let disease = null;
-  for (const [k, d] of Object.entries(DISEASES)) if (!disease && rng() < d.chance[si]) disease = k;
+  for (const [k, d] of Object.entries(DISEASES)) {
+    if (disease || (d.onlyWeather && !d.onlyWeather.includes(type))) continue;
+    if (rng() < d.chance[si]) disease = k;
+  }
   return { day, type, disease };
 }
 
@@ -40,10 +45,24 @@ export function plotEnv(save, plot) {
   const now = save.time.gameMinutes;
   const t = save.weather?.today?.type;
   const prot = isProtected(plot, now);
-  return {
-    waterMult: t === 'heat' && !prot ? WEATHER.heat.waterMult : 1,
-    rain: t === 'rain' && !plot.greenhouse,
-  };
+  const W = WEATHER[t] || {};
+  let waterMult = W.waterMult ?? 1;
+  if (waterMult > 1 && prot) waterMult = 1; // được che thì không khô nhanh
+  return { waterMult, rain: !!W.waters && !plot.greenhouse };
+}
+
+/** Giờ bùng phát của 1 loại bệnh */
+export const outbreakHourOf = (id) => DISEASES[id]?.hour ?? DISEASE.outbreakHour;
+
+/** Hạt màu hiếm ngẫu nhiên trong các loài đã mở khóa (quà mưa sao băng) */
+export function randomRareSeed(save, rng = Math.random) {
+  const lv = save.player?.level || 1;
+  const list = [];
+  for (const [sp, vs] of Object.entries(VARIANTS)) {
+    if (!FLOWERS[sp] || FLOWERS[sp].unlockLevel > lv) continue;
+    for (const [v, d] of Object.entries(vs)) if (d.rarity === 'rare') list.push(`${sp}:${v}`);
+  }
+  return list.length ? list[Math.floor(rng() * list.length)] : null;
 }
 
 const crossed = (from, to, mark) => from < mark && to >= mark;
@@ -66,36 +85,50 @@ export function weatherTick(save, from, to, { rng = Math.random, offline = false
   const dayStart = (dayTo - 1) * 1440;
   const factor = offline ? PROTECTION.offlineDamageFactor : 1;
 
-  // thiên tai theo giờ (bão, sương giá)
+  // thiên tai theo giờ (bão, sương giá, mưa đá, gió lớn)
   const wt = WEATHER[today.type];
   if (wt.hour != null && crossed(from, to, dayStart + wt.hour * 60)) {
-    let hit = 0, destroyed = 0, saved = 0;
+    let hit = 0, destroyed = 0, saved = 0, blown = 0;
     for (const plot of save.farm.plots) {
-      const prot = isProtected(plot, to);
+      let prot = isProtected(plot, to);
+      // gió lớn: bạt che đỡ được lần này nhưng bị thổi bay mất (nhà kính thì không sao)
+      if (wt.blowsCover && !plot.greenhouse && (plot.coverUntil || 0) >= to) { plot.coverUntil = 0; blown++; }
       for (const tile of plot.tiles) {
         if (tile.state !== 'growing' && tile.state !== 'ready') continue;
         if (today.type === 'frost' && SEASON_EFFECT.coldHardy.includes(tile.flower)) continue;
+        if (wt.tallOnly && !FLOWERS[tile.flower]?.tall) continue;
         if (prot) { saved++; continue; }
         hit++;
         tile.health = Math.max(0, tile.health - wt.damage * factor);
-        if (today.type === 'storm' && rng() < wt.destroyChance * factor) tile.health = 0;
+        if (wt.destroyChance && rng() < wt.destroyChance * factor) tile.health = 0;
         if (tile.health <= 0) { tile.state = 'dead'; destroyed++; }
       }
     }
-    events.push({ type: 'disaster', weather: today.type, hit, destroyed, saved, silent: offline });
+    events.push({ type: 'disaster', weather: today.type, hit, destroyed, saved, blown, silent: offline });
+  }
+
+  // mưa sao băng: tặng 1 hạt màu hiếm
+  if (wt.giftHour != null && crossed(from, to, dayStart + wt.giftHour * 60)) {
+    const seed = randomRareSeed(save, rng);
+    if (seed) {
+      save.inventory.seeds[seed] = (save.inventory.seeds[seed] || 0) + 1;
+      events.push({ type: 'gift', weather: today.type, seed, silent: offline });
+    }
   }
 
   // dịch bệnh bùng phát
-  if (today.disease && crossed(from, to, dayStart + DISEASE.outbreakHour * 60)) {
+  if (today.disease && crossed(from, to, dayStart + outbreakHourOf(today.disease) * 60)) {
     const d = DISEASES[today.disease];
     let infected = 0, guarded = 0;
     for (const plot of save.farm.plots) {
+      const covered = d.coverSafe && isProtected(plot, to);
       for (const tile of plot.tiles) {
         if ((tile.state !== 'growing' && tile.state !== 'ready') || tile.sick) continue;
-        if ((tile.guardUntil || 0) >= to) { guarded++; continue; }
+        if ((tile.guardUntil || 0) >= to || covered) { guarded++; continue; }
         let p = d.spread * (plot.greenhouse ? DISEASE.greenhouseFactor : 1);
-        if (today.disease === 'fungus' && today.type === 'rain') p *= DISEASE.rainBoostFungus;
-        if (rng() < p) { tile.sick = today.disease; infected++; }
+        if (today.disease === 'fungus' && (today.type === 'rain' || wt.fungusBoost)) p *= DISEASE.rainBoostFungus;
+        if (d.lowFertBoost && !tile.fert) p *= d.lowFertBoost;
+        if (rng() < Math.min(0.95, p)) { tile.sick = today.disease; infected++; }
       }
     }
     events.push({ type: 'outbreak', disease: today.disease, infected, guarded, silent: offline });

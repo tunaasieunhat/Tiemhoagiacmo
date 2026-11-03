@@ -131,7 +131,7 @@ export function spawnRegular(save, id) {
 }
 
 /** Cho thời gian trôi ở cửa hàng. Trả về danh sách sự kiện [{type:'arrive'|'timeout', customer}] */
-export function shopTick(save, { offline = false, rng = Math.random, hourFloat, flowerIds, festival = null, seasonal = [], day = 1 }) {
+export function shopTick(save, { offline = false, rng = Math.random, hourFloat, flowerIds, festival = null, seasonal = [], day = 1, spawnMult = 1 }) {
   const sh = save.shop;
   const now = save.time.gameMinutes;
   const events = [];
@@ -158,7 +158,7 @@ export function shopTick(save, { offline = false, rng = Math.random, hourFloat, 
       ? spawnRegular(save, pick(rng, regs))
       : spawnCustomer(save, rng, flowerIds, { festival, seasonal, found: Object.keys(save.book?.found || {}) });
     events.push({ type: 'arrive', customer });
-    sh.nextSpawnAt = now + randRange(rng, SHOP.spawnEvery) * (1 - SHOP.spawnFasterPerTier) ** tier * (festival ? festival.spawnMult : 1);
+    sh.nextSpawnAt = now + randRange(rng, SHOP.spawnEvery) * (1 - SHOP.spawnFasterPerTier) ** tier * (festival ? festival.spawnMult : 1) * spawnMult;
   } else if (now >= sh.nextSpawnAt) {
     sh.nextSpawnAt = now + 10; // hàng đã đầy, thử lại sau
   }

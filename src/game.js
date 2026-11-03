@@ -54,7 +54,7 @@ import { createPlot } from './save/schema.js';
 
 const ACTIONS = {
   till: (t, s) => farming.till(t, s),
-  plant: (t, s, o, now) => farming.plant(t, o.seed, s, now),
+  plant: (t, s, o, now) => farming.plant(t, o.seed, s, now, { plot: o.plot }),
   water: (t, s) => farming.water(t, s),
   fertilize: (t, s) => farming.fertilize(t, s),
   harvest: (t, s) => farming.harvest(t, s),
@@ -96,7 +96,7 @@ export class Game {
     this.fireflies = new Fireflies(stage.scene, world.fireflyAnchors);
     this.dayNight = new DayNight(stage, world.lampLights);
     this.seasonVisuals = new SeasonVisuals();
-    this.weatherFx = new WeatherFx(stage.scene);
+    this.weatherFx = new WeatherFx(stage.scene, stage.camera);
     weather.ensureWeather(this.save);
     this.applyWeatherVisuals(true);
     // GĐ8: trang trí, nhân viên, nhiệm vụ
@@ -197,6 +197,7 @@ export class Game {
       const shopEv = shop.shopTick(s, {
         offline, hourFloat: this.clock.hourFloat, flowerIds: this.unlockedFlowers(),
         festival: calendar.festivalOn(day), seasonal: calendar.seasonFlowers(day), day,
+        spawnMult: WEATHER[s.weather?.today?.type]?.spawnMult ?? 1,
       });
       for (const e of shopEv) {
         const npc = shop.npcOf(e.customer.npc);
@@ -239,6 +240,7 @@ export class Game {
       const parts = [];
       if (W.disaster) parts.push(`${W.icon} ${W.name}`);
       if (tm.disease) parts.push(`${DISEASES[tm.disease].icon} ${DISEASES[tm.disease].name}`);
+      if (W.good) parts.push(`${W.icon} ${W.name}`);
       if (e.tomorrowFestival) parts.push(`${e.tomorrowFestival.icon} ${e.tomorrowFestival.name}`);
       if (parts.length) setTimeout(() => this.toast(`📢 Dự báo ngày mai: ${parts.join(', ')}. Bấm vào đồng hồ để xem cách chuẩn bị`, W.disaster || tm.disease ? 'warn' : 'info'), 1200);
     } else if (e.type === 'disaster') {
@@ -248,17 +250,28 @@ export class Game {
       const W = WEATHER[e.weather];
       if (e.hit) this.toast(`${W.icon} ${W.name}! ${e.hit} cây bị ảnh hưởng${e.destroyed ? `, ${e.destroyed} cây bị hỏng` : ''}${e.saved ? ` · ${e.saved} cây được che chắn an toàn` : ''}`, 'bad');
       else if (e.saved) this.toast(`${W.icon} ${W.name} đã qua. Nhờ che chắn, ${e.saved} cây đều an toàn! 👍`, 'good');
+      else if (!e.blown) this.toast(`${W.icon} ${W.name} đã qua, vườn không bị hại gì 👍`, 'info');
+      if (e.blown) setTimeout(() => this.toast(`${W.icon} Gió thổi bay bạt che của ${e.blown} lô! Nhớ che lại nếu sắp có thiên tai`, 'warn'), 900);
       this.refreshFarm();
+    } else if (e.type === 'gift') {
+      this.emitter.emit('inventory');
+      if (e.silent) return;
+      const { species, variant } = variants.parseVkey(e.seed);
+      this.toast(`🌠 Một ngôi sao băng rơi xuống vườn... bạn nhặt được hạt ${variants.variantName(species, variant)} hiếm!`, 'good');
+      if (!this.visit) this.particles.spawn('sparkle', this.player.root.position.clone().setY(1.2));
     } else if (e.type === 'outbreak') {
       ev.outbreaks.push(e);
       if (e.silent) return;
       const D = DISEASES[e.disease];
-      if (e.infected) this.toast(`${D.icon} ${D.name} bùng phát: ${e.infected} cây bị bệnh! Dùng 💊 Thuốc để chữa`, 'bad');
-      else this.toast(`${D.icon} ${D.name} xuất hiện nhưng không cây nào bị lây${e.guarded ? ' nhờ phun thuốc phòng' : ''} 👍`, 'good');
+      if (e.infected) this.toast(`${D.icon} ${D.name} bùng phát: ${e.infected} cây bị bệnh! Dùng 💊 Thuốc${D.fertCures ? ' hoặc 🧪 phân bón' : ''} để chữa`, 'bad');
+      else this.toast(`${D.icon} ${D.name} xuất hiện nhưng không cây nào bị${e.guarded ? ' nhờ được phòng trước' : ''} 👍`, 'good');
     } else if (e.type === 'remind') {
       const W = WEATHER[e.tomorrow.type];
       const what = [W.disaster ? W.name : '', e.tomorrow.disease ? DISEASES[e.tomorrow.disease].name : ''].filter(Boolean).join(' và ');
-      this.toast(`⏰ Ngày mai có ${what}! Nhớ ${W.disaster ? 'che bạt ⛺' : ''}${W.disaster && e.tomorrow.disease ? ' và ' : ''}${e.tomorrow.disease ? 'phun thuốc 💊' : ''} nhé`, 'warn');
+      const D = DISEASES[e.tomorrow.disease];
+      const coverTip = W.disaster ? (W.blowsCover ? 'che bạt ⛺ cho cây thân cao (bạt đỡ xong sẽ bị gió thổi bay)' : 'che bạt ⛺') : '';
+      const medTip = D ? (D.coverSafe ? 'che bạt ⛺ hoặc phun thuốc 💊' : 'phun thuốc 💊') : '';
+      this.toast(`⏰ Ngày mai có ${what}! Nhớ ${coverTip}${coverTip && medTip ? ' và ' : ''}${medTip} nhé`, 'warn');
     }
   }
 
@@ -269,7 +282,7 @@ export class Game {
     this.seasonVisuals.set(c.seasonIndex, instant);
     this.weatherFx.set(w.today.type, c.seasonIndex);
     this.dayNight.setWeather(w.today.type);
-    this.farmView.wind = w.today.type === 'storm' ? 1 : w.today.type === 'rain' ? 0.25 : 0;
+    this.farmView.wind = { storm: 1, wind: 0.85, hail: 0.5, rain: 0.25 }[w.today.type] || 0;
   }
 
   update(dt) {
@@ -314,7 +327,7 @@ export class Game {
     this.customers.update(dt);
     this.dayNight.update(c.hourFloat, this.controls.target, dt);
     this.seasonVisuals.update(dt);
-    this.weatherFx.update(dt, this.controls.target);
+    this.weatherFx.update(dt, this.controls.target, this.clock.hourFloat);
     this.decorView.update(dt);
     this.villagers.update(dt, this.villageCtx());
     for (const m of Object.values(this.staffModels)) if (m.visible) m.position.y = Math.abs(Math.sin(performance.now() / 400)) * 0.03;
@@ -417,6 +430,7 @@ export class Game {
     if (!tile || !fn) return false;
     if (action === 'plant' && !opt.seed) opt.seed = this.seed;
     const s = this.save;
+    if (action === 'plant') opt.plot = s.farm.plots[pick.plot];
     const test = fn(structuredClone(tile), structuredClone({ tools: s.tools, inventory: s.inventory, stats: s.stats, upgrades: s.upgrades }), opt, this.now);
     if (!test.ok) { this.toast(test.msg, 'warn'); return false; }
     const pos = this.farmView.tileWorldPos(pick.plot, pick.tile);
@@ -442,7 +456,8 @@ export class Game {
       if (tile.offSeason) setTimeout(() => this.toast(`🍂 ${fname} đang trái mùa: lớn chậm và khó đạt 3★ (trừ khi có nhà kính)`, 'warn'), 600);
     }
     if (action === 'harvest') {
-      this.emitter.emit('float', { pos: pos.clone().setY(1.2), text: `+1 ${FLOWERS[res.flower].icon} ${'★'.repeat(res.quality)}` });
+      this.emitter.emit('float', { pos: pos.clone().setY(1.2), text: `+1 ${FLOWERS[res.flower].icon} ${'★'.repeat(res.quality)}${res.bonus ? ' 🌈' : ''}` });
+      if (res.bonus) this.particles.spawn('sparkle', pos);
       this.particles.spawn('leaf', pos);
       if (notebook.recordHarvest(this.save, res.flower, res.variant, res.quality, dayOf(this.now))) {
         const r = variants.rarityOf(res.flower, res.variant);

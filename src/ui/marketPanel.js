@@ -74,7 +74,7 @@ export class MarketPanel {
       const f = FLOWERS[id];
       return this.card({
         icon: f.icon, name: `Hạt ${variants.variantName(id, null)}`,
-        desc: `Lớn trong ${formatDuration(f.growHours * 60)} · tưới ${f.waterPerDay} lần/ngày · bán ~${f.basePrice} 💰`,
+        desc: `Lớn trong ${formatDuration(f.growHours * 60)} · tưới ${f.waterPerDay} lần/ngày · bán ~${f.basePrice} 💰${f.greenhouseOnly ? ' · 🏠 chỉ trồng trong nhà kính' : ''}${f.tall ? ' · 🌬️ thân cao, sợ gió lớn' : ''}`,
         price: f.seedPrice, lock: lv < f.unlockLevel ? f.unlockLevel : 0, owned: this.save.inventory.seeds[variants.vkey(id)] || 0,
         buttons: this.buyBtns('seed', id, f.seedPrice),
       });

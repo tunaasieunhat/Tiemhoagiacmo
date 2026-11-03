@@ -4,6 +4,15 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.14.0',
+    notes: [
+      '🌱 6 loài hoa mới: 🌸 Sao nhái, 💮 Cẩm chướng, 🏵️ Cúc vạn thọ, 🪷 Hoa ly, 🌺 Mẫu đơn, 🪻 Lan hồ điệp (chỉ trồng trong 🏠 nhà kính) — kèm 24 màu mới để lai tạo',
+      '🦠 3 bệnh mới: 🪲 Sâu đục nụ (hoa mất 1⭐), 🍂 Vàng lá (bón phân là khỏi), 🐌 Ốc sên (chỉ ngày mưa, 19:00 — che bạt là không bị)',
+      '🌦️ 5 thời tiết mới: 🧊 Mưa đá, 🌬️ Gió lớn (gãy cây thân cao, thổi bay bạt), 🌫️ Sương mù, 🌈 Cầu vồng (thu hoạch có thể +1⭐), 🌠 Mưa sao băng (tặng hạt màu hiếm)',
+      'Sửa lỗi tuyết và cánh hoa bay không hiện trên màn hình; hoa mới có mặt trong lễ hội Tết, 8/3, Mùa cưới, 20/10, Bí Ngô, 20/11',
+    ],
+  },
+  {
     version: '0.13.0',
     notes: [
       '🗺️ Mua đất của dân làng: 4 mảnh đất quanh nông trại của Bà Tư, Ông Ba, Cô Ngân, thầy Duy — mỗi mảnh thêm 9 ô trồng hoa',

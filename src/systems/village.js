@@ -1,9 +1,10 @@
 // Làng Hoa (GĐ11) — LOGIC THUẦN: ai đang ở đâu, làm gì (theo giờ game, thời tiết); tìm đường theo đường đá.
 import { VILLAGE, HOUSES, NEW_VILLAGERS, REGULAR_ROLES, LEAVES_AFTER_STORY, ACTIVITIES, SPOTS, SCHEDULES, NODES, EDGES, LINES } from '../../data/village.js';
 import { REGULARS } from '../../data/regulars.js';
+import { BAD_WEATHER as BAD_WEATHER_LIST } from '../../data/seasons.js';
 
 export const VILLAGER_IDS = Object.keys(SCHEDULES);
-const BAD_WEATHER = new Set(['rain', 'storm']);
+const BAD_WEATHER = new Set(BAD_WEATHER_LIST);
 
 export function homeOf(id) {
   return Object.keys(HOUSES).find((h) => HOUSES[h].owner === id) || null;
