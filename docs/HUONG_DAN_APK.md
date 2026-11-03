@@ -28,10 +28,11 @@ lên trang **Releases**.
 
 ## 2. Phát hành APK
 
-Sau khi có khóa, **mỗi lần code game được đẩy lên GitHub**, khoảng 8 phút sau APK mới tự xuất hiện ở trang
+Sau khi có khóa, **mỗi lần code game được đẩy lên GitHub**, khoảng 3 phút sau APK mới tự xuất hiện ở trang
 **Releases** (cột phải trang repo), tên file luôn là `TiemHoaGiacMo.apk` ⇒ link tải ở trên luôn đúng.
 
-Muốn build ngay mà không đợi: tab **Actions** → **Đóng gói APK Android** → **Run workflow** → **Run workflow**.
+Muốn build lại ngay: tab **Actions** → **Đóng gói APK Android** → bấm lượt chạy mới nhất → **Re-run all jobs**.
+(Nút *Run workflow* chỉ hiện khi quy trình đã có ở nhánh `main`.)
 
 Nếu lượt chạy bị ❌: bấm vào lượt chạy, dòng chữ đỏ ở mục *Annotations* cho biết lý do
 (thường gặp: dán secret thiếu ký tự ⇒ xóa secret rồi dán lại toàn bộ file).
