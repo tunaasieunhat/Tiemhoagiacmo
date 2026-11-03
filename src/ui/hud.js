@@ -9,6 +9,10 @@ import { TUTORIAL } from '../game.js';
 import { ShopPanel } from './shopPanel.js';
 import { MarketPanel } from './marketPanel.js';
 import { LabPanel } from './labPanel.js';
+import { FriendsPanel, messagesHtml } from './friendsPanel.js';
+import { social } from '../online/social.js';
+import { viError } from '../online/errors.js';
+import { isCleanText } from '../online/names.js';
 import { NotebookPanel } from './notebookPanel.js';
 import * as variants from '../systems/variants.js';
 import { REGULARS } from '../../data/regulars.js';
@@ -68,6 +72,8 @@ export class Hud {
     em.on('lab', () => { this.updateLabBadge(); if (this.modal === 'lab') this.lab.render(); });
     em.on('book', () => { if (this.modal === 'notebook') this.notebook.render(); });
     em.on('regular-story', (st) => this.showStory(st));
+    em.on('social', () => this.updateFriendBadge());
+    em.on('visit', (v) => this.updateVisit(v));
     em.on('xp', () => this.updateWallet());
     em.on('levelup', (ups) => this.showLevelUp(ups));
     em.on('weather', () => { this.updateAlert(); this.updateClock(this.game.clock); if (this.modal === 'forecast') this.openForecast(); });
@@ -82,6 +88,7 @@ export class Hud {
     this.marketPanel = new MarketPanel(this);
     this.lab = new LabPanel(this);
     this.notebook = new NotebookPanel(this);
+    this.friends = new FriendsPanel(this);
     this.updateAlert();
     this.updateWallet();
   }
@@ -113,6 +120,7 @@ export class Hud {
         <button class="round" data-act="go-shop" aria-label="Tiệm hoa">🏪<span class="badge hidden nav-badge"></span></button>
         <button class="round" data-act="go-market" aria-label="Khu chợ">🧺</button>
         <button class="round" data-act="go-lab" aria-label="Nhà lai tạo">🧬<span class="badge hidden lab-badge">✓</span></button>
+        <button class="round" data-act="friends" aria-label="Bạn bè">👥<span class="badge hidden fr-badge"></span></button>
       </div>
       <button class="alert-chip hidden" data-act="forecast"></button>
       <div class="saved-badge">💾 Đã lưu</div>
@@ -129,14 +137,24 @@ export class Hud {
         </div>
       </div>
       <div class="tutorial hidden"></div>
+      <div class="visit-bar hidden"></div>
+      <div class="visit-actions hidden"></div>
       <div class="sheet tile-panel hidden"></div>
       <div class="modal-wrap hidden"><div class="modal"></div></div>
     `;
     this.root.addEventListener('click', (e) => this.onClick(e));
     this.root.addEventListener('change', (e) => this.onChange(e));
+    this.root.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const f = e.target;
+      if (f.dataset.frForm) this.friends.onSubmit(f);
+      if (f.dataset.visitForm) this.postVisitMessage(f);
+    });
   }
 
   onClick(e) {
+    const fr = e.target.closest('[data-fr]');
+    if (fr) { this.friends.onAction(fr.dataset.fr, fr); return; }
     const lb = e.target.closest('[data-lab]');
     if (lb) { this.lab.onAction(lb.dataset.lab, lb); return; }
     const nb = e.target.closest('[data-nb]');
@@ -178,6 +196,11 @@ export class Hud {
       case 'forecast': this.openForecast(); break;
       case 'notebook': this.notebook.open(b.dataset.tab); break;
       case 'go-lab': this.openLab(); break;
+      case 'friends': this.friends.open(); break;
+      case 'visit-home': this.closeModal(); g.exitVisit(); break;
+      case 'visit-water': if (!b.classList.contains('disabled')) { b.classList.add('disabled'); g.helpWaterFriend(g.visit.profile.id); } else g.toast('Hôm nay đã tưới giúp nhà này rồi', 'info'); break;
+      case 'visit-gift': if (!b.classList.contains('disabled')) { this.friends.openGift(g.visit.profile); } else g.toast('Hôm nay đã tặng quà nhà này rồi', 'info'); break;
+      case 'visit-book': this.openVisitGuestbook(); break;
       case 'cover-all': g.coverAll(); this.openForecast(); break;
       case 'treat-all': g.treatAll(); this.openForecast(); break;
       case 'cover-plot': g.coverPlot(g.selected.plot); this.lastPanelHtml = ''; this.updateTilePanel(); break;
@@ -242,6 +265,63 @@ export class Hud {
     const badge = $('.nav-badge', this.root);
     badge.classList.toggle('hidden', !n);
     badge.textContent = n;
+  }
+
+  // ---------- bạn bè & thăm nhà ----------
+  updateFriendBadge() {
+    const n = this.game.account?.social?.badge || 0;
+    const b = $('.fr-badge', this.root);
+    b.classList.toggle('hidden', !n);
+    b.textContent = n;
+  }
+
+  updateVisit(v) {
+    this.root.classList.toggle('visiting', !!v);
+    const bar = $('.visit-bar', this.root);
+    const act = $('.visit-actions', this.root);
+    bar.classList.toggle('hidden', !v);
+    act.classList.toggle('hidden', !v);
+    if (!v) { if (this.modal === 'visitbook') this.closeModal(); return; }
+    const sn = v.snapshot || {};
+    bar.innerHTML = `<div class="vb-av">${avatarSVG(v.profile.avatar || {}, 44)}</div>
+      <div class="vb-info"><b>Nông trại của ${esc(v.profile.name)}</b>
+      <small>⭐ Cấp ${sn.level || 1}${sn.tier ? ` · ${sn.tierIcon || ''} ${esc(sn.tier)}` : ''}</small>
+      <small>🌸 ${sn.served || 0} khách · 💐 ${sn.bouquets || 0} bó hoa · 📖 Sổ tay ${sn.book || 0}%${sn.hearts ? ` · ❤️ ${sn.hearts}` : ''}</small></div>`;
+    act.innerHTML = `
+      <button class="tool ${v.helped_today ? 'disabled' : ''}" data-act="visit-water"><span class="ti">💧</span><span class="tl">${v.helped_today ? 'Đã tưới' : 'Tưới giúp'}</span></button>
+      <button class="tool ${v.gifted_today ? 'disabled' : ''}" data-act="visit-gift"><span class="ti">🎁</span><span class="tl">${v.gifted_today ? 'Đã tặng' : 'Tặng quà'}</span></button>
+      <button class="tool" data-act="visit-book"><span class="ti">✉️</span><span class="tl">Lưu bút (${v.messages?.length || 0})</span></button>
+      <button class="tool home" data-act="visit-home"><span class="ti">🏠</span><span class="tl">Về nhà</span></button>`;
+    if (this.modal === 'visitbook') this.openVisitGuestbook();
+  }
+
+  openVisitGuestbook() {
+    const v = this.game.visit;
+    if (!v) return;
+    const myId = this.game.account?.session?.user.id;
+    const draft = $('#vb-text', this.root)?.value || '';
+    this.openModal('visitbook', `
+      <h2>✉️ Sổ lưu bút của ${esc(v.profile.name)}</h2>
+      <form class="vb-form" data-visit-form="1">
+        <textarea id="vb-text" name="text" maxlength="140" rows="3" placeholder="Để lại lời nhắn thật dễ thương...">${esc(draft)}</textarea>
+        <button class="btn primary" type="submit">Gửi lời nhắn</button>
+      </form>
+      ${v.messages?.length ? messagesHtml(v.messages, myId, false) : '<p class="muted">Chưa có lời nhắn nào. Hãy là người đầu tiên!</p>'}`);
+  }
+
+  async postVisitMessage(form) {
+    const g = this.game;
+    const text = String(new FormData(form).get('text') || '').replace(/\s+/g, ' ').trim();
+    if (!text) { g.toast('Hãy viết gì đó nhé', 'warn'); return; }
+    if (!isCleanText(text)) { g.toast('Lời nhắn có từ ngữ không phù hợp', 'warn'); return; }
+    const btn = form.querySelector('button');
+    btn.disabled = true;
+    try {
+      await social.post(g.visit.profile.id, text);
+      g.toast('✉️ Đã để lại lời nhắn!', 'good');
+      form.querySelector('textarea').value = '';
+      await g.refreshVisit();
+    } catch (e) { g.toast(viError(e), 'warn'); btn.disabled = false; }
   }
 
   openLab() {
@@ -407,7 +487,7 @@ export class Hud {
   // ---------- thanh công cụ ----------
   updateToolbar() {
     const g = this.game;
-    this.root.querySelectorAll('.tool').forEach((b) => {
+    this.root.querySelectorAll('.toolbar .tool').forEach((b) => {
       b.classList.toggle('active', b.dataset.tool === g.tool);
       const badge = $('.badge', b);
       let n = null;

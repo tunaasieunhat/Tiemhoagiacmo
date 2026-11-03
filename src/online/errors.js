@@ -4,6 +4,10 @@ export function viError(err) {
   const msg = String(err.message || err.error_description || err).toLowerCase();
   const code = String(err.code || err.error_code || '');
   const has = (s) => msg.includes(s);
+  // lỗi tiếng Việt do hàm máy chủ trả về (tiền tố SOCIAL:)
+  const raw = String(err.message || '');
+  const i = raw.indexOf('SOCIAL: ');
+  if (i >= 0) return raw.slice(i + 8);
   if (has('invalid login credentials') || code === 'invalid_credentials') return 'Sai email hoặc mật khẩu.';
   if (has('email not confirmed') || code === 'email_not_confirmed') return 'Email chưa được xác nhận. Hãy mở hộp thư và bấm vào liên kết xác nhận.';
   if (has('already registered') || code === 'user_already_exists' || code === 'email_exists') return 'Email này đã có tài khoản. Hãy chuyển sang Đăng nhập.';

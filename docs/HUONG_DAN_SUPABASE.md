@@ -26,6 +26,11 @@ Làm một lần, khoảng 15 phút. Phần Google (bước 5) có thể làm sa
 
 Kiểm tra: menu **Table Editor** sẽ có các bảng `profiles`, `saves`, `banned_words`. Mỗi bảng có nhãn bảo mật RLS đã bật.
 
+**Tiếp theo (Giai đoạn 7 — bạn bè):** làm y hệt với file
+`supabase/migrations/20261103000001_gd7_social.sql` (New query → dán → Run).
+Sẽ có thêm các bảng `friendships`, `farm_showcase`, `farm_help`, `gifts`, `guestbook`, `rate_events`.
+Luôn chạy các file theo thứ tự ngày trong tên file.
+
 ## Bước 3 — Lấy 2 giá trị cần thiết cho game
 
 Menu trái **Project Settings** (bánh răng) → **API** (hoặc **Data API** / **API Keys**):

@@ -10,6 +10,7 @@ Công nghệ: Three.js + Vite, sau này dùng Supabase cho tài khoản online.
 - ✅ Giai đoạn 4 — Khu Chợ (hạt giống, vật tư, nâng cấp, mở rộng đất, bán sỉ), cấp độ + XP + thưởng lên cấp, 3 loài hoa mới (cúc họa mi, oải hương, cẩm tú cầu).
 - ✅ Giai đoạn 5 — 4 mùa (hoa đúng/trái mùa, cảnh vật đổi màu), lễ hội (Tết, 14/2, 8/3, Mùa cưới, 20/10, 20/11), thời tiết & thiên tai & dịch bệnh có dự báo trước 1 ngày, bạt che, thuốc, nhà kính.
 - ✅ Giai đoạn 6 — gói hoa sáng tạo (phối màu, ý nghĩa, cân đối, chất lượng), 18 màu hoa mới, ngôn ngữ loài hoa khám phá dần, Nhà Lai Tạo, Sổ tay thực vật, 4 khách quen có câu chuyện.
+- ✅ Giai đoạn 7 — bạn bè (tìm theo tên/mã, lời mời), thăm nông trại 3D của bạn (chỉ xem), tưới giúp 1 lần/ngày, tặng quà, sổ lưu bút — mọi giới hạn kiểm tra trên máy chủ.
 
 **Cài đặt online:** xem [Hướng dẫn Supabase](docs/HUONG_DAN_SUPABASE.md). Chưa cài thì game vẫn chạy ở chế độ khách (lưu trên máy).
 

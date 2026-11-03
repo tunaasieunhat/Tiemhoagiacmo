@@ -41,6 +41,9 @@ Tiemhoagiacmo/
 │  │  ├─ supabase.js       Tạo kết nối (chặn nhầm khóa bí mật), giới hạn thời gian chờ
 │  │  ├─ auth.js           Đăng nhập, đăng ký, quên mật khẩu, Google, hồ sơ
 │  │  ├─ cloudSync.js      Đồng bộ save: mất mạng, xung đột 2 máy
+│  │  ├─ social.js         Gọi hàm máy chủ bạn bè / quà / lời nhắn
+│  │  ├─ socialManager.js  Hỏi máy chủ định kỳ, nhận tưới giúp, đăng ảnh nông trại
+│  │  └─ showcase.js       Ảnh chụp nông trại công khai (không chứa tiền, kho đồ)
 │  │  ├─ names.js          Kiểm tra tên phía trình duyệt
 │  │  └─ errors.js         Lỗi tiếng Việt
 │  ├─ render/              ĐỒ HỌA 3D (Three.js)
@@ -83,8 +86,11 @@ cùng công thức để kiểm tra gian lận.
 
 ## 3. Bảng dữ liệu Supabase
 
-Đã làm (GĐ2, file `supabase/migrations/20261102000001_gd2_profiles_saves.sql`): `profiles`, `saves`, `banned_words`, hàm `push_save`.
-Các bảng còn lại làm ở GĐ7, GĐ8.
+Đã làm:
+- GĐ2 (`…_gd2_profiles_saves.sql`): `profiles`, `saves`, `banned_words`, hàm `push_save`.
+- GĐ7 (`…_gd7_social.sql`): `friendships`, `farm_showcase` (ảnh chụp nông trại công khai cho bạn bè), `farm_help`, `gifts`, `guestbook`, `rate_events` và các hàm máy chủ `search_players`, `send_friend_request`, `respond_friend_request`, `remove_friend`, `publish_showcase`, `help_water`, `claim_helps`, `send_gift`, `claim_gifts`, `post_message`, `delete_message`, `social_overview`, `visit_farm`, `my_guestbook`.
+
+GĐ7 dùng **hàm máy chủ Postgres (RPC, SECURITY DEFINER)** thay cho Edge Function: chạy trên máy chủ nên trình duyệt không gian lận được, kiểm tra + ghi trong cùng 1 giao dịch, và cài đặt chỉ cần dán SQL. Còn lại làm ở GĐ8.
 
 | Bảng | Nội dung | Ai được đọc / ghi (RLS) |
 |---|---|---|

@@ -11,6 +11,7 @@ import { formatDuration } from './systems/time.js';
 import { isOnlineConfigured, onlineConfigError, initialHash } from './online/supabase.js';
 import * as auth from './online/auth.js';
 import { CloudSync } from './online/cloudSync.js';
+import { SocialManager } from './online/socialManager.js';
 import { viError } from './online/errors.js';
 
 async function boot() {
@@ -125,6 +126,10 @@ async function boot() {
   saveMgr.startAutosave();
   await saveMgr.saveNow('boot');
   cloud?.start();
+  if (session && profile) {
+    game.account.social = new SocialManager({ game, emitter, userId: uid });
+    game.account.social.start();
+  }
 
   window.__game = game; // để thử nghiệm trong console trình duyệt
   console.info('Khởi động từ:', startSource);

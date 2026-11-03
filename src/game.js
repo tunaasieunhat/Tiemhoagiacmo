@@ -27,6 +27,10 @@ import { clockOf } from './systems/time.js';
 import { FarmView } from './render/farmView.js';
 import { Player } from './render/player.js';
 import { iconMaterial } from './render/icons.js';
+import { buildCharacter } from './models/character.js';
+import { snapshotToFarm } from './online/showcase.js';
+import { social } from './online/social.js';
+import { viError } from './online/errors.js';
 import { Particles, Fireflies } from './render/particles.js';
 import { DayNight } from './render/dayNight.js';
 import { CameraControls } from './render/cameraControls.js';
@@ -141,7 +145,7 @@ export class Game {
             const name = FLOWERS[tile.flower]?.name ?? 'Cây';
             if (e === 'ready') this.toast(`🌸 ${name} đã nở! Thu hoạch thôi`, 'good');
             if (e === 'dead') this.toast(`🥀 ${name} đã chết vì ${tile.sick ? 'bệnh' : 'thiếu nước'}`, 'bad');
-            if (e === 'ready') this.particles.spawn('sparkle', this.farmView.tileWorldPos(pi, ti));
+            if (e === 'ready' && !this.visit) this.particles.spawn('sparkle', this.farmView.tileWorldPos(pi, ti));
           }
         });
       });
@@ -195,7 +199,7 @@ export class Game {
       const W = WEATHER[e.weather];
       if (e.hit) this.toast(`${W.icon} ${W.name}! ${e.hit} cây bị ảnh hưởng${e.destroyed ? `, ${e.destroyed} cây bị hỏng` : ''}${e.saved ? ` · ${e.saved} cây được che chắn an toàn` : ''}`, 'bad');
       else if (e.saved) this.toast(`${W.icon} ${W.name} đã qua. Nhờ che chắn, ${e.saved} cây đều an toàn! 👍`, 'good');
-      this.farmView.sync(this.save);
+      this.refreshFarm();
     } else if (e.type === 'outbreak') {
       ev.outbreaks.push(e);
       if (e.silent) return;
@@ -243,9 +247,9 @@ export class Game {
     }
     if (this.clockT > 0.25) {
       this.clockT = 0;
-      this.farmView.sync(this.save);
+      if (!this.visit) this.farmView.sync(this.save);
       this.customers.sync(this.save);
-      const ready = breeding.labReady(this.save);
+      const ready = breeding.labReady(this.save) && !this.visit;
       this.labIcon.visible = ready;
       if (ready && !this.labNotified) { this.labNotified = true; this.toast('🧬 Nhà lai tạo đã xong! Bấm 🧬 để nhận hạt giống', 'good'); }
       if (!this.save.lab.slot) this.labNotified = false;
@@ -286,6 +290,7 @@ export class Game {
 
   onTap(x, y) {
     const pick = this.pickAt(x, y);
+    if (this.visit) { this.onVisitTap(pick); return; }
     if (!pick) { this.select(null); return; }
     if (pick.kind === 'tile') {
       if (this.tool === 'hand') this.select(pick);
@@ -331,6 +336,7 @@ export class Game {
   // ---------------- thao tác ----------------
   /** Kiểm tra trước rồi cho nhân vật đi tới làm */
   requestAction(pick, action, opt = {}) {
+    if (this.visit) return false;
     const tile = this.getTile(pick);
     const fn = ACTIONS[action];
     if (!tile || !fn) return false;
@@ -372,7 +378,7 @@ export class Game {
     } else {
       this.emitter.emit('float', { pos: pos.clone().setY(1.0), text: res.msg, small: true });
     }
-    this.farmView.sync(this.save);
+    this.refreshFarm();
     this.gainXp(action === 'harvest' ? XP.harvestPerStar * res.quality : XP[action] ?? 1);
     this.advanceTutorial(action);
     this.saveMgr.markDirty();
@@ -525,7 +531,7 @@ export class Game {
     this.toast(res.msg, res.ok ? 'good' : 'warn');
     if (!res.ok) return res;
     if (what === 'plot') {
-      this.farmView.build(s);
+      if (!this.visit) this.farmView.build(s);
       this.updateLockedSlots();
       const slot = s.farm.plots.length - 1;
       this.controls.focusOn(PLOT_SLOTS[slot]);
@@ -533,7 +539,7 @@ export class Game {
       this.particles.spawn('leaf', PLOT_SLOTS[slot].clone());
     }
     if (what === 'upgrade') this.applyUpgradeEffects();
-    if (what === 'greenhouse') { this.farmView.sync(s, true); this.controls.focusOn(PLOT_SLOTS[+id]); this.particles.spawn('sparkle', PLOT_SLOTS[+id].clone()); }
+    if (what === 'greenhouse') { this.refreshFarm(true); this.controls.focusOn(PLOT_SLOTS[+id]); this.particles.spawn('sparkle', PLOT_SLOTS[+id].clone()); }
     this.advanceTutorial('buy');
     this.saveMgr.markDirty();
     this.saveMgr.saveNow('manual');
@@ -555,6 +561,151 @@ export class Game {
       return g.visible;
     });
     this.pickRoots = [this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, ...locked];
+  }
+
+  /** Vẽ lại nông trại của mình (không làm gì khi đang thăm nhà bạn) */
+  refreshFarm(instant = false) {
+    if (!this.visit) this.farmView.sync(this.save, instant);
+  }
+
+  // ---------------- bạn bè (GĐ7) ----------------
+  get socialMgr() { return this.account?.social || null; }
+
+  /** Bạn bè đã tưới giúp nông trại của mình */
+  receiveWaterHelp(helps) {
+    const s = this.save;
+    const cap = farming.waterCapacity(s);
+    s.farm.plots.forEach((p) => p.tiles.forEach((t) => { if (['tilled', 'growing', 'ready'].includes(t.state)) t.water = Math.max(t.water, cap); }));
+    const names = [...new Set(helps.map((h) => h.helper || 'Một người bạn'))];
+    this.toast(`💧 ${names.slice(0, 3).join(', ')}${names.length > 3 ? ` và ${names.length - 3} người khác` : ''} đã tưới giúp nông trại của bạn!`, 'good');
+    if (!this.visit) { s.farm.plots.forEach((_, pi) => this.particles.spawn('water', PLOT_SLOTS[pi].clone())); this.farmView.sync(s); }
+    this.saveMgr.markDirty();
+  }
+
+  /** Nhận quà từ hộp quà (đã được máy chủ đánh dấu là đã nhận) */
+  receiveGifts(list) {
+    const s = this.save;
+    const inv = s.inventory;
+    const lines = [];
+    for (const g of list) {
+      if (g.kind === 'flower' && /^[a-z]+:[a-z]+\|[1-3]$/.test(g.key)) { inv.flowers[g.key] = (inv.flowers[g.key] || 0) + g.qty; const f = variants.parseFlowerKey(g.key); lines.push(`${g.qty} ${variants.variantName(f.species, f.variant)} ${'★'.repeat(f.q)}`); }
+      else if (g.kind === 'seed' && /^[a-z]+:[a-z]+$/.test(g.key)) { inv.seeds[g.key] = (inv.seeds[g.key] || 0) + g.qty; const v = variants.parseVkey(g.key); lines.push(`${g.qty} hạt ${variants.variantName(v.species, v.variant)}`); }
+      else if (g.kind === 'item' && ['fertilizer', 'cover', 'medicine'].includes(g.key)) { inv.items[g.key] = (inv.items[g.key] || 0) + g.qty; lines.push(`${g.qty} ${{ fertilizer: 'phân bón', cover: 'bạt che', medicine: 'thuốc' }[g.key]}`); }
+      else if (g.kind === 'coins') { s.player.coins += g.qty; lines.push(`${g.qty} xu`); }
+    }
+    this.saveMgr.markDirty();
+    this.saveMgr.saveNow('manual');
+    this.emitter.emit('inventory');
+    this.emitter.emit('tool', this.tool);
+    return lines;
+  }
+
+  /** Tưới giúp bạn (máy chủ kiểm tra 1 lần/ngày). Thưởng nhỏ cho người tốt bụng */
+  async helpWaterFriend(friendId) {
+    const r = await this.socialMgr?.act(() => social.helpWater(friendId));
+    if (!r) return false;
+    this.save.player.coins += 10;
+    this.gainXp(5);
+    this.toast('💧 Đã tưới giúp! +10 💰 +5 XP vì lòng tốt', 'good');
+    if (this.visit?.profile.id === friendId) {
+      this.visit.helped_today = true;
+      this.visitFarm.farm.plots.forEach((p, pi) => {
+        p.tiles.forEach((t) => { if (t.state !== 'untilled') t.water = 1; });
+        this.particles.spawn('water', PLOT_SLOTS[pi].clone());
+      });
+      this.farmView.sync(this.visitFarm, true);
+      this.emitter.emit('visit', this.visit);
+    }
+    this.saveMgr.markDirty();
+    this.emitter.emit('inventory');
+    return true;
+  }
+
+  /** Tặng quà: đồng bộ trước (máy chủ đối chiếu với save trên mạng), gửi, rồi trừ trong kho */
+  async sendGiftTo(friendId, kind, key, qty, message) {
+    const s = this.save;
+    const inv = s.inventory;
+    const have = kind === 'flower' ? inv.flowers[key] : kind === 'seed' ? inv.seeds[key] : kind === 'item' ? inv.items[key] : s.player.coins;
+    if (!(have >= qty)) { this.toast('Bạn không có đủ món này', 'warn'); return false; }
+    const cloud = this.account?.cloud;
+    await this.saveMgr.saveNow('manual');
+    if (cloud && !(await cloud.flush())) { this.toast('Chưa đồng bộ được tiến độ lên mạng, thử lại sau nhé', 'warn'); return false; }
+    try {
+      await social.sendGift(friendId, kind, key, qty, message);
+    } catch (e) {
+      this.toast(viError(e), 'warn');
+      return false;
+    }
+    if (kind === 'flower') { inv.flowers[key] -= qty; if (!inv.flowers[key]) delete inv.flowers[key]; }
+    else if (kind === 'seed') inv.seeds[key] -= qty;
+    else if (kind === 'item') inv.items[key] -= qty;
+    else s.player.coins -= qty;
+    this.gainXp(3);
+    this.toast('🎁 Đã gửi quà! Bạn ấy sẽ nhận trong Hộp quà', 'good');
+    if (this.visit?.profile.id === friendId) { this.visit.gifted_today = true; this.emitter.emit('visit', this.visit); }
+    this.saveMgr.markDirty();
+    this.saveMgr.saveNow('manual');
+    this.emitter.emit('inventory');
+    this.socialMgr?.poll();
+    return true;
+  }
+
+  /** Vào thăm nông trại bạn bè (chỉ xem) */
+  async enterVisit(friendId) {
+    let data;
+    try { data = await social.visit(friendId); } catch (e) { this.toast(viError(e), 'warn'); return false; }
+    if (!data) { this.toast('Không tìm thấy nông trại này', 'warn'); return false; }
+    this.visit = data;
+    this.visitFarm = snapshotToFarm(data.snapshot);
+    this.select(null);
+    this.setTool('hand');
+    this.player.clearQueue();
+    this.farmView.build(this.visitFarm);
+    this.player.root.visible = false;
+    this.customers.root.visible = false;
+    this.labIcon.visible = false;
+    const n = this.visitFarm.farm.plots.length;
+    this.world.lockedSlots.forEach((g) => { g.visible = g.userData.pick.slot >= n; });
+    if (this.visitor) this.stage.scene.remove(this.visitor);
+    this.visitor = buildCharacter({ ...data.profile.avatar }).root;
+    this.visitor.position.copy(PLOT_SLOTS[0]).add(new THREE.Vector3(2.6, 0, 1.2));
+    this.visitor.rotation.y = -0.6;
+    this.stage.scene.add(this.visitor);
+    this.controls.focusOn(PLOT_SLOTS[0].clone().add(new THREE.Vector3(1.4, 0, 0)), 1.4);
+    if (!data.snapshot) this.toast(`${data.profile.name} chưa mở nông trại cho bạn bè xem (cần chơi online một lúc)`, 'info');
+    this.emitter.emit('visit', data);
+    return true;
+  }
+
+  exitVisit() {
+    if (!this.visit) return;
+    this.visit = null;
+    this.visitFarm = null;
+    if (this.visitor) { this.stage.scene.remove(this.visitor); this.visitor = null; }
+    this.farmView.build(this.save);
+    this.player.root.visible = true;
+    this.customers.root.visible = true;
+    this.updateLockedSlots();
+    this.controls.focusOn(PLOT_SLOTS[0].clone().add(new THREE.Vector3(1.4, 0, -0.6)));
+    this.emitter.emit('visit', null);
+  }
+
+  async refreshVisit() {
+    if (!this.visit) return;
+    try { const d = await social.visit(this.visit.profile.id); if (d) { Object.assign(this.visit, d); this.emitter.emit('visit', this.visit); } } catch { /* bỏ qua */ }
+  }
+
+  onVisitTap(pick) {
+    if (!pick) return;
+    if (pick.kind === 'tile') {
+      const t = this.visitFarm.farm.plots[pick.plot]?.tiles[pick.tile];
+      this.farmView.setSelected(pick);
+      if (!t || !t.flower) { this.toast(t?.state === 'tilled' ? 'Đất đã xới, chưa gieo hạt' : 'Ô đất trống', 'info'); return; }
+      const st = t.state === 'ready' ? 'đã nở' : t.state === 'dead' ? 'đã héo' : farming.STAGE_NAMES[farming.stageOf(t)].toLowerCase();
+      this.toast(`${FLOWERS[t.flower].icon} ${variants.variantName(t.flower, t.variant)} · ${st}${t.water < 0.25 && t.state !== 'dead' ? ' · đang khát nước 💧' : ''}`, 'info');
+    } else {
+      this.toast(`Bạn đang thăm nhà ${this.visit.profile.name}. Bấm 🏠 Về nhà để quay lại.`, 'info');
+    }
   }
 
   // ---------------- sổ tay & lai tạo ----------------
@@ -624,7 +775,7 @@ export class Game {
     for (const { t, pi, ti } of list) {
       if (!farming.treat(t, s, this.now).ok) break;
       n++;
-      this.particles.spawn('spray', this.farmView.tileWorldPos(pi, ti));
+      if (!this.visit) this.particles.spawn('spray', this.farmView.tileWorldPos(pi, ti));
     }
     if (!list.length) this.toast('Không có cây nào cần phun thuốc', 'info');
     else this.toast(n ? `💊 Đã phun thuốc cho ${n} cây${n < list.length ? ` (hết thuốc, còn ${list.length - n} cây)` : ''}` : 'Hết thuốc! Mua ở Khu Chợ, mục Phòng hộ', n ? 'good' : 'warn');
@@ -633,7 +784,7 @@ export class Game {
   }
 
   afterProtect() {
-    this.farmView.sync(this.save);
+    this.refreshFarm();
     this.saveMgr.markDirty();
     this.emitter.emit('inventory');
     this.emitter.emit('refresh');
@@ -657,7 +808,7 @@ export class Game {
 
   fastForward(hours) {
     const ev = this.advance(hours * 60);
-    this.farmView.sync(this.save);
+    this.refreshFarm();
     this.toast(`⏩ Đã tua nhanh ${hours} giờ game`, 'info');
     this.emitter.emit('refresh');
     return ev;

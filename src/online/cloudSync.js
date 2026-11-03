@@ -121,8 +121,10 @@ export class CloudSync {
     if (this.status === 'conflict' && !force) return;
     if (!this.hasPending && !force) { if (this.status !== 'synced') this.setStatus('synced'); return; }
     if (typeof navigator !== 'undefined' && navigator.onLine === false) { this.setStatus('offline'); return; }
-    if (this.busy) { this.again = true; return; }
+    if (this.busy) { this.again = true; return this.inflight; }
     this.busy = true;
+    let done;
+    this.inflight = new Promise((r) => { done = r; });
     this.lastTryAt = Date.now();
     this.setStatus('syncing');
     const s = this.saveMgr.save;
@@ -132,6 +134,7 @@ export class CloudSync {
         p_data: structuredClone(s), p_version: s.version, p_base_rev: s.meta.cloudRev || 0, p_device: deviceName(),
       }).abortSignal(sig), 15000);
       if (error) throw error;
+      this.lastResult = data.status;
       if (data.status === 'ok') {
         s.meta.cloudRev = data.rev;
         s.meta.syncedRev = Math.max(s.meta.syncedRev, sentRev);
@@ -152,8 +155,25 @@ export class CloudSync {
       this.setStatus(offline ? 'offline' : 'error', { message: e?.message });
     } finally {
       this.busy = false;
+      done();
       if (this.again) { this.again = false; setTimeout(() => this.push(), 3500); }
     }
+  }
+
+  /** Đợi đến khi save trên máy đã lên mạng (dùng trước khi tặng quà). Trả về true nếu thành công */
+  async flush(maxMs = 10000) {
+    const end = Date.now() + maxMs;
+    while (Date.now() < end) {
+      if (this.busy) { await this.inflight; continue; }
+      if (!this.hasPending) return true;
+      if (this.status === 'conflict') return false;
+      this.lastResult = null;
+      await this.push();
+      if (!this.hasPending) return true;
+      if (this.lastResult === 'rate_limited') await new Promise((r) => setTimeout(r, 3200));
+      else if (this.status === 'offline' || this.status === 'error') return false;
+    }
+    return !this.hasPending;
   }
 
   /** Người chơi chọn cách giải quyết xung đột giữa 2 máy */
