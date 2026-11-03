@@ -4,6 +4,14 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.9.2',
+    notes: [
+      'Có nhạc nền: 3 bài phát lần lượt, chỉnh âm lượng hoặc chuyển bài trong ⚙️ Cài đặt',
+      'Hiệu ứng cánh hoa và tiếng "tách" khi chạm',
+      'Video intro khi mở game (tắt được trong Cài đặt)',
+    ],
+  },
+  {
     version: '0.9.1',
     notes: [
       'Mở tài khoản online: đăng ký / đăng nhập bằng email, lưu tiến độ lên mạng',

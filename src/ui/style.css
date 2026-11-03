@@ -541,3 +541,35 @@ h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
   .sheet { bottom: calc(64px + var(--safe-bottom)); max-height: calc(100% - 80px); overflow: auto; }
   .nav-btns { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ---------- Intro khi mở game ---------- */
+#intro { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; transition: opacity .45s; }
+#intro.out { opacity: 0; pointer-events: none; }
+#intro video { width: 100%; height: 100%; object-fit: contain; display: block; }
+#intro .intro-skip { position: absolute; right: calc(14px + var(--safe-right, 0px)); bottom: calc(18px + var(--safe-bottom, 0px)); padding: 8px 16px; border-radius: 999px; background: rgba(255, 255, 255, .14); color: #fff; font-weight: 800; font-size: 14px; border: 1px solid rgba(255, 255, 255, .3); backdrop-filter: blur(4px); }
+#intro .intro-tap { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #fff; background: rgba(6, 9, 13, .55); cursor: pointer; }
+#intro .intro-tap span { font-size: 54px; animation: introPulse 1.4s ease-in-out infinite; }
+#intro .intro-tap b { font-size: 20px; letter-spacing: .5px; }
+#intro .hidden { display: none; }
+@keyframes introPulse { 50% { transform: scale(1.12); } }
+
+/* ---------- Hiệu ứng chạm ---------- */
+.tapfx { position: fixed; z-index: 70; width: 0; height: 0; pointer-events: none; }
+.tapfx i { position: absolute; left: 0; top: 0; pointer-events: none; }
+.tapfx .ring { width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; border: 3px solid rgba(255, 143, 177, .75); background: radial-gradient(rgba(255, 255, 255, .55), rgba(255, 194, 212, 0) 70%); animation: tapRing .5s ease-out forwards; }
+.tapfx .petal { width: 9px; height: 13px; margin: -6px 0 0 -4px; border-radius: 80% 0 80% 0; background: var(--c); box-shadow: 0 0 4px rgba(255, 255, 255, .6); animation: tapPetal .68s cubic-bezier(.2, .7, .3, 1) forwards; }
+@keyframes tapRing { from { transform: scale(.25); opacity: 1; } to { transform: scale(1.25); opacity: 0; } }
+@keyframes tapPetal {
+  from { transform: translate(0, 0) rotate(var(--r)) scale(.4); opacity: 1; }
+  70% { opacity: 1; }
+  to { transform: translate(var(--dx), calc(var(--dy) + 10px)) rotate(calc(var(--r) + 140deg)) scale(1); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .tapfx .petal { display: none; } }
+
+/* ---------- Cài đặt âm thanh ---------- */
+.audio-row { display: grid; grid-template-columns: 9.5em 1fr 3em; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; margin: 6px 0; }
+.audio-row input[type=range] { width: 100%; accent-color: #ff8fb1; }
+.audio-row output { text-align: right; font-size: 13px; color: var(--ink-soft); }
+.audio-check { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; margin: 6px 0; }
+.audio-check input { width: 18px; height: 18px; accent-color: #ff8fb1; }
+.now-playing { display: flex; align-items: center; gap: 8px; justify-content: space-between; }

@@ -13,6 +13,7 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
+  if (req.headers.has('range')) return; // nhạc nền / video intro tải từng đoạn => đi thẳng mạng
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // Supabase, font ngoài... đi thẳng mạng
   if (url.pathname.endsWith('/version.json')) return; // luôn hỏi mạng

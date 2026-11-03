@@ -5,6 +5,7 @@ import * as auth from '../online/auth.js';
 import * as farming from '../systems/farming.js';
 import { formatClock, periodName, isNight, formatDuration } from '../systems/time.js';
 import { avatarSVG } from './avatar.js';
+import { savePrefs } from '../audio/audio.js';
 import { TUTORIAL } from '../game.js';
 import { ShopPanel } from './shopPanel.js';
 import { MarketPanel } from './marketPanel.js';
@@ -161,6 +162,7 @@ export class Hud {
     `;
     this.root.addEventListener('click', (e) => this.onClick(e));
     this.root.addEventListener('change', (e) => this.onChange(e));
+    this.root.addEventListener('input', (e) => { if (e.target.dataset?.audio) this.onAudioInput(e.target); });
     this.root.addEventListener('submit', (e) => {
       e.preventDefault();
       const f = e.target;
@@ -218,6 +220,12 @@ export class Hud {
       case 'go-market': this.openMarket(b.dataset.tab); break;
       case 'forecast': this.openForecast(); break;
       case 'quality': g.setQuality(b.dataset.level); this.openSettings(); break;
+      case 'music-next': {
+        g.audio?.music.next();
+        const t = $('.np-title', this.root);
+        if (t) t.textContent = g.audio?.music.title || '';
+        break;
+      }
       case 'do-update': this.doUpdate(b); break;
       case 'later-update': $('.update-banner', this.root).classList.add('hidden'); break;
       case 'notebook': this.notebook.open(b.dataset.tab); break;
@@ -258,6 +266,7 @@ export class Hud {
 
   onChange(e) {
     const g = this.game;
+    if (e.target.dataset?.audio) { if (e.target.type === 'checkbox') this.onAudioInput(e.target); return; }
     if (e.target.name === 'pname' && !g.account?.session) {
       const name = e.target.value.replace(/\s+/g, ' ').trim().slice(0, 20);
       if (name.length >= 2) { g.save.player.name = name; g.saveMgr.markDirty(); this.updateProfile(); }
@@ -756,6 +765,7 @@ export class Hud {
       <h3>🎨 Đồ họa</h3>
       <div class="seg">${[['auto', 'Tự động'], ['high', 'Cao'], ['medium', 'Vừa'], ['low', 'Tiết kiệm pin']].map(([v, l]) => `<button class="${(s.settings.quality || 'auto') === v ? 'on' : ''}" data-act="quality" data-level="${v}">${l}</button>`).join('')}</div>
       <p class="muted small">Đang dùng: ${GRAPHICS.levels[g.graphicsLevel].name}${(s.settings.quality || 'auto') === 'auto' ? ' (tự giảm khi máy chậm)' : ''}. "Tiết kiệm pin" tắt bóng đổ, giảm độ nét và chạy 30 khung hình/giây.</p>
+      ${this.audioSettingsHTML()}
       <p class="muted small">Đã lưu trên máy lúc ${last}.</p>
       ${DEV_TOOLS ? `<h3>🧪 Công cụ thử nghiệm</h3>
       <div class="row-btns">
@@ -766,6 +776,37 @@ export class Hud {
       <p class="muted small">Điều khiển: kéo để di chuyển bản đồ · cuộn chuột hoặc chụm 2 ngón để phóng to/thu nhỏ · máy tính có thể dùng phím W A S D.</p>
       <p class="muted small">Tiệm Hoa Giấc Mơ · phiên bản ${GAME_VERSION} (${GAME_STAGE})</p>
     `);
+  }
+
+  // ---------- âm thanh ----------
+  audioSettingsHTML() {
+    const a = this.game.audio;
+    if (!a) return '';
+    const p = a.prefs;
+    const pct = (v) => Math.round(v * 100);
+    return `
+      <h3>🎵 Âm thanh</h3>
+      <label class="audio-row">🎵 Nhạc nền<input type="range" min="0" max="100" step="5" value="${pct(p.music)}" data-audio="music"><output>${pct(p.music)}%</output></label>
+      <label class="audio-row">👆 Tiếng chạm<input type="range" min="0" max="100" step="5" value="${pct(p.sfx)}" data-audio="sfx"><output>${pct(p.sfx)}%</output></label>
+      <div class="now-playing"><span class="muted small">Đang phát: <b class="np-title">${esc(a.music.title)}</b></span><button class="btn" data-act="music-next">⏭️ Bài tiếp</button></div>
+      <label class="audio-check"><input type="checkbox" data-audio="tapFx" ${p.tapFx ? 'checked' : ''}> Hiệu ứng cánh hoa khi chạm</label>
+      <label class="audio-check"><input type="checkbox" data-audio="intro" ${p.intro ? 'checked' : ''}> Xem intro khi mở game</label>`;
+  }
+
+  onAudioInput(el) {
+    const a = this.game.audio;
+    if (!a) return;
+    const key = el.dataset.audio;
+    if (el.type === 'range') {
+      const v = Number(el.value) / 100;
+      if (key === 'music') a.music.setVolume(v);
+      else { a.prefs.sfx = v; a.sfx.tap(1); }
+      const out = el.parentElement.querySelector('output');
+      if (out) out.textContent = `${el.value}%`;
+    } else {
+      a.prefs[key] = el.checked;
+    }
+    savePrefs(a.prefs);
   }
 
   // ---------- tài khoản ----------

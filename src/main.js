@@ -17,10 +17,22 @@ import { viError } from './online/errors.js';
 import { startUpdateChecks, registerServiceWorker } from './online/updater.js';
 import { initNative, isNative, parseAuthUrl, closeExternal } from './online/native.js';
 import { GRAPHICS } from '../data/config.js';
+import { loadPrefs, MusicPlayer, Sfx } from './audio/audio.js';
+import { initTapEffects } from './ui/tapFx.js';
+import { playIntro } from './ui/intro.js';
 
 const RECOVERY_FLAG = 'thgm:recovery';
 
 async function boot() {
+  // âm thanh + hiệu ứng chạm + intro (chạy song song trong lúc dựng thế giới 3D)
+  const audioPrefs = loadPrefs();
+  const music = new MusicPlayer(audioPrefs);
+  const sfx = new Sfx(audioPrefs);
+  initTapEffects({ prefs: audioPrefs, sfx });
+  // mở từ link trong email (xác nhận / quên mật khẩu) thì bỏ intro cho nhanh
+  const fromAuthLink = /access_token|error|type=/.test(initialHash);
+  const introDone = playIntro({ enabled: audioPrefs.intro && !fromAuthLink });
+
   const emitter = new Emitter();
   const stage = createStage(document.getElementById('game'));
   const world = buildWorld(stage.scene);
@@ -55,6 +67,8 @@ async function boot() {
   stage.camera.position.set(30, 34, 30);
   stage.camera.lookAt(0, 0, 0);
   hideLoading();
+  await introDone;
+  music.start();
 
   // ---------------- tài khoản ----------------
   const authUI = new AuthScreen();
@@ -123,6 +137,7 @@ async function boot() {
   // ---------------- vào game ----------------
   game = new Game({ stage, world, saveMgr, emitter });
   game.account = { configured: isOnlineConfigured(), session, profile, cloud, authUI };
+  game.audio = { music, sfx, prefs: audioPrefs };
   const hud = new Hud(game, document.getElementById('hud'));
 
   const off = game.catchUpOffline();
