@@ -43,6 +43,9 @@ Cuộc thi hoa được chấm điểm trên máy chủ bằng một **Edge Func
 3. Xóa hết code mẫu trong ô soạn thảo.
 4. Mở file `supabase/functions/contest-submit/index.ts` (trên GitHub bấm **Copy raw file**) → dán toàn bộ vào.
 5. Bấm **Deploy function**. Đợi vài giây thấy trạng thái *Active* là xong.
+6. Mở function `contest-submit` → tab **Details** → mục *Function configuration* → **tắt**
+   **Verify JWT with legacy secret** → **Save changes**. (Project mới dùng khóa ký kiểu mới; code của function
+   đã tự kiểm tra người chơi nên tắt vẫn an toàn.)
 
 Không cần dán khóa bí mật nào: Supabase tự cấp khóa `service_role` cho function chạy **trên máy chủ**
 (khóa này không bao giờ xuống trình duyệt). Mỗi khi game cập nhật luật chấm điểm,
@@ -73,8 +76,9 @@ supabaseAnonKey: 'eyJhbGciOi...',
 Menu **Authentication**:
 
 1. **Sign In / Providers → Email**: đảm bảo **Enable Email provider** đang bật.
-   - **Confirm email** (bắt xác nhận email): nên **bật** khi phát hành.
-     Lúc đang thử nghiệm có thể **tắt** để đăng ký xong vào chơi ngay.
+   - **Confirm email** (bắt xác nhận email) — giao diện mới nằm ở trang **Sign In / Providers**, mục
+     **User Signups** (không nằm trong khung Email). Gói Free chỉ gửi ~2 email/giờ nên lúc đầu nên **tắt**;
+     khi có nhiều người chơi thì gắn dịch vụ email riêng rồi bật lại.
    - **Minimum password length**: đặt **8**.
 2. **URL Configuration**:
    - **Site URL**: `http://localhost:5173` (sau này đổi thành địa chỉ web thật ở GĐ9).
