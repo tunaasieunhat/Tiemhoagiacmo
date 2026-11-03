@@ -1,0 +1,7 @@
+{
+  "appId": "vn.tiemhoagiacmo.game",
+  "appName": "Tiệm Hoa Giấc Mơ",
+  "webDir": "dist",
+  "server": { "androidScheme": "https" },
+  "android": { "backgroundColor": "#ffe3ea" }
+}

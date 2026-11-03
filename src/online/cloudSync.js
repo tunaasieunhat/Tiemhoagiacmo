@@ -6,7 +6,7 @@
 // =============================================================
 import { supabase, withTimeout } from './supabase.js';
 import { ONLINE } from '../../data/online.js';
-import { migrateSave, createNewSave } from '../save/schema.js';
+import { migrateSave, createNewSave, SAVE_VERSION } from '../save/schema.js';
 import { readLocalSave, backupSave, deviceName } from '../save/saveManager.js';
 
 /** status: 'synced' | 'pending' | 'syncing' | 'offline' | 'error' | 'conflict' */
@@ -57,6 +57,11 @@ export class CloudSync {
       return { save: await this.adoptGuestOrNew(), isNew: true, source: 'new-offline' };
     }
 
+    // save trên mạng do bản game MỚI HƠN ghi => không được dùng / ghi đè, cần cập nhật game
+    if (cloudRow && cloudRow.version > SAVE_VERSION) {
+      this.markOutdated(cloudRow.version);
+      return { save: local || (await this.adoptGuestOrNew()), source: 'outdated' };
+    }
     const cloud = cloudRow ? this.fromCloud(cloudRow) : null;
     if (!cloud && !local) return { save: await this.adoptGuestOrNew(), isNew: true, source: 'new' };
     if (cloud && !local) return { save: cloud, source: 'cloud' };
@@ -96,6 +101,12 @@ export class CloudSync {
     return s;
   }
 
+  markOutdated(version) {
+    this.outdated = true;
+    this.setStatus('outdated');
+    this.emitter.emit('update-required', { version });
+  }
+
   start() {
     this.timer = setInterval(() => this.tick(), 5000);
     addEventListener('online', () => this.push());
@@ -118,6 +129,7 @@ export class CloudSync {
   }
 
   async push({ force = false } = {}) {
+    if (this.outdated) return;
     if (this.status === 'conflict' && !force) return;
     if (!this.hasPending && !force) { if (this.status !== 'synced') this.setStatus('synced'); return; }
     if (typeof navigator !== 'undefined' && navigator.onLine === false) { this.setStatus('offline'); return; }
@@ -144,6 +156,8 @@ export class CloudSync {
       } else if (data.status === 'rate_limited') {
         this.lastTryAt = Date.now() - ONLINE.cloudSyncSeconds * 1000 + 5000; // thử lại sau ~5 giây
         this.setStatus('pending');
+      } else if (data.status === 'outdated' || (data.status === 'conflict' && data.version > SAVE_VERSION)) {
+        this.markOutdated(data.version);
       } else if (data.status === 'conflict') {
         this.conflict = data;
         this.setStatus('conflict');

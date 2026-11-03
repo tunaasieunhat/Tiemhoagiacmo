@@ -4,3 +4,8 @@ dist
 .env.local
 *.log
 .DS_Store
+
+# Android (tạo tự động trong GitHub Actions)
+android/
+*.apk
+*.jks

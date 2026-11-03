@@ -61,3 +61,16 @@ export const PLAYER = {
   walkSpeed: 4.2,      // đơn vị 3D / giây
   actionSeconds: 0.55, // thời gian làm 1 thao tác
 };
+
+// ---- Đồ họa (GĐ9) ----
+//  pixelRatio: độ nét (càng cao càng đẹp nhưng nặng) · shadowSize: độ nét bóng đổ (0 = tắt bóng)
+//  fps: số khung hình tối đa mỗi giây (30 tiết kiệm pin)
+export const GRAPHICS = {
+  levels: {
+    high: { name: 'Cao', pixelRatio: 2, shadowSize: 2048, fps: 60 },
+    medium: { name: 'Vừa', pixelRatio: 1.5, shadowSize: 1024, fps: 60 },
+    low: { name: 'Tiết kiệm pin', pixelRatio: 1, shadowSize: 0, fps: 30 },
+  },
+  autoMinFps: 26,       // chế độ Tự động: dưới mức này thì giảm đồ họa 1 bậc
+  modalFps: 30,         // khi đang mở bảng (che màn hình) chỉ vẽ 30 khung/giây cho mát máy
+};

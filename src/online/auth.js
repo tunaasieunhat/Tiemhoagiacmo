@@ -1,8 +1,11 @@
 // Đăng nhập / đăng ký / quên mật khẩu / Google / hồ sơ người chơi.
 import { supabase, withTimeout } from './supabase.js';
 import { normalizeName } from './names.js';
+import { isNative, NATIVE_AUTH_REDIRECT, openExternal } from './native.js';
 
-const redirectUrl = () => location.origin + location.pathname;
+// Nơi người chơi được đưa về sau khi bấm link trong email / đăng nhập Google.
+// Trong app Android: mở lại app qua đường dẫn riêng vn.tiemhoagiacmo.game://auth
+const redirectUrl = () => (isNative() ? NATIVE_AUTH_REDIRECT : location.origin + location.pathname);
 const PROFILE_CACHE = (uid) => `thgm:profile:${uid}`;
 const MODE_KEY = 'thgm:mode';
 
@@ -26,7 +29,20 @@ export async function signUp(email, password, displayName) {
 export const resendConfirm = (email) => supabase.auth.resend({ type: 'signup', email: email.trim(), options: { emailRedirectTo: redirectUrl() } }).then(ok);
 export const sendReset = (email) => supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: redirectUrl() }).then(ok);
 export const updatePassword = (password) => supabase.auth.updateUser({ password }).then(ok);
-export const signInGoogle = () => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectUrl() } }).then(ok);
+export async function signInGoogle() {
+  if (isNative()) {
+    // Google không cho đăng nhập trong khung nhúng của app => mở trình duyệt hệ thống, đăng nhập xong quay về app
+    const d = ok(await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: NATIVE_AUTH_REDIRECT, skipBrowserRedirect: true } }));
+    await openExternal(d.url);
+    return d;
+  }
+  return ok(await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectUrl() } }));
+}
+
+/** App Android nhận token từ link trả về (đăng nhập Google, xác nhận email, quên mật khẩu) */
+export async function setSessionFromTokens(accessToken, refreshToken) {
+  return ok(await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }));
+}
 
 export async function signOut() {
   await supabase.auth.signOut({ scope: 'local' }).catch(() => {});

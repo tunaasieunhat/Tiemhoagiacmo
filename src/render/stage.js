@@ -1,6 +1,6 @@
 // Khởi tạo renderer, cảnh, camera isometric (trực giao) và ánh sáng.
 import * as THREE from 'three';
-import { CAMERA } from '../../data/config.js';
+import { CAMERA, GRAPHICS } from '../../data/config.js';
 
 export const CAM_OFFSET = new THREE.Vector3(1, 1.15, 1).normalize().multiplyScalar(60);
 
@@ -50,5 +50,20 @@ export function createStage(container) {
   addEventListener('resize', resize);
   visualViewport?.addEventListener('resize', resize);
 
-  return { renderer, scene, camera, sun, hemi, resize, isMobile };
+  /** Áp dụng mức đồ họa: 'high' | 'medium' | 'low' */
+  function applyQuality(level) {
+    const q = GRAPHICS.levels[level] || GRAPHICS.levels.medium;
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, q.pixelRatio));
+    const size = isMobile ? Math.min(q.shadowSize, 1024) : q.shadowSize;
+    sun.castShadow = size > 0;
+    if (size > 0 && sun.shadow.mapSize.x !== size) {
+      sun.shadow.mapSize.set(size, size);
+      sun.shadow.map?.dispose();
+      sun.shadow.map = null;
+    }
+    resize();
+    return q;
+  }
+
+  return { renderer, scene, camera, sun, hemi, resize, isMobile, applyQuality };
 }

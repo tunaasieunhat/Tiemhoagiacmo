@@ -21,6 +21,7 @@ export class WeatherFx {
     this.drops = Array.from({ length: N }, () => ({ x: (Math.random() - 0.5) * AREA, y: Math.random() * TOP, z: (Math.random() - 0.5) * AREA, s: 0.7 + Math.random() * 0.6, ph: Math.random() * 6 }));
     this.mode = 'none';
     this.t = 0;
+    this.density = 1; // giảm khi đồ họa "Tiết kiệm pin"
   }
 
   /** type: thời tiết hôm nay; season: chỉ số mùa */
@@ -44,7 +45,7 @@ export class WeatherFx {
     const storm = this.mode === 'storm';
     const isRain = this.rain.visible;
     // mưa dày, tuyết vừa, cánh hoa thưa
-    const count = isRain ? (storm ? N : 600) : this.mode === 'snow' ? 500 : 70;
+    const count = Math.round((isRain ? (storm ? N : 600) : this.mode === 'snow' ? 500 : 70) * this.density);
     const fall = isRain ? (storm ? 22 : 16) : this.mode === 'snow' ? 1.6 : 1.1;
     const wind = storm ? 6 : isRain ? 1.2 : 0.8;
     const arr = (isRain ? this.rain : this.flakes).geometry.attributes.position.array;

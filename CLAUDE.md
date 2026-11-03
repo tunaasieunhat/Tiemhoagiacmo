@@ -13,8 +13,10 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
 
 ## Tiến độ
 
-- ✅ GĐ1–8 xong (xem `README.md`). **Tiếp theo: GĐ9** — thông báo "Có bản cập nhật" (dùng `src/version.js`),
-  tối ưu điện thoại, hướng dẫn đưa game lên hosting miễn phí, đóng gói APK (Capacitor + GitHub Actions; người dùng đã chọn để APK đến GĐ9).
+- ✅ GĐ1–9 xong (xem `README.md`) — hết kế hoạch ban đầu. Việc tiếp theo do người dùng quyết định.
+- Đưa lên mạng: Netlify (`netlify.toml`, `docs/HUONG_DAN_DUA_LEN_MANG.md`). APK: Capacitor + GitHub Actions
+  (`.github/workflows/android.yml`, `android-keystore.yml`, `docs/HUONG_DAN_APK.md`); thư mục `android/` KHÔNG commit,
+  được tạo trong CI bằng `npx cap add android` + `scripts/android-setup.mjs`.
 - Supabase **chưa được người dùng cài**: chưa có URL/khóa trong `data/online.js` → game đang chạy chế độ khách.
   Hướng dẫn cài: `docs/HUONG_DAN_SUPABASE.md`.
 
@@ -25,6 +27,7 @@ npm install
 npm run dev               # máy chủ phát triển (--host để thử trên điện thoại cùng Wi-Fi)
 npm run build             # build ra dist/
 npm run build:functions   # đóng gói Edge Function thành 1 file supabase/functions/<tên>/index.ts
+npx vite preview --port 4173   # chạy bản build (có service worker, version.json) để thử offline / thông báo cập nhật
 ```
 
 Chưa có bộ test tự động trong repo (xem mục Kiểm thử).
@@ -49,6 +52,14 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
 
 ## Quy ước cần giữ
 
+- **Phát hành bản mới**: tăng `version` trong `package.json` + thêm ghi chú vào `data/changelog.js`. Build sinh
+  `dist/version.json` (game hỏi định kỳ để báo "Có bản cập nhật") và `dist/sw.js` từ `src/sw-template.js`
+  (chơi offline). Trong code dùng `GAME_VERSION`/`BUILD_ID` từ `src/version.js`, không ghi cứng số phiên bản.
+- Máy chạy bản game cũ không được ghi đè save của bản mới: `push_save` trả `outdated`, CloudSync dừng đồng bộ
+  và hiện banner yêu cầu cập nhật.
+- Code chỉ dành cho app Android nằm ở `src/online/native.js` (kiểm tra `isNative()`); trên web các hàm không làm gì.
+- Đồ họa theo mức `GRAPHICS` trong `data/config.js` (`settings.quality`: auto/high/medium/low); bundle build thành
+  1 file JS (`inlineDynamicImports`) để ghép được bản xem thử.
 - **Save có phiên bản** (hiện `SAVE_VERSION = 7`). Đổi cấu trúc save ⇒ tăng `SAVE_VERSION` và thêm
   `MIGRATIONS[phiên_bản_cũ]` trong `src/save/schema.js`; **không bao giờ làm mất tiến độ**. `fillDefaults` tự bổ sung
   trường thiếu (vì vậy số lượng hạt về 0 thì giữ khóa với giá trị 0, không xóa khóa).

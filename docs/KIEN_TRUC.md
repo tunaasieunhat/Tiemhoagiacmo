@@ -62,7 +62,12 @@ Tiemhoagiacmo/
 │  ├─ models/              Mô hình chibi dựng bằng khối hình (không dùng file ngoài)
 │  └─ ui/                  Giao diện HTML tiếng Việt (HUD, bảng, hộp thoại)
 ├─ supabase/               (GĐ2+) migrations SQL + Edge Functions
-└─ docs/                   Tài liệu
+├─ docs/                   Tài liệu (kiến trúc, Supabase, đưa lên mạng, APK)
+├─ public/                 manifest.webmanifest + icons (cài lên màn hình chính)
+├─ assets/                 Ảnh gốc biểu tượng & màn hình chờ cho APK (@capacitor/assets)
+├─ capacitor.config.json   Cấu hình ứng dụng Android
+├─ netlify.toml            Cấu hình đưa lên Netlify
+└─ .github/workflows/      android.yml (build APK), android-keystore.yml (tạo khóa ký 1 lần)
 ```
 
 **Nguyên tắc:** logic game (`systems/`) tách khỏi đồ họa → server (Edge Function) có thể chạy lại

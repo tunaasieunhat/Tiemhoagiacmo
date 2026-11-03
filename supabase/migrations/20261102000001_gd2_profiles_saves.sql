@@ -243,6 +243,10 @@ begin
   select * into cur from public.saves where user_id = uid for update;
 
   if found then
+    -- bản game cũ không được ghi đè save của bản game mới hơn (GĐ9)
+    if cur.version > p_version then
+      return jsonb_build_object('status', 'outdated', 'version', cur.version, 'rev', cur.rev);
+    end if;
     if cur.rev <> coalesce(p_base_rev, -1) then
       return jsonb_build_object('status', 'conflict', 'rev', cur.rev, 'data', cur.data,
                                 'version', cur.version, 'updated_at', cur.updated_at, 'device', cur.device);

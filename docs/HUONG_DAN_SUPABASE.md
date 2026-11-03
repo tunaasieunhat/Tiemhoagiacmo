@@ -83,6 +83,9 @@ Menu **Authentication**:
      - `http://localhost:5173/**`
      - Địa chỉ dạng `http://192.168.x.x:5173` mà máy tính hiện ra khi chạy `npm run dev` (để thử trên điện thoại).
 
+     - Khi đã đưa game lên mạng (GĐ9): `https://<tên-trang-của-bạn>.netlify.app/**`
+     - Cho ứng dụng Android: `vn.tiemhoagiacmo.game://auth`
+
    Các địa chỉ này là nơi người chơi được đưa về sau khi bấm link trong email (xác nhận, quên mật khẩu)
    hoặc sau khi đăng nhập Google.
 

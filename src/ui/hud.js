@@ -1,6 +1,6 @@
 // Giao diện HTML phủ lên trên 3D: thanh trên, thanh công cụ, bảng ô đất, kho đồ, cài đặt, thông báo.
 import { FLOWERS, FLOWER_IDS } from '../../data/flowers.js';
-import { CARE, DEV_TOOLS } from '../../data/config.js';
+import { CARE, DEV_TOOLS, GRAPHICS } from '../../data/config.js';
 import * as auth from '../online/auth.js';
 import * as farming from '../systems/farming.js';
 import { formatClock, periodName, isNight, formatDuration } from '../systems/time.js';
@@ -78,6 +78,8 @@ export class Hud {
     em.on('regular-story', (st) => this.showStory(st));
     em.on('social', () => this.updateFriendBadge());
     em.on('visit', (v) => this.updateVisit(v));
+    em.on('update-available', (v) => this.showUpdate(v, false));
+    em.on('update-required', (v) => this.showUpdate(v, true));
     em.on('quests', () => { this.updateQuestBadge(); if (this.modal === 'quests') this.quests.render(); });
     em.on('decor-mode', (on) => { this.root.classList.toggle('decorating', on); $('.decor-bar', this.root).classList.toggle('hidden', !on); });
     em.on('decor-slot', (slot) => this.openDecorSlot(slot));
@@ -137,6 +139,7 @@ export class Hud {
       </div>
       <button class="alert-chip hidden" data-act="forecast"></button>
       <div class="saved-badge">💾 Đã lưu</div>
+      <div class="update-banner hidden"></div>
       <div class="zoom-btns">
         <button class="round sm" data-act="zoom-in" aria-label="Phóng to">＋</button>
         <button class="round sm" data-act="zoom-out" aria-label="Thu nhỏ">－</button>
@@ -214,6 +217,9 @@ export class Hud {
       case 'go-shop': this.openShop(); break;
       case 'go-market': this.openMarket(b.dataset.tab); break;
       case 'forecast': this.openForecast(); break;
+      case 'quality': g.setQuality(b.dataset.level); this.openSettings(); break;
+      case 'do-update': this.doUpdate(b); break;
+      case 'later-update': $('.update-banner', this.root).classList.add('hidden'); break;
       case 'notebook': this.notebook.open(b.dataset.tab); break;
       case 'go-lab': this.openLab(); break;
       case 'friends': this.friends.open(); break;
@@ -256,7 +262,7 @@ export class Hud {
       const name = e.target.value.replace(/\s+/g, ' ').trim().slice(0, 20);
       if (name.length >= 2) { g.save.player.name = name; g.saveMgr.markDirty(); this.updateProfile(); }
     }
-    if (e.target.name === 'shadows') g.setShadows(e.target.checked);
+
   }
 
   doAction(action, seed) {
@@ -289,6 +295,30 @@ export class Hud {
     const badge = $('.nav-badge', this.root);
     badge.classList.toggle('hidden', !n);
     badge.textContent = n;
+  }
+
+  // ---------- cập nhật phiên bản (GĐ9) ----------
+  showUpdate(v, required) {
+    const el = $('.update-banner', this.root);
+    const apk = v.native && v.apkUrl;
+    const title = required ? '⬆️ Cần cập nhật game' : `🎉 Có bản cập nhật mới${v.version ? ` (${esc(v.version)})` : ''}!`;
+    const sub = required ? 'Tiến độ trên mạng được lưu bởi bản game mới hơn. Cập nhật để tiếp tục đồng bộ — tiến độ không bị mất.'
+      : (v.notes || []).slice(0, 3).map((n) => `• ${esc(n)}`).join('<br>') || 'Tải lại để dùng bản mới. Tiến độ được lưu tự động.';
+    el.innerHTML = `<div><b>${title}</b><small>${sub}</small></div>
+      <div class="ub-btns"><button class="btn primary" data-act="do-update" data-apk="${apk ? esc(v.apkUrl) : ''}">${apk ? 'Tải bản mới' : 'Tải lại ngay'}</button>
+      ${required ? '' : '<button class="btn" data-act="later-update">Để sau</button>'}</div>`;
+    el.classList.remove('hidden');
+  }
+
+  async doUpdate(btn) {
+    const g = this.game;
+    btn.disabled = true;
+    btn.textContent = 'Đang lưu...';
+    await g.saveMgr.saveNow('manual');
+    try { await g.account?.cloud?.flush(4000); } catch { /* bỏ qua */ }
+    if (btn.dataset.apk) { const { openExternal } = await import('../online/native.js'); await openExternal(btn.dataset.apk); btn.disabled = false; btn.textContent = 'Tải bản mới'; return; }
+    try { const regs = await navigator.serviceWorker?.getRegistrations?.(); await Promise.all((regs || []).map((r) => r.update())); } catch { /* bỏ qua */ }
+    location.reload();
   }
 
   // ---------- nhiệm vụ & trang trí ----------
@@ -723,7 +753,9 @@ export class Hud {
     this.openModal('settings', `
       <h2>⚙️ Cài đặt</h2>
       ${account}
-      <label class="row"><input type="checkbox" name="shadows" ${s.settings.shadows !== false ? 'checked' : ''}> Đổ bóng (tắt nếu máy chậm)</label>
+      <h3>🎨 Đồ họa</h3>
+      <div class="seg">${[['auto', 'Tự động'], ['high', 'Cao'], ['medium', 'Vừa'], ['low', 'Tiết kiệm pin']].map(([v, l]) => `<button class="${(s.settings.quality || 'auto') === v ? 'on' : ''}" data-act="quality" data-level="${v}">${l}</button>`).join('')}</div>
+      <p class="muted small">Đang dùng: ${GRAPHICS.levels[g.graphicsLevel].name}${(s.settings.quality || 'auto') === 'auto' ? ' (tự giảm khi máy chậm)' : ''}. "Tiết kiệm pin" tắt bóng đổ, giảm độ nét và chạy 30 khung hình/giây.</p>
       <p class="muted small">Đã lưu trên máy lúc ${last}.</p>
       ${DEV_TOOLS ? `<h3>🧪 Công cụ thử nghiệm</h3>
       <div class="row-btns">
@@ -748,6 +780,7 @@ export class Hud {
       offline: '📴 Đang ngoại tuyến — sẽ tự đồng bộ khi có mạng',
       error: '⚠️ Đồng bộ lỗi, sẽ thử lại',
       conflict: '🔀 Có xung đột giữa 2 máy, hãy chọn bản muốn giữ',
+      outdated: '⬆️ Tiến độ trên mạng thuộc bản game mới hơn — hãy cập nhật game để đồng bộ',
     }[c.status] || '';
   }
 

@@ -2,7 +2,7 @@
 //  BỘ ĐIỀU KHIỂN GAME: nối dữ liệu (save) <-> logic <-> đồ họa <-> giao diện
 // =============================================================
 import * as THREE from 'three';
-import { TIME, STARTER } from '../data/config.js';
+import { TIME, STARTER, GRAPHICS } from '../data/config.js';
 import { FLOWERS, FLOWER_IDS } from '../data/flowers.js';
 import { PAPERS, RIBBONS } from '../data/wrapping.js';
 import * as shop from './systems/shop.js';
@@ -124,7 +124,9 @@ export class Game {
     this.labIcon.visible = false;
     stage.scene.add(this.labIcon);
     this.labNotified = false;
-    this.setShadows(this.save.settings.shadows !== false);
+    // đồ họa: 'auto' bắt đầu ở mức Cao (máy tính) / Vừa (điện thoại), tự giảm nếu chậm
+    this.autoLevel = stage.isMobile ? 'medium' : 'high';
+    this.applyGraphics();
   }
 
   // ---------------- thời gian ----------------
@@ -1010,9 +1012,32 @@ export class Game {
     return ev;
   }
 
-  setShadows(on) {
-    this.save.settings.shadows = on;
-    this.stage.sun.castShadow = on;
+  /** Mức đồ họa đang dùng thực tế */
+  get graphicsLevel() {
+    const q = this.save.settings.quality || 'auto';
+    return q === 'auto' ? this.autoLevel : q;
+  }
+
+  applyGraphics() {
+    this.graphics = this.stage.applyQuality(this.graphicsLevel);
+    this.weatherFx.density = this.graphicsLevel === 'low' ? 0.4 : 1;
+    this.emitter.emit('graphics', this.graphicsLevel);
+  }
+
+  setQuality(q) {
+    this.save.settings.quality = q;
+    this.saveMgr.markDirty();
+    this.applyGraphics();
+  }
+
+  /** Chế độ Tự động: máy chậm thì giảm 1 bậc */
+  reportFps(fps) {
+    if ((this.save.settings.quality || 'auto') !== 'auto' || fps >= GRAPHICS.autoMinFps) return;
+    const next = { high: 'medium', medium: 'low' }[this.autoLevel];
+    if (!next) return;
+    this.autoLevel = next;
+    this.applyGraphics();
+    this.toast(`🐢 Máy hơi chậm, đã giảm đồ họa xuống "${GRAPHICS.levels[next].name}" cho mượt hơn (đổi trong ⚙️ Cài đặt)`, 'info');
   }
 
   toast(text, type = 'info') { this.emitter.emit('toast', { text, type }); }

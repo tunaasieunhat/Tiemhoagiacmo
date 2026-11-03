@@ -1,4 +1,5 @@
 // Điểm khởi động game.
+import './ui/fonts.js';
 import './ui/style.css';
 import { Emitter } from './core/events.js';
 import { createStage } from './render/stage.js';
@@ -13,6 +14,11 @@ import * as auth from './online/auth.js';
 import { CloudSync } from './online/cloudSync.js';
 import { SocialManager } from './online/socialManager.js';
 import { viError } from './online/errors.js';
+import { startUpdateChecks, registerServiceWorker } from './online/updater.js';
+import { initNative, isNative, parseAuthUrl, closeExternal } from './online/native.js';
+import { GRAPHICS } from '../data/config.js';
+
+const RECOVERY_FLAG = 'thgm:recovery';
 
 async function boot() {
   const emitter = new Emitter();
@@ -20,14 +26,30 @@ async function boot() {
   const world = buildWorld(stage.scene);
   let game = null;
 
-  // Vẽ thế giới ngay (làm nền cho màn hình đăng nhập)
+  // Vẽ thế giới ngay (làm nền cho màn hình đăng nhập).
+  // Giới hạn khung hình theo mức đồ họa; khi đang mở bảng che màn hình thì vẽ chậm lại cho mát máy.
   let last = performance.now();
+  let lastDraw = 0;
+  const perf = { frames: 0, since: performance.now(), startAt: performance.now() + 6000 };
   const loop = (t) => {
+    requestAnimationFrame(loop);
+    const modalOpen = !!document.querySelector('#hud .modal-wrap:not(.hidden)');
+    const fpsCap = Math.min(game?.graphics?.fps || 60, modalOpen ? GRAPHICS.modalFps : 60);
+    if (fpsCap < 60 && t - lastDraw < 1000 / fpsCap - 2) return;
+    lastDraw = t;
     const dt = Math.min((t - last) / 1000, 60 * 60 * 24);
     last = t;
     if (game) game.update(dt);
     stage.renderer.render(stage.scene, stage.camera);
-    requestAnimationFrame(loop);
+    // đo tốc độ máy (chế độ đồ họa Tự động)
+    if (game && t > perf.startAt && !modalOpen && document.visibilityState === 'visible') {
+      perf.frames++;
+      if (t - perf.since > 4000) {
+        const fps = (perf.frames * 1000) / (t - perf.since);
+        if (fps < fpsCap * 0.95) game.reportFps(fps);
+        perf.frames = 0; perf.since = t;
+      }
+    } else { perf.frames = 0; perf.since = t; }
   };
   requestAnimationFrame(loop);
   stage.camera.position.set(30, 34, 30);
@@ -49,7 +71,9 @@ async function boot() {
       await authUI.notice('Không thực hiện được', viError({ message: hashParams.get('error_description') || hashParams.get('error'), code: hashParams.get('error_code') }), 'Đã hiểu', '😥');
     }
     if (/access_token|error|type=/.test(initialHash)) history.replaceState(null, '', location.pathname + location.search);
-    if (session && hashParams.get('type') === 'recovery') {
+    let recovery = hashParams.get('type') === 'recovery';
+    try { if (sessionStorage.getItem(RECOVERY_FLAG)) { recovery = true; sessionStorage.removeItem(RECOVERY_FLAG); } } catch { /* bỏ qua */ }
+    if (session && recovery) {
       await authUI.newPassword();
       notices.push(['🔒 Đã đổi mật khẩu thành công!', 'good']);
     }
@@ -130,6 +154,33 @@ async function boot() {
     game.account.social = new SocialManager({ game, emitter, userId: uid });
     game.account.social.start();
   }
+
+  // GĐ9: báo bản cập nhật, chơi khi mất mạng, ứng dụng Android
+  if (cloud?.outdated) hud.showUpdate({}, true);
+  startUpdateChecks(emitter);
+  registerServiceWorker();
+  initNative({
+    onBack: () => {
+      if (hud.modal) { hud.closeModal(); return true; }
+      if (game.visit) { game.exitVisit(); return true; }
+      if (game.decorMode) { game.setDecorMode(false); return true; }
+      if (game.selected) { game.select(null); return true; }
+      return false;
+    },
+    onPause: () => saveMgr.saveNow('exit'),
+    onAuthUrl: async (url) => {
+      const t = parseAuthUrl(url);
+      await closeExternal();
+      if (t.error) { hud.toast(viError({ message: t.error }), 'warn'); return; }
+      if (!t.access_token) return;
+      try {
+        await auth.setSessionFromTokens(t.access_token, t.refresh_token);
+        if (t.type === 'recovery') { try { sessionStorage.setItem(RECOVERY_FLAG, '1'); } catch { /* bỏ qua */ } }
+        location.reload();
+      } catch (e) { hud.toast(viError(e), 'warn'); }
+    },
+  });
+  if (isNative()) document.body.classList.add('native');
 
   window.__game = game; // để thử nghiệm trong console trình duyệt
   console.info('Khởi động từ:', startSource);

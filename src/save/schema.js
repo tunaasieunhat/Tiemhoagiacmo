@@ -88,7 +88,7 @@ export function createNewSave() {
     },
     stats: { harvested: 0, playMinutes: 0, lastFreePackDay: 0, served: 0, sold: 0, coinsEarned: 0, tips: 0, bouquets: 0, spent: 0 },
     tutorial: { step: 0, done: false },
-    settings: { sound: true, shadows: true },
+    settings: { sound: true, shadows: true, quality: 'auto' },
   };
 }
 

@@ -12,6 +12,7 @@ Công nghệ: Three.js + Vite, sau này dùng Supabase cho tài khoản online.
 - ✅ Giai đoạn 6 — gói hoa sáng tạo (phối màu, ý nghĩa, cân đối, chất lượng), 18 màu hoa mới, ngôn ngữ loài hoa khám phá dần, Nhà Lai Tạo, Sổ tay thực vật, 4 khách quen có câu chuyện.
 - ✅ Giai đoạn 7 — bạn bè (tìm theo tên/mã, lời mời), thăm nông trại 3D của bạn (chỉ xem), tưới giúp 1 lần/ngày, tặng quà, sổ lưu bút — mọi giới hạn kiểm tra trên máy chủ.
 - ✅ Giai đoạn 8 — bảng xếp hạng (cấp độ, uy tín, cuộc thi; tuần/tổng; mọi người/bạn bè) có kiểm tra điểm trên máy chủ, cuộc thi hoa hằng tuần (Edge Function chấm điểm), nhiệm vụ ngày/tuần, tự động hóa (vòi tưới, máy bón phân, nhân viên), trang trí 12 món.
+- ✅ Giai đoạn 9 — thông báo "Có bản cập nhật", chơi được khi mất mạng & cài lên màn hình chính (PWA), tự giảm đồ họa khi máy chậm, hướng dẫn đưa lên mạng (Netlify), APK Android tự build bằng GitHub Actions.
 
 **Cài đặt online:** xem [Hướng dẫn Supabase](docs/HUONG_DAN_SUPABASE.md). Chưa cài thì game vẫn chạy ở chế độ khách (lưu trên máy).
 
@@ -58,6 +59,7 @@ Thanh công cụ dưới: ✋ Xem · 🪏 Xới · 🌱 Gieo · 💧 Tưới · 
 - `data/contest.js` — chủ đề cuộc thi & thưởng theo hạng
 - `data/seasons.js` — độ dài mùa, ảnh hưởng mùa, xác suất thời tiết/thiên tai/dịch bệnh theo mùa, mức thiệt hại, đồ phòng hộ, các lễ hội
 - `data/customers.js` — tên, ngoại hình, câu nói của khách
+- `data/changelog.js` — ghi chú hiện cho người chơi khi có bản cập nhật
 - `data/online.js` — địa chỉ & khóa công khai Supabase, tần suất đồng bộ
 - `data/badwords.js` — từ cấm (bản chính nằm trong bảng `banned_words` trên Supabase)
 
@@ -67,3 +69,5 @@ Sửa số → lưu file → trình duyệt tự cập nhật.
 
 - [Kiến trúc & bảng dữ liệu Supabase](docs/KIEN_TRUC.md)
 - [Hướng dẫn cài đặt Supabase](docs/HUONG_DAN_SUPABASE.md)
+- [Đưa game lên mạng miễn phí](docs/HUONG_DAN_DUA_LEN_MANG.md)
+- [Ứng dụng Android (APK)](docs/HUONG_DAN_APK.md)
