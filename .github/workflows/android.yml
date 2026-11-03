@@ -137,11 +137,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           node scripts/release-notes.mjs > RELEASE_NOTES.md
           TAG="apk-${VERSION_NAME}-${GITHUB_RUN_NUMBER}"
+          TITLE="Tiệm Hoa Giấc Mơ ${VERSION_NAME} (bản ${GITHUB_RUN_NUMBER})"
           if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --target "$GITHUB_SHA" --title "Tiệm Hoa Giấc Mơ ${VERSION_NAME} (bản ${GITHUB_RUN_NUMBER})" --notes-file RELEASE_NOTES.md --latest
+            # GitHub không cho token tự động tạo tag trên commit có file quy trình (.github/workflows) khác nhánh
+            # mặc định ⇒ khi đó gắn tag vào nhánh mặc định. File APK đăng lên vẫn là bản vừa build.
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "$TITLE" --notes-file RELEASE_NOTES.md --latest \
+              || gh release create "$TAG" --target "${DEFAULT_BRANCH:-main}" --title "$TITLE" --notes-file RELEASE_NOTES.md --latest
           fi
           gh release upload "$TAG" TiemHoaGiacMo.apk --clobber
           echo "::notice title=Đã phát hành::https://github.com/${GH_REPO}/releases/latest/download/TiemHoaGiacMo.apk"
