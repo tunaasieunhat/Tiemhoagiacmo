@@ -17,9 +17,9 @@ export const ONLINE = {
 
   // Địa chỉ trang web của game sau khi đưa lên mạng (GĐ9), vd 'https://tiem-hoa-giac-mo.netlify.app'
   // Dùng cho: ứng dụng Android kiểm tra bản mới, liên kết trong email xác nhận / quên mật khẩu.
-  siteUrl: '',
+  siteUrl: 'https://tiem-hoa-giac-mo.netlify.app',
   // Trang tải APK mới (GitHub Releases), vd 'https://github.com/<tên>/<repo>/releases/latest'
-  apkDownloadUrl: '',
+  apkDownloadUrl: 'https://github.com/tunaasieunhat/Tiemhoagiacmo/releases/latest',
   checkUpdateMinutes: 5,  // bao lâu hỏi máy chủ xem có bản mới một lần
 
   cloudSyncSeconds: 45,   // tự đẩy save lên mạng tối đa mỗi bao nhiêu giây

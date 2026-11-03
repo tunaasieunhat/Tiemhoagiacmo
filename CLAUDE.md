@@ -14,7 +14,8 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
 ## Tiến độ
 
 - ✅ GĐ1–9 xong (xem `README.md`) — hết kế hoạch ban đầu. Việc tiếp theo do người dùng quyết định.
-- Đưa lên mạng: Netlify (`netlify.toml`, `docs/HUONG_DAN_DUA_LEN_MANG.md`). APK: Capacitor + GitHub Actions
+- Đưa lên mạng: Netlify (`netlify.toml`, `docs/HUONG_DAN_DUA_LEN_MANG.md`) — trang thật: https://tiem-hoa-giac-mo.netlify.app
+  (Netlify đang deploy nhánh `ccr-845954e0-2hh7a1`; `main` chỉ có commit đầu tiên). APK: Capacitor + GitHub Actions
   (`.github/workflows/android.yml`, `android-keystore.yml`, `docs/HUONG_DAN_APK.md`); thư mục `android/` KHÔNG commit,
   được tạo trong CI bằng `npx cap add android` + `scripts/android-setup.mjs`.
 - Supabase **chưa được người dùng cài**: chưa có URL/khóa trong `data/online.js` → game đang chạy chế độ khách.

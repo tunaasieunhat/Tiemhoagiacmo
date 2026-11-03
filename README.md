@@ -1,5 +1,7 @@
 # 🌷 Tiệm Hoa Giấc Mơ
 
+🎮 **Chơi ngay:** https://tiem-hoa-giac-mo.netlify.app
+
 Game 3D chibi trồng hoa & bán hoa, chạy trên trình duyệt (điện thoại + máy tính).
 Công nghệ: Three.js + Vite, sau này dùng Supabase cho tài khoản online.
 
