@@ -85,6 +85,11 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   sự kiện kể dở lưu `evStep` để kể tiếp (không chọn lại cảnh đầu để cày điểm). Game: `startTalk/talkChoose/giftTo/afterBond`
   (XP thưởng qua `gainXp`); HUD: `openVillager/renderTalk/openGift/showBondRewards`; Sổ tay tab `village`.
   GĐ13 (mua đất) dùng `relations.heartsOf(save, id)`.
+- **Nhờ việc & mini game** (0.12.1): `data/minigames.js` (FAVOR_RULES thưởng theo 0–3⭐, FAVORS từng người, MINIGAMES độ khó,
+  RHYMES câu lục bát). Logic `src/systems/favors.js` (todaysFavor cố định theo ngày bằng hash, lần đầu gặp chắc chắn có;
+  finishFavor ghi `rel.favorDay`, `rel.favors[id].best`). UI `src/ui/minigames.js`: `runMiniGame(kind, opts)` → {stars, quit},
+  7 game DOM/CSS (needle, hammer, fishing, pour, math, rhyme, memory), bỏ cuộc = 0⭐. Dân làng có việc nhờ hiện 🙏 trên đầu.
+  Thử mini game: trang thử import `runMiniGame` + "người chơi tự động" đọc DOM (vd vị trí kim `translateX`).
 - **Dò chạm** (0.9.7): `game.pickAt` bỏ qua vật ẩn (three.js không tự bỏ), chạm sát mặt đất / khe thì lấy ô dưới ngón tay
   (`farmView.tileNear`).
 - **Âm thanh / intro** (bản 0.9.2): nhạc nền `public/audio/*.mp3` (đã nén 112 kbps), số liệu ở `data/audio.js`.

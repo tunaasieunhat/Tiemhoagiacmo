@@ -20,7 +20,7 @@ Công nghệ: Three.js + Vite, sau này dùng Supabase cho tài khoản online.
 - ✅ Giai đoạn 9 — thông báo "Có bản cập nhật", chơi được khi mất mạng & cài lên màn hình chính (PWA), tự giảm đồ họa khi máy chậm, hướng dẫn đưa lên mạng (Netlify), APK Android tự build bằng GitHub Actions.
 - ✅ Giai đoạn 10 — trang trí tự do (kéo để dời, xoay, cất), 8 món Halloween + Lễ hội Bí Ngô, sửa lỗi chạm không chính xác.
 - ✅ Giai đoạn 11 — Làng Hoa: 6 nhà + trường làng, dân làng đi lại & làm việc theo giờ, mở rộng bản đồ.
-- ✅ Giai đoạn 12 — kết thân với dân làng: tình thân 10 ❤️, trò chuyện có lựa chọn, tặng hoa theo sở thích, sinh nhật, 24 sự kiện rẽ nhánh, quà mốc tim.
+- ✅ Giai đoạn 12 — kết thân với dân làng: tình thân 10 ❤️, trò chuyện có lựa chọn, tặng hoa theo sở thích, sinh nhật, 24 sự kiện rẽ nhánh, quà mốc tim. Dân làng nhờ việc với 7 mini game (xỏ kim, câu cá, đóng đinh, pha cà phê, chấm toán, ghép vần thơ, lật thẻ).
 
 **Cài đặt online:** xem [Hướng dẫn Supabase](docs/HUONG_DAN_SUPABASE.md). Chưa cài thì game vẫn chạy ở chế độ khách (lưu trên máy).
 

@@ -31,6 +31,7 @@ import { DecorView } from './render/decorView.js';
 import { VillagerView } from './render/villagers.js';
 import { VILLAGE } from '../data/village.js';
 import * as relations from './systems/relations.js';
+import * as favors from './systems/favors.js';
 import { desiredState } from './systems/village.js';
 import { submitContest } from './online/ranking.js';
 import { PAPERS as WRAP_PAPERS, RIBBONS as WRAP_RIBBONS } from '../data/wrapping.js';
@@ -894,7 +895,7 @@ export class Game {
   // ---------------- làng (GĐ11) ----------------
   villageCtx() {
     const m = this.save.time.gameMinutes;
-    return { hour: (m % 1440) / 60, weather: this.save.weather?.today?.type || null, festivalId: calendar.festivalOn(dayOf(m))?.id || null, save: this.save };
+    return { hour: (m % 1440) / 60, day: dayOf(m), weather: this.save.weather?.today?.type || null, festivalId: calendar.festivalOn(dayOf(m))?.id || null, save: this.save };
   }
 
   focusVillager(id) {
@@ -934,6 +935,18 @@ export class Game {
     if (!m.ok) { this.toast(m.reason, 'info'); return null; }
     const res = relations.giveGift(this.save, id, flowerKey, this.today);
     if (res.error) { this.toast(res.error, 'warn'); return null; }
+    this.afterBond(id, res);
+    this.emitter.emit('inventory');
+    return res;
+  }
+
+  /** Việc dân làng nhờ hôm nay (mini game) */
+  favorToday(id) { return favors.todaysFavor(this.save, id, this.today); }
+
+  /** Xong mini game nhờ việc: stars 0–3 */
+  finishFavorGame(id, favor, stars) {
+    const res = favors.finishFavor(this.save, id, favor, stars, this.today);
+    if (res.xp) this.gainXp(res.xp);
     this.afterBond(id, res);
     this.emitter.emit('inventory');
     return res;

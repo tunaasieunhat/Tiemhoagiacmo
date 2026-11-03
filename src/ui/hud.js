@@ -8,6 +8,8 @@ import { avatarSVG } from './avatar.js';
 import { savePrefs } from '../audio/audio.js';
 import { villagerInfo, greeting, houseStatus } from '../systems/village.js';
 import * as rel from '../systems/relations.js';
+import { runMiniGame } from './minigames.js';
+import { FAVOR_RULES } from '../../data/minigames.js';
 import { FRIEND, REACTION, BONDS } from '../../data/stories.js';
 import { DECOR as DECOR_ALL } from '../../data/decor.js';
 import { ACTIVITIES, HOUSES, LEAVES_AFTER_STORY } from '../../data/village.js';
@@ -464,6 +466,7 @@ export class Hud {
     const bday = rel.isBirthday(id, day);
     const chapters = info.regular ? (g.save.regulars?.[id]?.hearts || 0) : null;
     const hasFlowers = Object.values(g.save.inventory.flowers).some((n) => n > 0);
+    const favor = g.favorToday(id);
     this.openModal('villager', `
       <div class="vg-head">${avatarSVG(info.look, 64)}<div><h2>${esc(info.name)}${bday ? ' 🎂' : ''}</h2><small class="muted">${esc(info.role)}${info.home ? ` · ${esc(HOUSES[info.home].name)}` : ''}</small>${this.heartBar(id)}</div></div>
       <p class="vg-say">“${esc(greeting(id, ctx))}”</p>
@@ -472,7 +475,8 @@ export class Hud {
         <button class="btn ${ev ? 'primary glow' : 'primary'} ${!meet.ok || !canTalk ? 'disabled' : ''}" data-vg="talk" data-id="${id}">${ev ? `✨ ${esc(ev.title)}` : '💬 Trò chuyện'}${canTalk ? '' : ' ✓'}</button>
         <button class="btn ${!meet.ok || !canGift || !hasFlowers ? 'disabled' : ''}" data-vg="gift" data-id="${id}">🎁 Tặng hoa${canGift ? '' : ' ✓'}</button>
       </div>
-      ${!meet.ok ? `<p class="muted small">${esc(meet.reason)}</p>` : !canTalk && !canGift ? '<p class="muted small">Hôm nay đã trò chuyện và tặng quà rồi — mai ghé tiếp nhé!</p>' : ''}
+      ${favor && meet.ok ? `<button class="btn primary glow wide favor-btn" data-vg="favor" data-id="${id}">🙏 ${esc(info.name)} nhờ bạn: ${esc(favor.icon)} ${esc(favor.title)}</button>` : ''}
+      ${!meet.ok ? `<p class="muted small">${esc(meet.reason)}</p>` : !canTalk && !canGift && !favor ? '<p class="muted small">Hôm nay đã trò chuyện và tặng quà rồi — mai ghé tiếp nhé!</p>' : ''}
       <div class="kv"><span>📍 Bây giờ</span><b>${act ? `${act.icon} ${esc(act.name)}` : '—'}${st?.walking ? ' (đang đi tới)' : ''}</b></div>
       ${chapters != null ? `<div class="kv"><span>🌷 Chuyện ở tiệm hoa</span><b>${chapters}/5 chương</b></div>` : ''}
       ${this.likesLine(id)}
@@ -517,6 +521,7 @@ export class Hud {
         break;
       }
       case 'done': this.talk = null; this.giftFor = null; if (!this.showBondRewards()) this.openVillager(id); break;
+      case 'favor': this.startFavor(id); break;
       case 'gift':
         if (el.classList.contains('disabled')) { const m = g.canMeet(id); g.toast(!m.ok ? m.reason : !rel.canGift(g.save, id, g.today) ? 'Hôm nay đã tặng quà rồi' : 'Kho chưa có hoa — thu hoạch hoa rồi quay lại nhé', 'info'); return; }
         this.giftFor = id; this.openGift(id); break;
@@ -526,6 +531,24 @@ export class Hud {
         break;
       }
     }
+  }
+
+  /** Nhận lời giúp: chơi mini game rồi trao thưởng */
+  async startFavor(id) {
+    const g = this.game;
+    const favor = g.favorToday(id);
+    if (!favor || !g.canMeet(id).ok) return;
+    const info = villagerInfo(id);
+    this.closeModal();
+    const { stars, quit } = await runMiniGame(favor.game, { title: favor.title, icon: favor.icon, ask: favor.ask, who: info.name, sfx: g.audio?.sfx });
+    const res = g.finishFavorGame(id, favor, stars);
+    this.openModal('favor', `
+      <div class="vg-head">${avatarSVG(info.look, 56)}<div><b>${esc(info.name)}</b>${this.heartBar(id)}</div></div>
+      <p class="fav-stars">${'⭐'.repeat(res.stars)}${'☆'.repeat(3 - res.stars)}</p>
+      <p class="vg-say">“${esc(quit ? 'Ơ, bạn bận à? Không sao, mai mình nhờ lại nhé!' : res.stars > 0 ? favor.thanks : favor.fail)}”</p>
+      <p class="fp-chip up">+${res.fp} điểm tình thân 💗${res.coins ? ` · +${res.coins} 💰 tiền công` : ''}${res.after > res.before ? ` · lên ${res.after} ❤️!` : ''}</p>
+      <p class="muted small">Kỷ lục việc này: ${'⭐'.repeat(res.best) || 'chưa có sao'} · 3⭐ = +${FAVOR_RULES.fp[3]} tình thân, +${FAVOR_RULES.coins[3]} 💰</p>
+      <button class="btn primary wide" data-vg="done" data-id="${id}">Xong</button>`);
   }
 
   renderTalk() {

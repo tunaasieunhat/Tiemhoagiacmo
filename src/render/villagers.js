@@ -5,6 +5,7 @@ import { cyl, sphere, rbox, at } from '../models/primitives.js';
 import { glow } from '../models/environment.js';
 import { VILLAGE, ACTIVITIES, HOUSES } from '../../data/village.js';
 import { VILLAGER_IDS, villagerInfo, desiredState, routeTo, spotPos, homeOf } from '../systems/village.js';
+import { todaysFavor } from '../systems/favors.js';
 
 const iconCache = new Map();
 function iconMaterial(emoji) {
@@ -146,10 +147,13 @@ export class VillagerView {
     let dh = v.heading - v.g.rotation.y;
     dh = Math.atan2(Math.sin(dh), Math.cos(dh));
     v.g.rotation.y += dh * Math.min(1, dt * 8);
-    v.icon.visible = v.mode === 'at';
+    v.icon.visible = v.mode === 'at' || v.mode === 'walk';
     if (v.icon.visible) {
       const a = ACTIVITIES[v.act];
-      const mat = iconMaterial(a?.icon || '💬');
+      // có việc muốn nhờ hôm nay => hiện 🙏 thay cho biểu tượng việc đang làm
+      const favor = ctx.save && ctx.day && todaysFavor(ctx.save, v.id, ctx.day);
+      if (v.mode === 'walk' && !favor) v.icon.visible = false;
+      const mat = iconMaterial(favor ? '🙏' : a?.icon || '💬');
       if (v.icon.material !== mat) v.icon.material = mat;
       v.icon.position.y = (v.kid ? 1.75 : 2.05) + Math.sin(this.t * 2 + v.phase) * 0.06 + (a?.anim === 'sit' ? -0.2 : 0);
     }

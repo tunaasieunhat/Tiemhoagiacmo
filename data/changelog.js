@@ -4,6 +4,14 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.12.1',
+    notes: [
+      '🙏 Dân làng nhờ việc: thấy 🙏 trên đầu ai thì chạm vào để giúp — mỗi việc là 1 mini game',
+      '7 mini game: 🪡 xỏ kim (Bà Tư), 🎣 câu cá & 🔨 đóng đinh (Ông Ba), ☕ pha cà phê muối (Cô Ngân), 🧮 chấm bài toán (Thầy Duy), 📝 ghép vần thơ (Cô Mai), 🃏 lật thẻ hoa (Bé Su)',
+      'Làm càng giỏi (tối đa 3⭐) càng được nhiều tình thân và tiền công',
+    ],
+  },
+  {
     version: '0.12.0',
     notes: [
       '💞 Kết thân với 6 dân làng: thanh tình thân 10 ❤️, trò chuyện và tặng hoa mỗi ngày',
