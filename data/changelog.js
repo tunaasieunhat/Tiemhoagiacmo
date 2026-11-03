@@ -4,6 +4,14 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.9.1',
+    notes: [
+      'Mở tài khoản online: đăng ký / đăng nhập bằng email, lưu tiến độ lên mạng',
+      'Chơi cùng bạn bè: thăm nông trại, tặng quà, tưới giúp, sổ lưu bút',
+      'Bảng xếp hạng và cuộc thi hoa hằng tuần',
+    ],
+  },
+  {
     version: '0.9.0',
     notes: [
       'Thông báo khi có bản cập nhật mới',

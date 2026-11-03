@@ -12,8 +12,8 @@
 //  (Có thể thay bằng biến môi trường VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY / VITE_SITE_URL / VITE_APK_URL)
 // =============================================================
 export const ONLINE = {
-  supabaseUrl: '',
-  supabaseAnonKey: '',
+  supabaseUrl: 'https://nhwqubttbkpcuckrduij.supabase.co',
+  supabaseAnonKey: 'sb_publishable_FixnDN58T6ortzA7wPXUJQ_eKKGwv2N',
 
   // Địa chỉ trang web của game sau khi đưa lên mạng (GĐ9), vd 'https://tiem-hoa-giac-mo.netlify.app'
   // Dùng cho: ứng dụng Android kiểm tra bản mới, liên kết trong email xác nhận / quên mật khẩu.
@@ -24,5 +24,5 @@ export const ONLINE = {
 
   cloudSyncSeconds: 45,   // tự đẩy save lên mạng tối đa mỗi bao nhiêu giây
   retrySeconds: 20,       // lỗi mạng thì thử lại sau bao lâu
-  enableGoogle: true,     // hiện nút "Đăng nhập bằng Google" (cần bật Google trong Supabase)
+  enableGoogle: false,    // hiện nút "Đăng nhập bằng Google" — đổi thành true SAU KHI đã bật Google trong Supabase
 };

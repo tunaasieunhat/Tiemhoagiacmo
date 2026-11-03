@@ -21,8 +21,9 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
   `ANDROID_KEYSTORE_B64` (PKCS12, mật khẩu cố định `tiemhoagiacmo`, alias `tiemhoa`); build đã ký thì tự đăng Releases
   (tag `apk-<version>-<run>`, ghi chú từ `data/changelog.js`), link tải cố định
   `releases/latest/download/TiemHoaGiacMo.apk`. Repo GitHub là **công khai**.
-- Supabase **chưa được người dùng cài**: chưa có URL/khóa trong `data/online.js` → game đang chạy chế độ khách.
-  Hướng dẫn cài: `docs/HUONG_DAN_SUPABASE.md`.
+- Supabase đã cài (03/11/2026): project `nhwqubttbkpcuckrduij` (vùng Frankfurt), khóa publishable trong `data/online.js`,
+  đã chạy 3 file SQL. `enableGoogle: false` cho tới khi người dùng bật Google. Máy chủ Supabase thật KHÔNG truy cập được
+  từ môi trường của Claude (proxy chặn) ⇒ người dùng tự thử. Hướng dẫn cài: `docs/HUONG_DAN_SUPABASE.md`.
 
 ## Lệnh
 
