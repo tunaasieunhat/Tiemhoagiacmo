@@ -192,6 +192,9 @@ declare uid uuid := public.require_login();
 begin
   if jsonb_typeof(p_snapshot) <> 'object' or jsonb_typeof(p_snapshot -> 'plots') <> 'array' then perform public.social_error('Dữ liệu nông trại không hợp lệ'); end if;
   if jsonb_array_length(p_snapshot -> 'plots') > 8 then perform public.social_error('Dữ liệu nông trại không hợp lệ'); end if;
+  if coalesce(p_snapshot ->> 'level', '1') !~ '^[0-9]{1,4}$' or char_length(coalesce(p_snapshot ->> 'tier', '')) > 40 then
+    perform public.social_error('Dữ liệu nông trại không hợp lệ');
+  end if;
   if not public.rate_check('showcase', 1, interval '20 seconds') then return jsonb_build_object('status', 'rate_limited'); end if;
   insert into public.farm_showcase (user_id, snapshot, updated_at) values (uid, p_snapshot, now())
   on conflict (user_id) do update set snapshot = excluded.snapshot, updated_at = now();
@@ -398,7 +401,7 @@ begin
     'friends', coalesce((
       select jsonb_agg(jsonb_build_object(
         'id', p.id, 'name', p.display_name, 'avatar', p.avatar, 'code', p.friend_code,
-        'level', coalesce((s.snapshot ->> 'level')::int, p.level),
+        'level', case when s.snapshot ->> 'level' ~ '^[0-9]{1,4}$' then (s.snapshot ->> 'level')::int else p.level end,
         'tier', s.snapshot ->> 'tier',
         'seen_at', s.updated_at,
         'helped_today', exists (select 1 from public.farm_help h where h.helper = uid and h.owner = p.id and h.day = today),

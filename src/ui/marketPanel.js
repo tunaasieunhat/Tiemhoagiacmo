@@ -7,6 +7,8 @@ import { wholesalePrice } from '../systems/shop.js';
 import { formatDuration } from '../systems/time.js';
 import { PROTECTION } from '../../data/seasons.js';
 import * as variants from '../systems/variants.js';
+import { MACHINES, STAFF } from '../../data/automation.js';
+import { DECOR } from '../../data/decor.js';
 
 const TABS = [
   { id: 'seeds', label: '🌱 Hạt giống' },
@@ -14,6 +16,8 @@ const TABS = [
   { id: 'upgrades', label: '🛠️ Nâng cấp' },
   { id: 'protect', label: '🛡️ Phòng hộ' },
   { id: 'land', label: '🗺️ Đất' },
+  { id: 'auto', label: '🤖 Tự động' },
+  { id: 'decor', label: '🎨 Trang trí' },
   { id: 'sell', label: '📦 Bán sỉ' },
 ];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -36,7 +40,7 @@ export class MarketPanel {
     const m = this.hud.root.querySelector('.modal');
     const top = keepScroll && this.hud.modal === 'market' ? m?.scrollTop || 0 : 0;
     const s = this.save;
-    const body = { seeds: this.seeds, supplies: this.supplies, upgrades: this.upgrades, protect: this.protect, land: this.land, sell: this.sell }[this.tab].call(this);
+    const body = { seeds: this.seeds, supplies: this.supplies, upgrades: this.upgrades, protect: this.protect, land: this.land, auto: this.auto, decor: this.decor, sell: this.sell }[this.tab].call(this);
     this.hud.openModal('market', `
       <h2>🧺 Khu Chợ</h2>
       <div class="mk-wallet"><span>💰 <b>${s.player.coins}</b></span><span>⭐ Cấp <b>${s.player.level}</b></span></div>
@@ -119,6 +123,36 @@ export class MarketPanel {
     return `<p class="muted small">Xem dự báo thời tiết bằng cách bấm vào đồng hồ. Thiên tai và dịch bệnh luôn được báo trước 1 ngày.</p>${items}<h3>Nhà kính</h3>${houses}`;
   }
 
+  auto() {
+    const s = this.save;
+    const lv = s.player.level;
+    const machines = Object.entries(MACHINES).map(([k, m]) => `<h3>${m.icon} ${m.name}</h3><p class="muted small">${m.desc}</p>` + s.farm.plots.map((p, i) => this.card({
+      icon: m.icon, name: `Lô số ${i + 1}`, desc: p.machines?.[k] ? 'Đã lắp đặt' : m.desc,
+      price: p.machines?.[k] ? null : m.price, lock: !p.machines?.[k] && lv < m.level ? m.level : 0,
+      buttons: p.machines?.[k] ? '<span class="maxed">✔ Đang chạy</span>' : `<button class="btn ${s.player.coins < m.price ? 'disabled' : 'primary'}" data-mk="machine" data-kind="${k}" data-id="${i}">Lắp đặt</button>`,
+    })).join('')).join('');
+    const staff = Object.entries(STAFF).map(([id, st]) => {
+      const cur = s.automation.staff[id];
+      const working = cur?.hired && cur.active;
+      const paused = cur?.hired && !cur.active;
+      return this.card({
+        icon: st.icon, name: st.name, desc: `${st.desc}<br>Lương <b>${st.wage} 💰 / ngày game</b>${paused ? ' · <b>đang tạm nghỉ vì chưa trả lương</b>' : ''}`,
+        price: working ? null : paused ? st.wage : st.hire, lock: !cur?.hired && lv < st.level ? st.level : 0,
+        buttons: working ? `<button class="btn" data-mk="fire" data-id="${id}">Cho nghỉ</button>` : `<button class="btn primary" data-mk="hire" data-id="${id}">${paused ? 'Gọi lại' : 'Thuê'}</button>`,
+      });
+    }).join('');
+    return `<p class="muted small">Máy móc làm việc cả khi bạn không chơi. Nhân viên nhận lương đầu mỗi ngày game; hết tiền thì tạm nghỉ.</p>${machines}<h3>👥 Nhân viên</h3>${staff}`;
+  }
+
+  decor() {
+    const s = this.save;
+    const lv = s.player.level;
+    return `<p class="muted small">Mua đồ rồi bấm 🎨 (bên trái) để đặt quanh nông trại và tiệm. Bạn bè ghé thăm sẽ thấy, mỗi món có điểm xinh xắn 🎨.</p>` + Object.entries(DECOR).map(([id, d]) => this.card({
+      icon: d.icon, name: d.name, desc: `🎨 +${d.beauty} điểm xinh xắn`, price: d.price, lock: lv < d.level ? d.level : 0, owned: s.decor.owned[id] || 0,
+      buttons: `<button class="btn ${s.player.coins < d.price ? 'disabled' : 'primary'}" data-mk="decor" data-id="${id}">Mua</button>`,
+    })).join('');
+  }
+
   land() {
     const s = this.save;
     const next = nextPlot(s);
@@ -158,6 +192,13 @@ export class MarketPanel {
       this.render(true);
       return;
     }
+    if (act === 'machine') { g.buyMachine(el.dataset.kind, +el.dataset.id); this.render(true); return; }
+    if (act === 'hire') { g.hireStaff(el.dataset.id); this.render(true); return; }
+    if (act === 'fire') {
+      if (!el.dataset.armed) { el.dataset.armed = '1'; el.textContent = 'Chắc chưa?'; return; }
+      g.fireStaff(el.dataset.id); this.render(true); return;
+    }
+    if (act === 'decor') { g.buyDecor(el.dataset.id); this.render(true); return; }
     if (act === 'sell1') {
       g.sellWholesale(el.dataset.k, 1);
       this.render(true);

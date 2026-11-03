@@ -16,10 +16,12 @@ import { vkey, DEFAULT_VARIANT } from '../systems/variants.js';
 import { createBook } from '../systems/notebook.js';
 import { createLabState } from '../systems/breeding.js';
 import { createRegularsState } from '../systems/regulars.js';
+import { createQuestState } from '../systems/quests.js';
+import { createAutomationState } from '../systems/automation.js';
 
 const toVkeys = (obj) => Object.fromEntries(Object.entries(obj).map(([k, n]) => [k.includes(':') ? k : vkey(k), n]));
 
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 export function newId() {
   if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
@@ -34,6 +36,7 @@ export function createPlot(id) {
     tiles: Array.from({ length: FARM.plotCols * FARM.plotRows }, createTile),
     greenhouse: false, // nhà kính (GĐ5)
     coverUntil: 0,     // đang che bạt đến phút game này
+    machines: {},      // { sprinkler: true, feeder: true } (GĐ8)
   };
 }
 
@@ -77,6 +80,9 @@ export function createNewSave() {
     book: createBook(),            // sổ tay thực vật (GĐ6)
     lab: createLabState(),         // nhà lai tạo (GĐ6)
     regulars: createRegularsState(), // khách quen (GĐ6)
+    quests: createQuestState(),      // nhiệm vụ ngày/tuần (GĐ8)
+    automation: createAutomationState(), // nhân viên (GĐ8)
+    decor: { owned: {}, slots: {} },  // đồ trang trí: số lượng đang có, vị trí đã đặt (GĐ8)
     farm: {
       plots: [createPlot('plot-1')],
     },
@@ -143,6 +149,14 @@ export const MIGRATIONS = {
     for (const k of Object.keys(flowers)) { const vk = k.split('|')[0]; s.book.found[vk] = s.book.found[vk] || { day: 1, harvested: 1, bestQ: +k.split('|')[1] }; }
     s.lab = s.lab || createLabState();
     s.regulars = s.regulars || createRegularsState();
+    return s;
+  },
+  // v6 -> v7 (Giai đoạn 8): nhiệm vụ, tự động hóa, trang trí
+  6: (s) => {
+    s.quests = s.quests || createQuestState();
+    s.automation = s.automation || createAutomationState();
+    s.decor = s.decor || { owned: {}, slots: {} };
+    for (const p of s.farm.plots) p.machines = p.machines || {};
     return s;
   },
 };

@@ -2,9 +2,11 @@
 import { social } from './social.js';
 import { buildSnapshot } from './showcase.js';
 import { viError } from './errors.js';
+import { submitScores } from './ranking.js';
 
 const POLL_MS = 45000;
 const PUBLISH_MS = 90000;
+const SCORES_MS = 120000;
 const SEEN_KEY = (uid) => `thgm:guestbook-seen:${uid}`;
 
 export class SocialManager {
@@ -48,12 +50,22 @@ export class SocialManager {
         this.overview.helps_waiting = 0;
       }
       if (Date.now() - this.lastPublish > PUBLISH_MS) await this.publish();
+      if (Date.now() - (this.lastScores || 0) > SCORES_MS) await this.submitScores();
       this.emitter.emit('social', this.overview);
     } catch (e) {
       console.warn('Không tải được dữ liệu bạn bè', e);
     } finally {
       this.busy = false;
     }
+  }
+
+  /** Nộp điểm xếp hạng: máy chủ tự đọc save đã đồng bộ, không nhận số từ đây */
+  async submitScores() {
+    try {
+      const r = await submitScores();
+      this.lastScores = Date.now();
+      if (r?.capped) console.warn('Máy chủ đã giới hạn điểm vì tăng quá nhanh');
+    } catch (e) { console.warn('Không nộp được điểm', e); }
   }
 
   async publish() {

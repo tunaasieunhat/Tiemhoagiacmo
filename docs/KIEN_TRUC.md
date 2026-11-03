@@ -13,6 +13,7 @@ Tiemhoagiacmo/
 │  ├─ seasons.js           Mùa, thời tiết, thiên tai, dịch bệnh, lễ hội, đồ phòng hộ
 │  ├─ variants.js          Màu hoa, ý nghĩa, công thức lai, thưởng sổ tay
 │  ├─ regulars.js          Khách quen & câu chuyện
+│  ├─ quests.js, automation.js, decor.js, contest.js   Nhiệm vụ, tự động hóa, trang trí, cuộc thi
 │  ├─ online.js            Địa chỉ + khóa công khai Supabase
 │  └─ badwords.js          Từ cấm (bản phụ, bản chính ở máy chủ)
 ├─ src/
@@ -32,6 +33,10 @@ Tiemhoagiacmo/
 │  │  ├─ breeding.js       Lai tạo
 │  │  ├─ notebook.js       Sổ tay thực vật
 │  │  ├─ regulars.js       Khách quen
+│  │  ├─ quests.js         Nhiệm vụ ngày/tuần
+│  │  ├─ automation.js     Vòi tưới, máy bón phân, nhân viên
+│  │  ├─ contest.js        Mùa thi (tuần thật, giờ VN), chấm bài dự thi — dùng chung với máy chủ
+│  │  └─ contestServer.js  Xử lý nộp bài trong Edge Function
 │  │  └─ time.js           Đồng hồ game
 │  ├─ save/                LƯU GAME
 │  │  ├─ schema.js         Cấu trúc save + số phiên bản + chuyển đổi save cũ
@@ -67,7 +72,7 @@ cùng công thức để kiểm tra gian lận.
 
 ```js
 {
-  version: 6,                     // số phiên bản cấu trúc → tự chuyển đổi khi game cập nhật
+  version: 7,                     // số phiên bản cấu trúc → tự chuyển đổi khi game cập nhật
   meta: { saveId, ownerId, rev, syncedRev, createdAt, updatedAt },
   player: { name, avatar, level, xp, coins, reputation },
   time: { gameMinutes, lastRealTs },
@@ -90,7 +95,8 @@ cùng công thức để kiểm tra gian lận.
 - GĐ2 (`…_gd2_profiles_saves.sql`): `profiles`, `saves`, `banned_words`, hàm `push_save`.
 - GĐ7 (`…_gd7_social.sql`): `friendships`, `farm_showcase` (ảnh chụp nông trại công khai cho bạn bè), `farm_help`, `gifts`, `guestbook`, `rate_events` và các hàm máy chủ `search_players`, `send_friend_request`, `respond_friend_request`, `remove_friend`, `publish_showcase`, `help_water`, `claim_helps`, `send_gift`, `claim_gifts`, `post_message`, `delete_message`, `social_overview`, `visit_farm`, `my_guestbook`.
 
-GĐ7 dùng **hàm máy chủ Postgres (RPC, SECURITY DEFINER)** thay cho Edge Function: chạy trên máy chủ nên trình duyệt không gian lận được, kiểm tra + ghi trong cùng 1 giao dịch, và cài đặt chỉ cần dán SQL. Còn lại làm ở GĐ8.
+GĐ7 dùng **hàm máy chủ Postgres (RPC, SECURITY DEFINER)** thay cho Edge Function: chạy trên máy chủ nên trình duyệt không gian lận được, kiểm tra + ghi trong cùng 1 giao dịch, và cài đặt chỉ cần dán SQL. - GĐ8 (`…_gd8_leaderboard_contest.sql`): `player_stats` (điểm máy chủ chấp nhận), `contest_entries`, `contest_best`, `contest_claims`; hàm `submit_scores` (đọc save đã đồng bộ, giới hạn tốc độ tăng XP/uy tín), `get_leaderboard`, `contest_status`, `claim_contest_reward`.
+- **Edge Function** `contest-submit` (nguồn: `supabase/functions-src/contest-submit.js` + `src/systems/contestServer.js`, đóng gói bằng `npm run build:functions` ra 1 file `supabase/functions/contest-submit/index.ts`): chấm lại bó hoa dự thi bằng chính `src/systems/bouquet.js`, đối chiếu kho hoa trong save, giới hạn 3 bài/tuần, ghi điểm bằng khóa service_role (chỉ ở máy chủ).
 
 | Bảng | Nội dung | Ai được đọc / ghi (RLS) |
 |---|---|---|

@@ -2,6 +2,7 @@
 import { stageOf, isWilted, isSick, growMinutes } from '../systems/farming.js';
 import { tierInfo } from '../systems/shop.js';
 import { bookProgress } from '../systems/notebook.js';
+import { DECOR } from '../../data/decor.js';
 
 const STATE = { untilled: 0, tilled: 1, growing: 2, ready: 3, dead: 4 };
 const STATE_BACK = ['untilled', 'tilled', 'growing', 'ready', 'dead'];
@@ -21,8 +22,12 @@ export function buildSnapshot(save) {
     harvested: save.stats.harvested || 0,
     book: save.book ? bookProgress(save).pct : 0,
     hearts,
+    decor: { ...(save.decor?.slots || {}) },
+    beauty: Object.values(save.decor?.slots || {}).reduce((a, id) => a + (DECOR[id]?.beauty || 0), 0),
     plots: save.farm.plots.map((p) => ({
       gh: p.greenhouse ? 1 : 0,
+      mc: p.machines?.sprinkler ? 1 : 0,
+      mf: p.machines?.feeder ? 1 : 0,
       cv: !p.greenhouse && (p.coverUntil || 0) >= now ? 1 : 0,
       tiles: p.tiles.map((tile) => ({
         s: STATE[tile.state] ?? 0,
@@ -44,7 +49,7 @@ export function snapshotToFarm(snap) {
     time: { gameMinutes: 0 },
     farm: {
       plots: plots.map((p) => ({
-        cols: 3, rows: 3, greenhouse: !!p.gh, coverUntil: p.cv ? Infinity : -1,
+        cols: 3, rows: 3, greenhouse: !!p.gh, coverUntil: p.cv ? Infinity : -1, machines: { sprinkler: !!p.mc, feeder: !!p.mf },
         tiles: (p.tiles || []).slice(0, 9).map((t) => {
           const state = STATE_BACK[t.s] || 'untilled';
           const flower = t.f || null;

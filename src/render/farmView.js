@@ -9,6 +9,7 @@ import { stageOf, isThirsty, isWilted, isSick } from '../systems/farming.js';
 import { uniqueMat } from '../models/materials.js';
 import { PLOT_SLOTS } from './world.js';
 import { iconMaterial } from './icons.js';
+import { buildSprinkler, buildFeeder } from '../models/decor.js';
 
 const SOIL = {
   untilled: '#cfae86',
@@ -107,8 +108,17 @@ export class FarmView {
       const cover = makeCover(w, d);
       cover.visible = false;
       g.add(cover);
+      // máy móc tự động (GĐ8)
+      const sprinkler = buildSprinkler();
+      sprinkler.position.set(-w / 2 - 0.05, 0, -d / 2 - 0.05);
+      sprinkler.visible = false;
+      g.add(sprinkler);
+      const feeder = buildFeeder();
+      feeder.position.set(w / 2 + 0.3, 0, -d / 2 + 0.3);
+      feeder.visible = false;
+      g.add(feeder);
       this.root.add(g);
-      this.plots.push({ group: g, tiles, greenhouse, cover });
+      this.plots.push({ group: g, tiles, greenhouse, cover, sprinkler, feeder });
     });
     this.sync(save, true);
   }
@@ -121,6 +131,8 @@ export class FarmView {
       if (!pv) return;
       pv.greenhouse.visible = !!plot.greenhouse;
       pv.cover.visible = !plot.greenhouse && (plot.coverUntil || 0) >= now;
+      pv.sprinkler.visible = !!plot.machines?.sprinkler;
+      pv.feeder.visible = !!plot.machines?.feeder;
       plot.tiles.forEach((tile, ti) => this.syncTile(pv.tiles[ti], tile, instant));
     });
   }
@@ -187,6 +199,7 @@ export class FarmView {
       }
     }
     this.selectCursor.material.opacity = 0.65 + Math.sin(t * 5) * 0.3;
+    for (const pv of this.plots) if (pv.sprinkler.visible) pv.sprinkler.userData.spin.rotation.y += dt * 3;
   }
 }
 

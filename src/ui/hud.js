@@ -10,6 +10,10 @@ import { ShopPanel } from './shopPanel.js';
 import { MarketPanel } from './marketPanel.js';
 import { LabPanel } from './labPanel.js';
 import { FriendsPanel, messagesHtml } from './friendsPanel.js';
+import { QuestsPanel } from './questsPanel.js';
+import { RankPanel } from './rankPanel.js';
+import { claimableCount } from '../systems/quests.js';
+import { DECOR, DECOR_SLOTS } from '../../data/decor.js';
 import { social } from '../online/social.js';
 import { viError } from '../online/errors.js';
 import { isCleanText } from '../online/names.js';
@@ -74,6 +78,9 @@ export class Hud {
     em.on('regular-story', (st) => this.showStory(st));
     em.on('social', () => this.updateFriendBadge());
     em.on('visit', (v) => this.updateVisit(v));
+    em.on('quests', () => { this.updateQuestBadge(); if (this.modal === 'quests') this.quests.render(); });
+    em.on('decor-mode', (on) => { this.root.classList.toggle('decorating', on); $('.decor-bar', this.root).classList.toggle('hidden', !on); });
+    em.on('decor-slot', (slot) => this.openDecorSlot(slot));
     em.on('xp', () => this.updateWallet());
     em.on('levelup', (ups) => this.showLevelUp(ups));
     em.on('weather', () => { this.updateAlert(); this.updateClock(this.game.clock); if (this.modal === 'forecast') this.openForecast(); });
@@ -89,6 +96,9 @@ export class Hud {
     this.lab = new LabPanel(this);
     this.notebook = new NotebookPanel(this);
     this.friends = new FriendsPanel(this);
+    this.quests = new QuestsPanel(this);
+    this.rank = new RankPanel(this);
+    this.updateQuestBadge();
     this.updateAlert();
     this.updateWallet();
   }
@@ -121,6 +131,9 @@ export class Hud {
         <button class="round" data-act="go-market" aria-label="Khu chợ">🧺</button>
         <button class="round" data-act="go-lab" aria-label="Nhà lai tạo">🧬<span class="badge hidden lab-badge">✓</span></button>
         <button class="round" data-act="friends" aria-label="Bạn bè">👥<span class="badge hidden fr-badge"></span></button>
+        <button class="round" data-act="quests" aria-label="Nhiệm vụ">📋<span class="badge hidden q-badge"></span></button>
+        <button class="round" data-act="rank" aria-label="Xếp hạng và cuộc thi">🏆</button>
+        <button class="round" data-act="decor-mode" aria-label="Trang trí">🎨</button>
       </div>
       <button class="alert-chip hidden" data-act="forecast"></button>
       <div class="saved-badge">💾 Đã lưu</div>
@@ -138,6 +151,7 @@ export class Hud {
       </div>
       <div class="tutorial hidden"></div>
       <div class="visit-bar hidden"></div>
+      <div class="decor-bar hidden"><span>🎨 <b>Chế độ trang trí</b> — chạm dấu ＋ để đặt hoặc đổi đồ</span><button class="btn primary" data-act="decor-done">Xong</button></div>
       <div class="visit-actions hidden"></div>
       <div class="sheet tile-panel hidden"></div>
       <div class="modal-wrap hidden"><div class="modal"></div></div>
@@ -153,6 +167,12 @@ export class Hud {
   }
 
   onClick(e) {
+    const qq = e.target.closest('[data-q]');
+    if (qq) { this.quests.onAction(qq.dataset.q, qq); return; }
+    const rk = e.target.closest('[data-rk]');
+    if (rk) { this.rank.onAction(rk.dataset.rk, rk); return; }
+    const dc = e.target.closest('[data-dc]');
+    if (dc) { this.onDecorPick(dc); return; }
     const fr = e.target.closest('[data-fr]');
     if (fr) { this.friends.onAction(fr.dataset.fr, fr); return; }
     const lb = e.target.closest('[data-lab]');
@@ -197,6 +217,10 @@ export class Hud {
       case 'notebook': this.notebook.open(b.dataset.tab); break;
       case 'go-lab': this.openLab(); break;
       case 'friends': this.friends.open(); break;
+      case 'quests': this.quests.open(); break;
+      case 'rank': this.rank.open(); break;
+      case 'decor-mode': this.closeModal(); g.setDecorMode(true); break;
+      case 'decor-done': this.closeModal(); g.setDecorMode(false); break;
       case 'visit-home': this.closeModal(); g.exitVisit(); break;
       case 'visit-water': if (!b.classList.contains('disabled')) { b.classList.add('disabled'); g.helpWaterFriend(g.visit.profile.id); } else g.toast('Hôm nay đã tưới giúp nhà này rồi', 'info'); break;
       case 'visit-gift': if (!b.classList.contains('disabled')) { this.friends.openGift(g.visit.profile); } else g.toast('Hôm nay đã tặng quà nhà này rồi', 'info'); break;
@@ -267,6 +291,35 @@ export class Hud {
     badge.textContent = n;
   }
 
+  // ---------- nhiệm vụ & trang trí ----------
+  updateQuestBadge() {
+    const n = claimableCount(this.game.save);
+    const b = $('.q-badge', this.root);
+    b.classList.toggle('hidden', !n);
+    b.textContent = n;
+  }
+
+  openDecorSlot(slot) {
+    const s = this.game.save;
+    const cur = s.decor.slots[slot];
+    const owned = Object.entries(s.decor.owned).filter(([, n]) => n > 0);
+    const zone = DECOR_SLOTS.find((x) => x.id === slot)?.zone === 'shop' ? 'trước tiệm hoa' : 'quanh nông trại';
+    this.openModal('decorslot', `
+      <h2>🎨 Đặt đồ ${zone}</h2>
+      ${cur ? `<div class="mk-item"><div class="mk-icon">${DECOR[cur].icon}</div><div class="mk-info"><b>Đang đặt: ${DECOR[cur].name}</b></div><div class="mk-buy"><button class="btn" data-dc="remove" data-slot="${slot}">Cất đi</button></div></div>` : ''}
+      <h3>Đồ đang có</h3>
+      ${owned.length ? `<div class="lab-list">${owned.map(([id, n]) => `<button class="lab-item" data-dc="place" data-slot="${slot}" data-id="${id}"><span>${DECOR[id].icon}</span><small>${DECOR[id].name}</small><b>×${n}</b></button>`).join('')}</div>` : '<p class="muted">Bạn chưa có đồ trang trí nào.</p>'}
+      <button class="btn wide" data-act="go-market" data-tab="decor">🧺 Mua thêm ở Khu Chợ</button>
+      <p class="muted small">Điểm xinh xắn hiện tại: 🎨 ${this.game.beauty()}</p>`);
+  }
+
+  onDecorPick(el) {
+    const g = this.game;
+    if (el.dataset.dc === 'remove') g.placeDecor(el.dataset.slot, null);
+    if (el.dataset.dc === 'place') g.placeDecor(el.dataset.slot, el.dataset.id);
+    this.closeModal();
+  }
+
   // ---------- bạn bè & thăm nhà ----------
   updateFriendBadge() {
     const n = this.game.account?.social?.badge || 0;
@@ -285,8 +338,8 @@ export class Hud {
     const sn = v.snapshot || {};
     bar.innerHTML = `<div class="vb-av">${avatarSVG(v.profile.avatar || {}, 44)}</div>
       <div class="vb-info"><b>Nông trại của ${esc(v.profile.name)}</b>
-      <small>⭐ Cấp ${sn.level || 1}${sn.tier ? ` · ${sn.tierIcon || ''} ${esc(sn.tier)}` : ''}</small>
-      <small>🌸 ${sn.served || 0} khách · 💐 ${sn.bouquets || 0} bó hoa · 📖 Sổ tay ${sn.book || 0}%${sn.hearts ? ` · ❤️ ${sn.hearts}` : ''}</small></div>`;
+      <small>⭐ Cấp ${num(sn.level) || 1}${sn.tier ? ` · ${esc(sn.tierIcon || '')} ${esc(sn.tier)}` : ''}</small>
+      <small>🌸 ${num(sn.served)} khách · 💐 ${num(sn.bouquets)} bó hoa · 📖 Sổ tay ${num(sn.book)}%${sn.hearts ? ` · ❤️ ${num(sn.hearts)}` : ''}${sn.beauty ? ` · 🎨 ${num(sn.beauty)}` : ''}</small></div>`;
     act.innerHTML = `
       <button class="tool ${v.helped_today ? 'disabled' : ''}" data-act="visit-water"><span class="ti">💧</span><span class="tl">${v.helped_today ? 'Đã tưới' : 'Tưới giúp'}</span></button>
       <button class="tool ${v.gifted_today ? 'disabled' : ''}" data-act="visit-gift"><span class="ti">🎁</span><span class="tl">${v.gifted_today ? 'Đã tặng' : 'Tặng quà'}</span></button>
@@ -782,6 +835,9 @@ export class Hud {
     setTimeout(() => el.remove(), 1400);
   }
 }
+
+/** Số an toàn để hiển thị (dữ liệu từ người chơi khác) */
+const num = (v) => Math.max(0, Math.floor(Number(v) || 0));
 
 /** Chấm màu nhỏ cho biến thể hoa */
 function vdot(species, variant) {

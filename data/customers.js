@@ -6,7 +6,7 @@ export const CUSTOMERS = [
   { id: 'lan', name: 'Cô Lan', self: 'cô', look: { skin: '#ffe0c7', hair: '#4a3328', outfit: '#f6a6b9', hat: null, bun: true } },
   { id: 'minh', name: 'Anh Minh', self: 'anh', look: { skin: '#f8cfae', hair: '#2f2a2a', outfit: '#8fc9e8', hat: null } },
   { id: 'thao', name: 'Chị Thảo', self: 'chị', look: { skin: '#ffe0c7', hair: '#6b4433', outfit: '#c8b4f0', hat: '#ffffff', bun: true } },
-  { id: 'tu', name: 'Bà Tư', self: 'bà', look: { skin: '#f8cfae', hair: '#dcdcdc', outfit: '#a6dd94', hat: null, bun: true } },
+  { id: 'tu', name: 'Bà Năm', self: 'bà', look: { skin: '#f8cfae', hair: '#dcdcdc', outfit: '#a6dd94', hat: null, bun: true } },
   { id: 'na', name: 'Bé Na', self: 'con', look: { skin: '#ffe0c7', hair: '#e07a52', outfit: '#ffd34e', hat: '#f6a6b9' } },
   { id: 'hai', name: 'Chú Hải', self: 'chú', look: { skin: '#e8b48f', hair: '#3b3b3b', outfit: '#9fe0c4', hat: '#8fc9e8' } },
   { id: 'vy', name: 'Em Vy', self: 'em', look: { skin: '#ffe0c7', hair: '#f29bb2', outfit: '#fff0a8', hat: null, bun: true } },

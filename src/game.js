@@ -22,6 +22,13 @@ import * as breeding from './systems/breeding.js';
 import * as regulars from './systems/regulars.js';
 import { REGULAR_RULES } from '../data/regulars.js';
 import { MEANINGS } from '../data/variants.js';
+import * as quests from './systems/quests.js';
+import * as automation from './systems/automation.js';
+import { STAFF, MACHINES } from '../data/automation.js';
+import { DECOR } from '../data/decor.js';
+import { DecorView } from './render/decorView.js';
+import { submitContest } from './online/ranking.js';
+import { PAPERS as WRAP_PAPERS, RIBBONS as WRAP_RIBBONS } from '../data/wrapping.js';
 import * as farming from './systems/farming.js';
 import { clockOf } from './systems/time.js';
 import { FarmView } from './render/farmView.js';
@@ -83,6 +90,21 @@ export class Game {
     this.weatherFx = new WeatherFx(stage.scene);
     weather.ensureWeather(this.save);
     this.applyWeatherVisuals(true);
+    // GĐ8: trang trí, nhân viên, nhiệm vụ
+    this.decorView = new DecorView(stage.scene);
+    this.decorView.sync(this.save.decor.slots);
+    this.staffModels = {};
+    for (const [id, st] of Object.entries(STAFF)) {
+      const m = buildCharacter(st.look).root;
+      m.position.copy(id === 'gardener' ? new THREE.Vector3(-5.0, 0, 2.2) : new THREE.Vector3(9.3, 0, -3.8));
+      m.rotation.y = id === 'gardener' ? 1.2 : 0.4;
+      m.scale.setScalar(0.92);
+      m.visible = false;
+      stage.scene.add(m);
+      this.staffModels[id] = m;
+    }
+    quests.refreshQuests(this.save, dayOf(this.save.time.gameMinutes), { online: false });
+    this.updateStaffModels();
     this.controls = new CameraControls(stage.camera, stage.renderer.domElement, {
       onTap: (x, y) => this.onTap(x, y),
       onHover: (x, y) => this.onHover(x, y),
@@ -137,6 +159,7 @@ export class Game {
         const env = weather.plotEnv(s, plot);
         plot.tiles.forEach((tile, ti) => {
           if (env.rain && ['tilled', 'growing', 'ready'].includes(tile.state)) tile.water = Math.max(tile.water, cap);
+          automation.runMachines(s, plot, tile, cap);
           const growMult = tile.flower ? calendar.seasonGrowMult(tile.flower, day, plot.greenhouse) : 1;
           const e = farming.simulateTile(tile, step, { offline, env: { growMult, waterMult: env.waterMult } });
           if (!e) return;
@@ -149,6 +172,8 @@ export class Game {
           }
         });
       });
+      // nhân viên
+      this.runStaff(to, offline);
       // cửa hàng: khách đến / khách bỏ đi
       const shopEv = shop.shopTick(s, {
         offline, hourFloat: this.clock.hourFloat, flowerIds: this.unlockedFlowers(),
@@ -181,6 +206,11 @@ export class Game {
     if (e.type === 'newday') {
       this.applyWeatherVisuals();
       this.emitter.emit('weather');
+      // trả lương nhân viên + nhiệm vụ mới
+      for (const w of automation.payWages(this.save)) {
+        if (!w.paid && !offline) this.toast(`😢 Không đủ tiền trả lương, ${STAFF[w.id].name} tạm nghỉ. Vào Khu Chợ › Tự động để thuê lại`, 'warn');
+      }
+      if (quests.refreshQuests(this.save, e.day, { online: !!this.account?.session })) this.emitter.emit('quests');
       if (offline) return;
       const c = calendar.calendarOf(e.day);
       if (e.seasonChanged) this.toast(`${c.season.icon} ${c.season.name} đã đến! Hoa đúng mùa: ${calendar.seasonFlowers(e.day).map((f) => FLOWERS[f].icon).join(' ')}`, 'good');
@@ -264,6 +294,8 @@ export class Game {
     this.dayNight.update(c.hourFloat, this.controls.target, dt);
     this.seasonVisuals.update(dt);
     this.weatherFx.update(dt, this.controls.target);
+    this.decorView.update(dt);
+    for (const m of Object.values(this.staffModels)) if (m.visible) m.position.y = Math.abs(Math.sin(performance.now() / 400)) * 0.03;
     if (this.labIcon.visible) this.labIcon.position.y = 4.6 + Math.sin(performance.now() / 300) * 0.12;
     this.fireflies.update(performance.now() / 1000, this.dayNight.night);
   }
@@ -291,6 +323,7 @@ export class Game {
   onTap(x, y) {
     const pick = this.pickAt(x, y);
     if (this.visit) { this.onVisitTap(pick); return; }
+    if (this.decorMode) { if (pick?.kind === 'decorSlot') this.emitter.emit('decor-slot', pick.slot); return; }
     if (!pick) { this.select(null); return; }
     if (pick.kind === 'tile') {
       if (this.tool === 'hand') this.select(pick);
@@ -373,6 +406,7 @@ export class Game {
         const r = variants.rarityOf(res.flower, res.variant);
         setTimeout(() => this.toast(`📖 Màu hoa mới vào Sổ tay: ${variants.variantName(res.flower, res.variant)} (${r.name})!`, 'good'), 700);
         this.checkBookMilestones();
+        this.questEvent('newcolor');
         this.emitter.emit('book');
       }
     } else {
@@ -380,6 +414,8 @@ export class Game {
     }
     this.refreshFarm();
     this.gainXp(action === 'harvest' ? XP.harvestPerStar * res.quality : XP[action] ?? 1);
+    if (action === 'harvest') { this.questEvent('harvest'); if (res.quality === 3) this.questEvent('harvest3'); }
+    if (action === 'plant' || action === 'water') this.questEvent(action);
     this.advanceTutorial(action);
     this.saveMgr.markDirty();
     this.emitter.emit('inventory');
@@ -463,6 +499,11 @@ export class Game {
     const newTier = shop.tierOf(s.player.reputation);
     if (newTier > oldTier) setTimeout(() => this.toast(`🎉 Tiệm lên bậc "${shop.tierInfo(s.player.reputation).name}"! Khách sẽ đến đông hơn.`, 'good'), 1800);
     this.gainXp(Math.floor((ev.price + tip) / 10) * XP.sellPer10Coins + (bouquet ? XP.bouquet : 0) + (ev.mood === 'perfect' ? XP.perfect : 0));
+    this.questEvent('serve');
+    this.questEvent('earn', ev.price + tip);
+    if (bouquet) this.questEvent('bouquet');
+    if (ev.mood === 'perfect') this.questEvent('perfect');
+    if (story?.ok) this.questEvent('regular');
     this.advanceTutorial('sell');
     this.saveMgr.markDirty();
     this.emitter.emit('inventory');
@@ -560,7 +601,7 @@ export class Game {
       g.visible = g.userData.pick.slot >= n;
       return g.visible;
     });
-    this.pickRoots = [this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, ...locked];
+    this.pickRoots = this.decorMode ? [this.decorView.root] : [this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, ...locked];
   }
 
   /** Vẽ lại nông trại của mình (không làm gì khi đang thăm nhà bạn) */
@@ -607,6 +648,7 @@ export class Game {
     this.save.player.coins += 10;
     this.gainXp(5);
     this.toast('💧 Đã tưới giúp! +10 💰 +5 XP vì lòng tốt', 'good');
+    this.questEvent('help');
     if (this.visit?.profile.id === friendId) {
       this.visit.helped_today = true;
       this.visitFarm.farm.plots.forEach((p, pi) => {
@@ -664,6 +706,9 @@ export class Game {
     this.player.root.visible = false;
     this.customers.root.visible = false;
     this.labIcon.visible = false;
+    if (this.decorMode) this.setDecorMode(false);
+    this.decorView.sync(data.snapshot?.decor || {});
+    this.updateStaffModels();
     const n = this.visitFarm.farm.plots.length;
     this.world.lockedSlots.forEach((g) => { g.visible = g.userData.pick.slot >= n; });
     if (this.visitor) this.stage.scene.remove(this.visitor);
@@ -685,6 +730,8 @@ export class Game {
     this.farmView.build(this.save);
     this.player.root.visible = true;
     this.customers.root.visible = true;
+    this.decorView.sync(this.save.decor.slots);
+    this.updateStaffModels();
     this.updateLockedSlots();
     this.controls.focusOn(PLOT_SLOTS[0].clone().add(new THREE.Vector3(1.4, 0, -0.6)));
     this.emitter.emit('visit', null);
@@ -706,6 +753,154 @@ export class Game {
     } else {
       this.toast(`Bạn đang thăm nhà ${this.visit.profile.name}. Bấm 🏠 Về nhà để quay lại.`, 'info');
     }
+  }
+
+  // ---------------- nhiệm vụ (GĐ8) ----------------
+  questEvent(event, amount = 1) {
+    const done = quests.questProgress(this.save, event, amount);
+    for (const d of done) this.toast(`📋 Hoàn thành nhiệm vụ: ${d.template.text.replace('{n}', d.quest.n)}! Vào 📋 để nhận thưởng`, 'good');
+    this.emitter.emit('quests');
+  }
+
+  claimQuest(kind, i) {
+    const rw = quests.claimQuest(this.save, kind, i);
+    if (!rw) return null;
+    this.gainXp(rw.xp);
+    this.toast(`🎁 Nhận thưởng: +${rw.coins} 💰 +${rw.xp} XP${rw.fertilizer ? ` +${rw.fertilizer} 🧪` : ''}`, 'good');
+    this.saveMgr.markDirty();
+    this.emitter.emit('inventory');
+    this.emitter.emit('quests');
+    return rw;
+  }
+
+  // ---------------- cuộc thi hoa (GĐ8) ----------------
+  /** Nộp bài: đồng bộ trước (máy chủ đối chiếu kho hoa), gửi Edge Function, rồi trừ hoa đã dự thi */
+  async submitContestEntry(sel) {
+    const s = this.save;
+    for (const [k, n] of Object.entries(sel.items)) if (n > 0 && !((s.inventory.flowers[k] || 0) >= n)) { this.toast('Không đủ hoa trong kho', 'warn'); return null; }
+    const cloud = this.account?.cloud;
+    await this.saveMgr.saveNow('manual');
+    if (cloud && !(await cloud.flush())) { this.toast('Chưa đồng bộ được tiến độ lên mạng, thử lại sau nhé', 'warn'); return null; }
+    let r;
+    try { r = await submitContest(sel); } catch (e) { this.toast(viError(e), 'warn'); return null; }
+    for (const [k, n] of Object.entries(sel.items)) { if (n > 0) { s.inventory.flowers[k] -= n; if (!s.inventory.flowers[k]) delete s.inventory.flowers[k]; } }
+    if (!WRAP_PAPERS[sel.paper].free) s.inventory.papers[sel.paper] -= 1;
+    if (!WRAP_RIBBONS[sel.ribbon].free) s.inventory.ribbons[sel.ribbon] -= 1;
+    this.gainXp(20);
+    this.toast(`🏆 Đã nộp bài dự thi: ${r.score} điểm! Hạng hiện tại ${r.rank}/${r.players}`, 'good');
+    this.saveMgr.markDirty();
+    this.saveMgr.saveNow('manual');
+    this.emitter.emit('inventory');
+    return r;
+  }
+
+  // ---------------- tự động hóa (GĐ8) ----------------
+  runStaff(now, offline) {
+    const s = this.save;
+    const g = automation.runGardener(s, now);
+    if (g && (g.harvested.length || g.planted || g.tilled)) {
+      for (const h of g.harvested) {
+        if (notebook.recordHarvest(s, h.flower, h.variant, h.quality, dayOf(now)) && !offline) this.toast(`📖 Màu hoa mới vào Sổ tay: ${variants.variantName(h.flower, h.variant)}!`, 'good');
+        this.gainXp(XP.harvestPerStar * h.quality);
+        this.questEvent('harvest');
+        if (h.quality === 3) this.questEvent('harvest3');
+      }
+      if (!offline && (g.harvested.length || g.planted)) this.toast(`👨‍🌾 Bác Tâm: thu hoạch ${g.harvested.length} bông, gieo lại ${g.planted} hạt`, 'info');
+      this.refreshFarm();
+      this.emitter.emit('inventory');
+      this.saveMgr.markDirty();
+    }
+    // chị bán hàng: phục vụ khách mua cành lẻ
+    const ck = s.automation.staff.clerk;
+    if (!offline && ck?.hired && ck.active && now >= (ck.nextAt || 0)) {
+      ck.nextAt = now + STAFF.clerk.everyMinutes;
+      const c = s.shop.customers.find((x) => !x.regular && x.request.type !== 'bouquet' && now - x.arrivedAt > 5);
+      if (c) {
+        const sel = shop.autoPick(c.request, s.inventory, s.book?.meanings);
+        if (shop.evaluateDelivery(c.request, sel).ok) {
+          const r = this.deliverToCustomer(c.id, sel);
+          if (r.ok) this.toast(`👩‍💼 Chị Thu đã bán hoa cho ${shop.npcOf(c.npc).name}`, 'info');
+        }
+      }
+    }
+  }
+
+  buyMachine(kind, pi) {
+    const r = automation.buyMachine(this.save, kind, pi);
+    this.toast(r.msg, r.ok ? 'good' : 'warn');
+    if (r.ok) { this.refreshFarm(true); this.particles.spawn('sparkle', PLOT_SLOTS[pi].clone()); this.afterAutomation(); }
+    return r;
+  }
+
+  hireStaff(id) {
+    const r = automation.hireStaff(this.save, id);
+    this.toast(r.msg, r.ok ? 'good' : 'warn');
+    if (r.ok) this.afterAutomation();
+    return r;
+  }
+
+  fireStaff(id) {
+    const r = automation.fireStaff(this.save, id);
+    this.toast(r.msg, 'info');
+    this.afterAutomation();
+  }
+
+  afterAutomation() {
+    this.updateStaffModels();
+    this.saveMgr.markDirty();
+    this.saveMgr.saveNow('manual');
+    this.emitter.emit('inventory');
+  }
+
+  updateStaffModels() {
+    for (const [id, m] of Object.entries(this.staffModels)) m.visible = !this.visit && automation.staffActive(this.save, id);
+  }
+
+  // ---------------- trang trí (GĐ8) ----------------
+  buyDecor(id, n = 1) {
+    const d = DECOR[id];
+    const s = this.save;
+    if (!d) return false;
+    if (s.player.level < d.level) { this.toast(`Cần đạt cấp ${d.level}`, 'warn'); return false; }
+    if (s.player.coins < d.price * n) { this.toast(`Không đủ tiền (cần ${d.price * n} 💰)`, 'warn'); return false; }
+    s.player.coins -= d.price * n;
+    s.decor.owned[id] = (s.decor.owned[id] || 0) + n;
+    this.toast(`${d.icon} Đã mua ${d.name}! Bấm 🎨 để đặt vào nông trại`, 'good');
+    this.saveMgr.markDirty();
+    this.emitter.emit('inventory');
+    return true;
+  }
+
+  /** Đặt (id) hoặc gỡ (null) đồ ở 1 vị trí */
+  placeDecor(slot, id) {
+    const dec = this.save.decor;
+    const cur = dec.slots[slot];
+    if (cur) { dec.owned[cur] = (dec.owned[cur] || 0) + 1; delete dec.slots[slot]; }
+    if (id) {
+      if (!(dec.owned[id] > 0)) { this.toast('Bạn chưa có món này, mua ở Khu Chợ › Trang trí', 'warn'); return false; }
+      dec.owned[id] -= 1;
+      dec.slots[slot] = id;
+      const sl = this.decorView.markers[slot].holder.position.clone();
+      this.particles.spawn('sparkle', sl);
+    }
+    this.decorView.sync(dec.slots);
+    this.saveMgr.markDirty();
+    this.emitter.emit('inventory');
+    return true;
+  }
+
+  beauty(slots = this.save.decor.slots) {
+    return Object.values(slots).reduce((a, id) => a + (DECOR[id]?.beauty || 0), 0);
+  }
+
+  setDecorMode(on) {
+    if (this.visit) return;
+    this.decorMode = on;
+    this.decorView.setEditing(on);
+    this.select(null);
+    this.updateLockedSlots();
+    if (on) this.controls.focusOn(new THREE.Vector3(3, 0, 1), 0.85);
+    this.emitter.emit('decor-mode', on);
   }
 
   // ---------------- sổ tay & lai tạo ----------------
@@ -731,6 +926,7 @@ export class Game {
     this.toast(`🧬 Lai tạo thành công: ${r.seeds} hạt ${name}${r.isNew ? ` — màu mới (${rar.name})!` : ''}`, 'good');
     this.particles.spawn('sparkle', this.world.lab.position.clone());
     this.gainXp(r.isNew ? 15 : 5);
+    this.questEvent('breed');
     this.saveMgr.markDirty();
     this.emitter.emit('inventory');
     this.emitter.emit('lab');

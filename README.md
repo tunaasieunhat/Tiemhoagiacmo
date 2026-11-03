@@ -11,6 +11,7 @@ Công nghệ: Three.js + Vite, sau này dùng Supabase cho tài khoản online.
 - ✅ Giai đoạn 5 — 4 mùa (hoa đúng/trái mùa, cảnh vật đổi màu), lễ hội (Tết, 14/2, 8/3, Mùa cưới, 20/10, 20/11), thời tiết & thiên tai & dịch bệnh có dự báo trước 1 ngày, bạt che, thuốc, nhà kính.
 - ✅ Giai đoạn 6 — gói hoa sáng tạo (phối màu, ý nghĩa, cân đối, chất lượng), 18 màu hoa mới, ngôn ngữ loài hoa khám phá dần, Nhà Lai Tạo, Sổ tay thực vật, 4 khách quen có câu chuyện.
 - ✅ Giai đoạn 7 — bạn bè (tìm theo tên/mã, lời mời), thăm nông trại 3D của bạn (chỉ xem), tưới giúp 1 lần/ngày, tặng quà, sổ lưu bút — mọi giới hạn kiểm tra trên máy chủ.
+- ✅ Giai đoạn 8 — bảng xếp hạng (cấp độ, uy tín, cuộc thi; tuần/tổng; mọi người/bạn bè) có kiểm tra điểm trên máy chủ, cuộc thi hoa hằng tuần (Edge Function chấm điểm), nhiệm vụ ngày/tuần, tự động hóa (vòi tưới, máy bón phân, nhân viên), trang trí 12 món.
 
 **Cài đặt online:** xem [Hướng dẫn Supabase](docs/HUONG_DAN_SUPABASE.md). Chưa cài thì game vẫn chạy ở chế độ khách (lưu trên máy).
 
@@ -51,6 +52,10 @@ Thanh công cụ dưới: ✋ Xem · 🪏 Xới · 🌱 Gieo · 💧 Tưới · 
 - `data/levels.js` — XP cần cho mỗi cấp, XP mỗi việc, thưởng lên cấp
 - `data/variants.js` — các màu hoa (màu sắc, tông, ý nghĩa, độ hiếm, công thức lai), thời gian lai, thưởng sổ tay
 - `data/regulars.js` — khách quen: câu chuyện, yêu cầu, phần quà từng chương
+- `data/quests.js` — mẫu nhiệm vụ & phần thưởng
+- `data/automation.js` — máy móc & nhân viên (giá, lương, cấp)
+- `data/decor.js` — đồ trang trí & vị trí đặt
+- `data/contest.js` — chủ đề cuộc thi & thưởng theo hạng
 - `data/seasons.js` — độ dài mùa, ảnh hưởng mùa, xác suất thời tiết/thiên tai/dịch bệnh theo mùa, mức thiệt hại, đồ phòng hộ, các lễ hội
 - `data/customers.js` — tên, ngoại hình, câu nói của khách
 - `data/online.js` — địa chỉ & khóa công khai Supabase, tần suất đồng bộ

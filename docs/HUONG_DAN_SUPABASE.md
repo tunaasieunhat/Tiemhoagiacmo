@@ -31,6 +31,23 @@ Kiểm tra: menu **Table Editor** sẽ có các bảng `profiles`, `saves`, `ban
 Sẽ có thêm các bảng `friendships`, `farm_showcase`, `farm_help`, `gifts`, `guestbook`, `rate_events`.
 Luôn chạy các file theo thứ tự ngày trong tên file.
 
+**Giai đoạn 8 (xếp hạng & cuộc thi):** chạy tiếp file `supabase/migrations/20261104000001_gd8_leaderboard_contest.sql`.
+(Nếu bạn đã chạy file GĐ7 trước đây, hãy chạy lại file GĐ7 một lần nữa để nhận bản vá bảo mật.)
+
+## Bước 2b — Cài Edge Function cho cuộc thi hoa (Giai đoạn 8)
+
+Cuộc thi hoa được chấm điểm trên máy chủ bằng một **Edge Function** tên `contest-submit`.
+
+1. Menu trái **Edge Functions** → **Deploy a new function** → chọn **Via Editor**.
+2. Đặt tên function đúng là: `contest-submit`
+3. Xóa hết code mẫu trong ô soạn thảo.
+4. Mở file `supabase/functions/contest-submit/index.ts` (trên GitHub bấm **Copy raw file**) → dán toàn bộ vào.
+5. Bấm **Deploy function**. Đợi vài giây thấy trạng thái *Active* là xong.
+
+Không cần dán khóa bí mật nào: Supabase tự cấp khóa `service_role` cho function chạy **trên máy chủ**
+(khóa này không bao giờ xuống trình duyệt). Mỗi khi game cập nhật luật chấm điểm,
+mình sẽ báo bạn dán lại file này.
+
 ## Bước 3 — Lấy 2 giá trị cần thiết cho game
 
 Menu trái **Project Settings** (bánh răng) → **API** (hoặc **Data API** / **API Keys**):

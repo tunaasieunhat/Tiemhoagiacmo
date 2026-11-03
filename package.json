@@ -1,12 +1,13 @@
 {
   "name": "tiem-hoa-giac-mo",
   "private": true,
-  "version": "0.7.0",
+  "version": "0.8.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
-    "preview": "vite preview --host"
+    "preview": "vite preview --host",
+    "build:functions": "node scripts/build-functions.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.115.0",
