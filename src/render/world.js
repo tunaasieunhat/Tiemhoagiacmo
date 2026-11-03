@@ -1,4 +1,6 @@
 // Dựng bản đồ tĩnh: đảo cỏ, 3 khu vực (Nông trại, Tiệm hoa, Khu chợ), đường đi, cây cối.
+import { buildVillage, inVillageZone } from './village.js';
+import { VILLAGE } from '../../data/village.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { rbox, cyl, sphere, at, textSprite, mesh } from '../models/primitives.js';
@@ -61,7 +63,7 @@ export function buildWorld(scene) {
   world.add(market);
 
   // vùng không được đặt đồ trang trí (GĐ10) — gom dần khi dựng bản đồ
-  const decorMap = { islandR: ISLAND_R, circles: [], rects: [], paths: [] };
+  const decorMap = { islandR: ISLAND_R, islands: [{ x: 0, z: 0, r: ISLAND_R }], circles: [], rects: [], paths: [] };
   const block = (x, z, r, name = '') => decorMap.circles.push({ x, z, r, name });
 
   // ----- hàng rào nông trại (cổng ở phía sau, z nhỏ) -----
@@ -200,6 +202,10 @@ export function buildWorld(scene) {
   world.add(pd);
   block(pd.position.x, pd.position.z, 2.9, 'ao nước');
   fireflyAnchors.push(pd.position.clone());
+
+  // ----- Làng Hoa (GĐ11) -----
+  const village = buildVillage(world, decorMap);
+  fireflyAnchors.push(new THREE.Vector3(VILLAGE.center.x, 0, VILLAGE.center.z));
   fireflyAnchors.push(new THREE.Vector3(0, 0, 2));
 
   // ----- cây & bụi trang trí (tránh các khu chính) -----
@@ -229,9 +235,9 @@ export function buildWorld(scene) {
     const t = tree(kinds[Math.floor(rand() * kinds.length)], 0.8 + rand() * 0.45);
     t.position.set(x, 0, z);
     t.rotation.y = rand() * 6;
-    world.add(t);
     avoid.push({ c: t.position, r: 1.6 });
-    block(x, z, 0.95, 'cây');
+    // giữ nguyên thứ tự ngẫu nhiên như bản cũ (cây cũ không đổi chỗ); chỉ bỏ cây nằm trên đường / đất làng mới
+    if (!inVillageZone(x, z)) { world.add(t); block(x, z, 0.95, 'cây'); }
     placed++;
   }
   const flowerColors = [null, '#ffc4d6', '#fff0a8', '#d9c4ff', '#ffffff'];
@@ -241,8 +247,7 @@ export function buildWorld(scene) {
     const b = rand() > 0.35 ? bush('#93d48d', flowerColors[Math.floor(rand() * flowerColors.length)], 0.7 + rand() * 0.6) : rock(0.6 + rand() * 0.8);
     b.position.x = x; b.position.z = z;
     b.rotation.y = rand() * 6;
-    world.add(b);
-    block(x, z, 0.45, 'bụi cây');
+    if (!inVillageZone(x, z, -0.3)) { world.add(b); block(x, z, 0.45, 'bụi cây'); }
   }
   for (let i = 0; i < 90; i++) {
     const x = (rand() - 0.5) * 2 * (ISLAND_R - 1), z = (rand() - 0.5) * 2 * (ISLAND_R - 1);
@@ -250,7 +255,7 @@ export function buildWorld(scene) {
     if (Math.abs(x - fc.x) < fx + 0.5 && Math.abs(z - fc.z) < fz + 0.5) continue;
     const t = grassTuft(rand() > 0.5 ? '#86c47a' : '#9bd38a');
     t.position.set(x, 0, z);
-    world.add(t);
+    if (!inVillageZone(x, z, -0.8)) world.add(t);
   }
   // bụi hoa ven hàng rào nông trại
   for (let i = 0; i < 6; i++) {
@@ -274,7 +279,7 @@ export function buildWorld(scene) {
 
   mergeStatic(world);
 
-  return { world, lampLights, fireflyAnchors, lockedSlots, shop, market: marketG, lab, decorMap };
+  return { world, lampLights, fireflyAnchors, lockedSlots, shop, market: marketG, lab, decorMap, village };
 }
 
 function distToSeg(x, z, a, b) {

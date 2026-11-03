@@ -147,11 +147,22 @@ export class CameraControls {
     this.focusAnim = { to: point.clone().setY(0), zoom };
   }
 
+  /** Vùng camera được phép nhìn tới: các vòng tròn { x, z, r } (đảo chính + làng) */
+  get regions() { return this._regions || (this._regions = [{ x: 0, z: 0, r: CAMERA.panLimit }]); }
+
   clamp() {
-    const L = CAMERA.panLimit;
-    const len = Math.hypot(this.target.x, this.target.z);
-    if (len > L) { this.target.x *= L / len; this.target.z *= L / len; }
-    this.target.y = 0;
+    const t = this.target;
+    t.y = 0;
+    if (this.regions.some((c) => Math.hypot(t.x - c.x, t.z - c.z) <= c.r)) return;
+    // ra ngoài: kéo về mép vùng gần nhất
+    let best = null, bd = Infinity;
+    for (const c of this.regions) {
+      const dx = t.x - c.x, dz = t.z - c.z, len = Math.hypot(dx, dz) || 1;
+      const px = c.x + (dx / len) * c.r, pz = c.z + (dz / len) * c.r;
+      const d = Math.hypot(t.x - px, t.z - pz);
+      if (d < bd) { bd = d; best = [px, pz]; }
+    }
+    t.x = best[0]; t.z = best[1];
   }
 
   apply() {

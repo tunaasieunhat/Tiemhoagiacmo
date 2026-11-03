@@ -28,6 +28,8 @@ import { STAFF, MACHINES } from '../data/automation.js';
 import { DECOR, DECOR_RULES, DECOR_EVENTS } from '../data/decor.js';
 import * as decorSys from './systems/decor.js';
 import { DecorView } from './render/decorView.js';
+import { VillagerView } from './render/villagers.js';
+import { VILLAGE } from '../data/village.js';
 import { submitContest } from './online/ranking.js';
 import { PAPERS as WRAP_PAPERS, RIBBONS as WRAP_RIBBONS } from '../data/wrapping.js';
 import * as farming from './systems/farming.js';
@@ -94,6 +96,8 @@ export class Game {
     // GĐ8: trang trí, nhân viên, nhiệm vụ
     this.decorView = new DecorView(stage.scene);
     this.decorEdit = null; // món đang chọn / đang dời trong chế độ trang trí (GĐ10)
+    // GĐ11: dân làng
+    this.villagers = new VillagerView(stage.scene, world.village?.houses || {});
     this.decorView.sync(this.save.decor.placed);
     this.staffModels = {};
     for (const [id, st] of Object.entries(STAFF)) {
@@ -115,6 +119,7 @@ export class Game {
       onDrag: (x, y) => this.moveDecorEdit(x, y),
       onDragEnd: () => {},
     });
+    this.controls.regions.push({ x: VILLAGE.center.x, z: VILLAGE.center.z, r: VILLAGE.camRadius });
     // camera bắt đầu nhìn vào lô đất đầu tiên; điện thoại dọc thì zoom gần hơn
     const portrait = innerWidth < innerHeight;
     this.controls.target.copy(PLOT_SLOTS[0]).add(portrait ? new THREE.Vector3(0.7, 0, 0.7) : new THREE.Vector3(1.5, 0, -1));
@@ -305,6 +310,7 @@ export class Game {
     this.seasonVisuals.update(dt);
     this.weatherFx.update(dt, this.controls.target);
     this.decorView.update(dt);
+    this.villagers.update(dt, this.villageCtx());
     for (const m of Object.values(this.staffModels)) if (m.visible) m.position.y = Math.abs(Math.sin(performance.now() / 400)) * 0.03;
     if (this.labIcon.visible) this.labIcon.position.y = 4.6 + Math.sin(performance.now() / 300) * 0.12;
     this.fireflies.update(performance.now() / 1000, this.dayNight.night);
@@ -365,6 +371,12 @@ export class Game {
       this.controls.focusOn(z.center);
       if (pick.zone === 'shop') this.emitter.emit('open-shop', {});
       else this.emitter.emit('open-market', {});
+    } else if (pick.kind === 'villager') {
+      this.select(null);
+      this.emitter.emit('villager', { id: pick.id });
+    } else if (pick.kind === 'house') {
+      this.select(null);
+      this.emitter.emit('house', { id: pick.id });
     } else if (pick.kind === 'lockedPlot') {
       this.select(null);
       this.emitter.emit('open-market', { tab: 'land' });
@@ -622,7 +634,7 @@ export class Game {
       g.visible = g.userData.pick.slot >= n;
       return g.visible;
     });
-    this.pickRoots = this.decorMode ? [this.decorView.root] : [this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, ...locked];
+    this.pickRoots = this.decorMode ? [this.decorView.root] : [this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, ...locked, this.villagers.root, ...this.villagers.housePick()];
   }
 
   /** Vẽ lại nông trại của mình (không làm gì khi đang thăm nhà bạn) */
@@ -875,6 +887,22 @@ export class Game {
 
   updateStaffModels() {
     for (const [id, m] of Object.entries(this.staffModels)) m.visible = !this.visit && automation.staffActive(this.save, id);
+  }
+
+  // ---------------- làng (GĐ11) ----------------
+  villageCtx() {
+    const m = this.save.time.gameMinutes;
+    return { hour: (m % 1440) / 60, weather: this.save.weather?.today?.type || null, festivalId: calendar.festivalOn(dayOf(m))?.id || null, save: this.save };
+  }
+
+  focusVillager(id) {
+    const v = this.villagers.list.find((q) => q.id === id);
+    if (v) this.controls.focusOn(new THREE.Vector3(v.x, 0, v.z), Math.max(this.controls.zoom, 1.5));
+  }
+
+  goVillage() {
+    this.select(null);
+    this.controls.focusOn(new THREE.Vector3(VILLAGE.center.x, 0, VILLAGE.center.z - 1), 0.95);
   }
 
   // ---------------- trang trí (GĐ8, đặt tự do từ GĐ10) ----------------

@@ -4,6 +4,15 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.11.0',
+    notes: [
+      '🏘️ Làng Hoa: đảo mở rộng về phía nam với 6 ngôi nhà, trường làng, quảng trường có giếng, quán cà phê Mây và cầu tàu',
+      'Dân làng sống theo giờ: tưới vườn, đi dạy, đi học, câu cá, uống cà phê, ra ngắm vườn hoa của bạn; tối bật đèn, khuya đi ngủ',
+      'Chạm vào dân làng để nghe họ chào và xem đang làm gì; chạm vào nhà để xem chủ nhà có ở nhà không',
+      'Nút 🏘️ để đi nhanh tới làng; đặt đồ trang trí được cả trong làng',
+    ],
+  },
+  {
     version: '0.10.0',
     notes: [
       'Trang trí TỰ DO: đặt đồ ở bất kỳ đâu quanh nông trại, tiệm và chợ; kéo để dời, xoay, cất vào kho',

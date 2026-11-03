@@ -24,7 +24,8 @@ function distToSeg(x, z, a, b) {
 export function checkPlace(placed, id, x, z, map, ignoreUid = null) {
   const r = sizeOf(id);
   if (!DECOR[id]) return { ok: false, reason: 'Món đồ không hợp lệ' };
-  if (Math.hypot(x, z) > map.islandR - DECOR_RULES.islandMargin - r * 0.5) return { ok: false, reason: 'Quá sát mép đảo' };
+  const islands = map.islands?.length ? map.islands : [{ x: 0, z: 0, r: map.islandR }];
+  if (!islands.some((i) => Math.hypot(x - i.x, z - i.z) <= i.r - DECOR_RULES.islandMargin - r * 0.5)) return { ok: false, reason: 'Quá sát mép đảo' };
   for (const c of map.circles) if (Math.hypot(x - c.x, z - c.z) < c.r + r) return { ok: false, reason: c.name ? `Vướng ${c.name}` : 'Vướng cây hoặc công trình' };
   for (const q of map.rects) if (Math.abs(x - q.x) < q.hx + r && Math.abs(z - q.z) < q.hz + r) return { ok: false, reason: q.name ? `Vướng ${q.name}` : 'Vướng công trình' };
   for (const [a, b] of map.paths) if (distToSeg(x, z, a, b) < DECOR_RULES.pathMargin + r) return { ok: false, reason: 'Không đặt lên đường đi' };

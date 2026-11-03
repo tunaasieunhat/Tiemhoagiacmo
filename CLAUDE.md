@@ -13,8 +13,8 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
 
 ## Tiến độ
 
-- ✅ GĐ1–10 xong (xem `README.md`). Kế hoạch đã thống nhất với người dùng (03/11/2026), mỗi GĐ xong thì DỪNG chờ đồng ý:
-  GĐ11 Làng (6 nhà, dân làng đi lại theo giờ, mở rộng bản đồ) → GĐ12 Quan hệ & cốt truyện có lựa chọn (tim 0–10, quà
+- ✅ GĐ1–11 xong (xem `README.md`). Kế hoạch đã thống nhất với người dùng (03/11/2026), mỗi GĐ xong thì DỪNG chờ đồng ý:
+  GĐ12 Quan hệ & cốt truyện có lựa chọn (tim 0–10, quà
   thích/ghét, hội thoại nhánh) → GĐ13 Mua đất của dân làng (giá theo tim + tâm trạng trong ngày, có thể từ chối) →
   GĐ14 6 hạt mới (cẩm chướng, mẫu đơn, ly, sao nhái, lan hồ điệp chỉ nhà kính, cúc vạn thọ), 3 bệnh mới, 5 thời tiết mới
   → GĐ15 Vận May (gói Thường/Vàng bằng tiền & vé TRONG GAME, công khai tỉ lệ, bảo hiểm, mảnh; cây hiếm có hiệu ứng động).
@@ -72,6 +72,13 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   Ảnh chụp cho bạn bè: `snapshot.deco = [[id,x,z,r]]`, đọc bằng `placedFromSnapshot` (làm sạch, đọc được cả kiểu cũ
   `snapshot.decor`). Đồ sự kiện có `event` (vd 'pumpkin' chỉ bán Mùa Thu, `DECOR_EVENTS`). Mô hình ở `src/models/decor.js`;
   hiệu ứng động qua `userData` (spin, bob, float, orbit, dangle, flicker, bubbles) chạy trong `decorView.update`.
+- **Làng Hoa** (GĐ11): số liệu `data/village.js` (nhà, dân làng mới Cô Mai & Ông Ba, lịch `SCHEDULES` theo giờ game,
+  chỗ `SPOTS`, đường `NODES/EDGES`, câu chào `LINES`). 4 khách quen cũng sống ở làng (ẩn khi đang đứng ở tiệm;
+  Bà Tư xong truyện thì lên thành phố, Tết về). Logic thuần `src/systems/village.js` (desiredState, routeTo Dijkstra,
+  houseStatus); dựng bản đồ `src/render/village.js` (gọi trong buildWorld; cây cũ giữ nguyên thứ tự ngẫu nhiên, chỉ bỏ cây
+  nằm trên đất/đường làng); mô hình `src/models/village.js`; dân làng `src/render/villagers.js` (cửa sổ từng nhà là
+  vật liệu riêng, sáng theo `glow.window` khi có người thức). Đảo = nhiều vòng tròn: `decorMap.islands`,
+  `controls.regions`. Không đổi cấu trúc save (vị trí dân làng tính từ giờ game).
 - **Dò chạm** (0.9.7): `game.pickAt` bỏ qua vật ẩn (three.js không tự bỏ), chạm sát mặt đất / khe thì lấy ô dưới ngón tay
   (`farmView.tileNear`).
 - **Âm thanh / intro** (bản 0.9.2): nhạc nền `public/audio/*.mp3` (đã nén 112 kbps), số liệu ở `data/audio.js`.

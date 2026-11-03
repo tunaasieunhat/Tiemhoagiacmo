@@ -6,6 +6,8 @@ import * as farming from '../systems/farming.js';
 import { formatClock, periodName, isNight, formatDuration } from '../systems/time.js';
 import { avatarSVG } from './avatar.js';
 import { savePrefs } from '../audio/audio.js';
+import { villagerInfo, greeting, houseStatus } from '../systems/village.js';
+import { ACTIVITIES, HOUSES, LEAVES_AFTER_STORY } from '../../data/village.js';
 import { isNative, openExternal } from '../online/native.js';
 import { ONLINE } from '../../data/online.js';
 import { TUTORIAL } from '../game.js';
@@ -88,6 +90,8 @@ export class Hud {
     em.on('quests', () => { this.updateQuestBadge(); if (this.modal === 'quests') this.quests.render(); });
     em.on('decor-mode', (on) => { this.root.classList.toggle('decorating', on); $('.decor-bar', this.root).classList.toggle('hidden', !on); });
     em.on('decor-edit', () => this.renderDecorBar());
+    em.on('villager', ({ id }) => this.openVillager(id));
+    em.on('house', ({ id }) => this.openHouse(id));
     em.on('inventory', () => { if (this.game.decorMode) this.renderDecorBar(); });
     em.on('xp', () => this.updateWallet());
     em.on('levelup', (ups) => this.showLevelUp(ups));
@@ -138,6 +142,7 @@ export class Hud {
         <button class="round" data-act="go-shop" aria-label="Tiệm hoa">🏪<span class="badge hidden nav-badge"></span></button>
         <button class="round" data-act="go-market" aria-label="Khu chợ">🧺</button>
         <button class="round" data-act="go-lab" aria-label="Nhà lai tạo">🧬<span class="badge hidden lab-badge">✓</span></button>
+        <button class="round" data-act="go-village" aria-label="Làng Hoa">🏘️</button>
         <button class="round" data-act="friends" aria-label="Bạn bè">👥<span class="badge hidden fr-badge"></span></button>
         <button class="round" data-act="quests" aria-label="Nhiệm vụ">📋<span class="badge hidden q-badge"></span></button>
         <button class="round" data-act="rank" aria-label="Xếp hạng và cuộc thi">🏆</button>
@@ -235,6 +240,8 @@ export class Hud {
       case 'later-update': $('.update-banner', this.root).classList.add('hidden'); break;
       case 'notebook': this.notebook.open(b.dataset.tab); break;
       case 'go-lab': this.openLab(); break;
+      case 'go-village': this.closeModal(); g.goVillage(); break;
+      case 'see-villager': this.closeModal(); g.focusVillager(b.dataset.id); break;
       case 'friends': this.friends.open(); break;
       case 'quests': this.quests.open(); break;
       case 'rank': this.rank.open(); break;
@@ -424,6 +431,48 @@ export class Hud {
       case 'cancel': g.cancelDecorEdit(); break;
       case 'place': g.confirmDecorEdit(); break;
     }
+  }
+
+  // ---------- làng (GĐ11) ----------
+  openVillager(id) {
+    const g = this.game;
+    const info = villagerInfo(id);
+    if (!info) return;
+    const ctx = g.villageCtx();
+    const st = g.villagers.stateOf(id);
+    const act = ACTIVITIES[st?.act] || null;
+    const hearts = info.regular ? (g.save.regulars?.[id]?.hearts || 0) : null;
+    this.openModal('villager', `
+      <div class="vg-head">${avatarSVG(info.look, 64)}<div><h2>${esc(info.name)}</h2><small class="muted">${esc(info.role)}${info.home ? ` · ${esc(HOUSES[info.home].name)}` : ''}</small></div></div>
+      <p class="vg-say">“${esc(greeting(id, ctx))}”</p>
+      <div class="kv"><span>📍 Bây giờ</span><b>${act ? `${act.icon} ${esc(act.name)}` : '—'}${st?.walking ? ' (đang đi tới)' : ''}</b></div>
+      ${hearts != null ? `<div class="kv"><span>🌷 Khách quen của tiệm</span><b>${'❤️'.repeat(hearts)}${'🤍'.repeat(Math.max(0, 5 - hearts))}</b></div>` : ''}
+      <p class="muted small">${esc(info.bio)}</p>
+      <p class="muted small">✨ Sắp có: trò chuyện chọn câu trả lời, tặng quà và kết thân với ${esc(info.self)} ${esc(info.name.split(' ').slice(1).join(' '))}.</p>`);
+  }
+
+  openHouse(id) {
+    const g = this.game;
+    const ctx = g.villageCtx();
+    const hs = houseStatus(id, ctx);
+    if (!hs) return;
+    let body;
+    if (!hs.owner) {
+      const names = hs.inside.map((v) => villagerInfo(v)?.name).filter(Boolean);
+      body = names.length ? `<p>📚 Đang có lớp: <b>${esc(names.join(', '))}</b> đang ở trường.</p>` : '<p>🔕 Trường đang nghỉ, không có ai.</p>';
+    } else {
+      const o = hs.owner;
+      const d = hs.state;
+      let line;
+      if (d.absent && d.reason === 'moved') line = `✈️ ${esc(LEAVES_AFTER_STORY[o.id]?.note || 'Chủ nhà đã đi xa.')}`;
+      else if (d.absent && d.reason === 'shop') line = `🌷 ${esc(o.name)} đang ghé tiệm hoa của bạn!`;
+      else if (hs.atHome) line = d.act === 'sleep' ? `💤 ${esc(o.name)} đang ngủ, nhẹ nhàng thôi nhé.` : `🏠 ${esc(o.name)} đang ở nhà.`;
+      else line = `🚶 Chủ nhà đi vắng — ${hs.act ? `${hs.act.icon} ${esc(hs.act.name.toLowerCase())}` : 'đang ở ngoài'}.`;
+      const canSee = !d.absent && !hs.atHome && !ACTIVITIES[d.act]?.indoor; // đang ở trong trường / nhà khác thì không thấy
+      body = `<div class="vg-head">${avatarSVG(o.look, 56)}<div><b>${esc(o.name)}</b><br><small class="muted">${esc(o.role)}</small></div></div>
+        <p>${line}</p>${canSee ? `<button class="btn wide" data-act="see-villager" data-id="${esc(o.id)}">📍 Tìm ${esc(o.name)}</button>` : ''}`;
+    }
+    this.openModal('house', `<h2>🏡 ${esc(hs.house.name)}</h2>${body}`);
   }
 
   // ---------- bạn bè & thăm nhà ----------
