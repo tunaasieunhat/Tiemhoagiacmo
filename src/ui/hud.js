@@ -14,7 +14,7 @@ import * as landSys from '../systems/land.js';
 import { FAVOR_RULES } from '../../data/minigames.js';
 import { FRIEND, REACTION, BONDS } from '../../data/stories.js';
 import { DECOR as DECOR_ALL } from '../../data/decor.js';
-import { ACTIVITIES, HOUSES, LEAVES_AFTER_STORY } from '../../data/village.js';
+import { ACTIVITIES, HOUSES, LEAVES_AFTER_STORY, SPOTS } from '../../data/village.js';
 import { isNative, openExternal } from '../online/native.js';
 import { ONLINE } from '../../data/online.js';
 import { TUTORIAL } from '../game.js';
@@ -733,8 +733,12 @@ export class Hud {
       else line = `🚶 Chủ nhà đi vắng — ${hs.act ? `${hs.act.icon} ${esc(hs.act.name.toLowerCase())}` : 'đang ở ngoài'}.`;
       const canSee = !d.absent && !hs.atHome && !ACTIVITIES[d.act]?.indoor; // đang ở trong trường / nhà khác thì không thấy
       const canKnock = !d.absent && hs.atHome && d.act !== 'sleep';
+      // chủ nhà đang làm việc ngay trước nhà (vd Cô Ngân bán cà phê trước Quán Mây) ⇒ nói chuyện luôn
+      const sp = SPOTS[d.spot];
+      const nearby = canSee && sp?.x != null && Math.hypot(sp.x - hs.house.x, sp.z - hs.house.z) < 4.5;
+      if (nearby) line = `${hs.act ? hs.act.icon : '👋'} ${esc(o.name)} đang ở ngay trước ${esc(hs.house.name)}${hs.act ? ` — ${esc(hs.act.name.toLowerCase())}` : ''}.`;
       body = `<div class="vg-head">${avatarSVG(o.look, 56)}<div><b>${esc(o.name)}</b><br><small class="muted">${esc(o.role)}</small></div></div>
-        <p>${line}</p>${canSee ? `<button class="btn wide" data-act="see-villager" data-id="${esc(o.id)}">📍 Tìm ${esc(o.name)}</button>` : ''}
+        <p>${line}</p>${nearby ? `<button class="btn primary wide" data-act="knock" data-id="${esc(o.id)}">💬 Nói chuyện với ${esc(o.name)}</button>` : canSee ? `<button class="btn wide" data-act="see-villager" data-id="${esc(o.id)}">📍 Tìm ${esc(o.name)}</button>` : ''}
         ${canKnock ? `<button class="btn primary wide" data-act="knock" data-id="${esc(o.id)}">🚪 Gõ cửa hỏi thăm</button>` : ''}`;
     }
     this.openModal('house', `<h2>🏡 ${esc(hs.house.name)}</h2>${body}`);

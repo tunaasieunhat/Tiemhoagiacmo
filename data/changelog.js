@@ -4,6 +4,14 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.15.1',
+    notes: [
+      '🔧 Sửa lỗi không chạm được Cô Ngân khi cô đang bán cà phê trước Quán Mây',
+      'Chạm vào Quán Mây lúc Cô Ngân đang bán hàng: có nút 💬 Nói chuyện ngay',
+      'Hai dân làng đứng sát nhau (tán gẫu ở giếng): chạm vào ai thì chọn đúng người đó',
+    ],
+  },
+  {
     version: '0.15.0',
     notes: [
       '🍀 Vận May: mở 🎁 Gói Thường (cấp 2) và 🌟 Gói Vàng (cấp 4) bằng vé hoặc tiền trong game — có bảng tỉ lệ công khai đầy đủ',

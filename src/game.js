@@ -346,21 +346,50 @@ export class Game {
     const ground = new THREE.Vector3();
     const under = !this.decorMode && this.raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -TILE_TOP), ground)
       ? this.farmView.tileNear(ground.x, ground.z) : null;
+    let houseHit = null;
     for (const h of hits) {
       // three.js vẫn dò trúng vật đang ẨN (biểu tượng ⭐/💧 đã tắt, khách đã đi...) => bỏ qua, nếu không sẽ chọn nhầm
       if (!isShown(h.object)) continue;
       let o = h.object;
       while (o) {
         if (o.userData?.pick) {
+          const pk = o.userData.pick;
+          // vùng chạm của nhà to hơn ngôi nhà => người đứng trước cửa (vd Cô Ngân bán ở Quán Mây) vẫn phải chạm được:
+          // gặp nhà thì dò tiếp xem phía sau có dân làng không
+          if (pk.kind === 'house') { houseHit = houseHit || pk; break; }
+          if (houseHit && pk.kind !== 'villager') return houseHit;
           // trúng vách bên / mép của ô đất (sát mặt đất) => lấy ô dưới ngón tay; trúng cây, biểu tượng => giữ ô của cây đó
-          if (o.userData.pick.kind === 'tile' && under && h.point.y < TILE_TOP + 0.05) return under;
-          return o.userData.pick;
+          if (pk.kind === 'tile' && under && h.point.y < TILE_TOP + 0.05) return under;
+          if (pk.kind === 'villager') return this.nearestVillagerHit(hits, pk);
+          return pk;
         }
         o = o.parent;
       }
     }
+    if (houseHit) return houseHit;
     // chạm trúng khe giữa các ô đất: lấy ô gần nhất
     return under;
+  }
+
+  /** 2 dân làng đứng sát nhau (vd cùng tán gẫu ở giếng) ⇒ chọn người có thân gần tia chạm nhất */
+  nearestVillagerHit(hits, first) {
+    const ids = new Set();
+    for (const h of hits) {
+      let o = h.object;
+      while (o && !o.userData?.pick) o = o.parent;
+      if (o?.userData.pick.kind === 'villager' && isShown(h.object)) ids.add(o.userData.pick.id);
+    }
+    if (ids.size < 2) return first;
+    const ray = this.raycaster.ray;
+    let best = first, bestD = Infinity;
+    for (const id of ids) {
+      const v = this.villagers.list.find((q) => q.id === id);
+      if (!v) continue;
+      const c = v.g.position.clone(); c.y += 0.9;
+      const d = ray.distanceToPoint(c);
+      if (d < bestD) { bestD = d; best = { kind: 'villager', id }; }
+    }
+    return best;
   }
 
   onHover(x, y) {

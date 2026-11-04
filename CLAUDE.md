@@ -109,7 +109,9 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   `farmView.update`, `farmView.night`; vật liệu riêng ⇒ `disposeLuckFx` khi bỏ cây). Đồ trang trí `luck: true` (mỗi món 1 cái).
   Edge Function có thể tự deploy qua `.github/workflows/supabase-functions.yml` khi người dùng thêm secret `SUPABASE_ACCESS_TOKEN`.
 - **Dò chạm** (0.9.7): `game.pickAt` bỏ qua vật ẩn (three.js không tự bỏ), chạm sát mặt đất / khe thì lấy ô dưới ngón tay
-  (`farmView.tileNear`).
+  (`farmView.tileNear`). (0.15.1) Vùng chạm nhà (`house`) to hơn nhà ⇒ trúng nhà thì dò tiếp, có dân làng phía sau thì ưu tiên
+  dân làng; nhiều dân làng trùng tia chạm ⇒ `nearestVillagerHit` chọn người gần tia nhất. Bảng nhà: chủ nhà làm việc ngay trước
+  nhà (SPOTS cách < 4,5) ⇒ nút "💬 Nói chuyện" (Cô Ngân bán cà phê trước Quán Mây cũng là nhà cô).
 - **Âm thanh / intro** (bản 0.9.2): nhạc nền `public/audio/*.mp3` (đã nén 112 kbps), số liệu ở `data/audio.js`.
   Intro DREAMER GAMES (0.9.4) vẽ bằng CSS + canvas, KHÔNG dùng video (đã xóa `intro.mp4`). Code: `src/audio/audio.js` (MusicPlayer, Sfx tạo tiếng bằng Web Audio), `src/ui/tapFx.js` (cánh hoa khi
   chạm), `src/ui/intro.js` (trời đêm + chữ → bình minh + cánh hoa → tên game → tan vào nông trại; chạm để bỏ qua;
