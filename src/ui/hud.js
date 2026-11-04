@@ -151,6 +151,8 @@ export class Hud {
         <span class="wchip" title="Uy tín">💗 <b class="w-rep">0</b><small class="w-tier"></small></span>
       </div>
       <div class="nav-btns">
+        <button class="round nav-toggle" data-act="nav-toggle" aria-label="Thu gọn hoặc mở menu"><span class="nt-open">☰</span><span class="nt-close">✕</span></button>
+        <div class="nav-grid">
         <button class="round" data-act="go-farm" aria-label="Về nông trại">🌱</button>
         <button class="round" data-act="go-shop" aria-label="Tiệm hoa">🏪<span class="badge hidden nav-badge"></span></button>
         <button class="round" data-act="go-market" aria-label="Khu chợ">🧺</button>
@@ -161,6 +163,7 @@ export class Hud {
         <button class="round" data-act="rank" aria-label="Xếp hạng và cuộc thi">🏆</button>
         <button class="round" data-act="decor-mode" aria-label="Trang trí">🎨</button>
         <button class="round" data-act="luck" aria-label="Vận May">🍀<span class="badge hidden lk-badge"></span></button>
+        </div>
       </div>
       <button class="alert-chip hidden" data-act="forecast"></button>
       <div class="saved-badge">💾 Đã lưu</div>
@@ -184,6 +187,8 @@ export class Hud {
       <div class="sheet tile-panel hidden"></div>
       <div class="modal-wrap hidden"><div class="modal"></div></div>
     `;
+    // nhớ trạng thái thu gọn cột nút bên trái (lưu trên máy, không nằm trong save)
+    try { if (localStorage.getItem('thgm:nav') === 'closed') $('.nav-btns', this.root).classList.add('collapsed'); } catch { /* bỏ qua */ }
     this.root.addEventListener('click', (e) => this.onClick(e));
     this.root.addEventListener('change', (e) => this.onChange(e));
     this.root.addEventListener('input', (e) => { if (e.target.dataset?.audio) this.onAudioInput(e.target); });
@@ -245,6 +250,12 @@ export class Hud {
         break;
       case 'tut-skip': g.save.tutorial.done = true; this.updateTutorial(); break;
       case 'login': this.login(); break;
+      case 'nav-toggle': {
+        const nav = $('.nav-btns', this.root);
+        const c = nav.classList.toggle('collapsed');
+        try { localStorage.setItem('thgm:nav', c ? 'closed' : 'open'); } catch { /* bỏ qua */ }
+        break;
+      }
       case 'go-farm': g.controls.focusOn(PLOT_SLOTS[0].clone().add({ x: 1.2, y: 0, z: -0.6 })); this.closeModal(); break;
       case 'go-shop': this.openShop(); break;
       case 'go-market': this.openMarket(b.dataset.tab); break;

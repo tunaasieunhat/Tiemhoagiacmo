@@ -282,9 +282,18 @@ h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
 .wallet { position: absolute; top: calc(64px + var(--safe-top)); left: calc(8px + var(--safe-left)); display: flex; gap: 6px; pointer-events: none; }
 .wchip { background: var(--card); border: 2px solid var(--line); border-radius: 999px; padding: 3px 10px; font-weight: 800; font-size: 14px; box-shadow: var(--shadow); font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 4px; }
 .wchip small { font-size: 13px; }
-.nav-btns { position: absolute; left: calc(10px + var(--safe-left)); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; }
+.nav-btns { position: absolute; left: calc(10px + var(--safe-left)); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.nav-grid { display: flex; flex-direction: column; gap: 8px; }
 .nav-btns .round { position: relative; }
 .nav-btns .badge { top: -4px; right: -4px; }
+/* nút ☰ thu gọn / mở cột nút (GĐ15+) */
+.nav-toggle { background: #fff3f6; }
+.nav-toggle .nt-open { display: none; }
+.nav-btns.collapsed .nav-toggle .nt-open { display: inline; }
+.nav-btns.collapsed .nav-toggle .nt-close { display: none; }
+.nav-btns.collapsed .nav-grid { display: none !important; }
+/* đang thu gọn mà có việc cần làm (nhiệm vụ xong, có vé...) ⇒ chấm đỏ trên nút ☰ */
+.nav-btns.collapsed:has(.nav-grid .badge:not(.hidden)) .nav-toggle::after { content: ''; position: absolute; top: 0; right: 0; width: 11px; height: 11px; border-radius: 50%; background: var(--pink-deep); border: 2px solid #fff; }
 
 /* ---------- quầy bán hoa ---------- */
 .modal.wide { width: min(560px, 100%); }
@@ -540,7 +549,7 @@ h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
 .decor-bar .db-item.more { background: #eef8ff; border-color: #9fd6f0; }
 @media (max-height: 480px) { .decor-bar { padding: 7px 10px; gap: 5px; } .decor-bar .db-item { width: 64px; padding: 3px; } .decor-bar .db-item span { font-size: 20px; } }
 #hud.decorating .bottom, #hud.decorating .tutorial, #hud.decorating .tile-panel, #hud.decorating .nav-btns { display: none !important; }
-@media (max-height: 760px) { .nav-btns { display: grid; grid-template-columns: 1fr 1fr; } .nav-btns .round { width: 44px; height: 44px; font-size: 20px; } }
+@media (max-height: 760px) { .nav-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; } .nav-btns .round { width: 44px; height: 44px; font-size: 20px; } }
 
 /* ---------- GĐ9: cập nhật & điện thoại ---------- */
 .update-banner { position: absolute; z-index: 30; top: calc(8px + var(--safe-top)); left: 50%; transform: translateX(-50%); width: min(460px, calc(100% - 16px)); display: flex; gap: 10px; align-items: center; background: #fffbe8; border: 2px solid #f6d67a; border-radius: 20px; padding: 10px 12px; box-shadow: var(--shadow); animation: drop .3s ease-out; }
@@ -556,7 +565,6 @@ h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
   .alert-chip { display: none; }
   .tutorial { bottom: calc(64px + var(--safe-bottom)); }
   .sheet { bottom: calc(64px + var(--safe-bottom)); max-height: calc(100% - 80px); overflow: auto; }
-  .nav-btns { grid-template-columns: repeat(3, 1fr); }
 }
 
 /* ---------- Intro khi mở game (DREAMER GAMES → Tiệm Hoa Giấc Mơ) ---------- */
@@ -819,6 +827,25 @@ h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
   .lk-reveal { min-height: 180px; }
   .lk-shake { font-size: 64px; }
   .lk-prize { font-size: 44px; }
-  .nav-btns { grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  .nav-btns .round { width: 40px; height: 40px; font-size: 18px; }
+  /* điện thoại xoay ngang: cột nút nhỏ gọn 2 cột, đặt dưới ví tiền; thanh công cụ vừa khít các nút */
+  .nav-btns { top: calc(96px + var(--safe-top)); transform: none; gap: 5px; }
+  .nav-grid { grid-template-columns: repeat(2, 36px); gap: 5px; }
+  .nav-btns .round { width: 36px; height: 36px; font-size: 17px; border-width: 1.5px; }
+  .nav-btns .badge { top: -5px; right: -6px; min-width: 16px; height: 16px; font-size: 10px; padding: 0 4px; border-radius: 8px; }
+  .bottom { width: auto; }
+  .toolbar { width: auto; gap: 2px; padding: 4px; border-radius: 22px; }
+  .tool { flex: none; width: 50px; height: 40px; border-radius: 16px; }
+  .tool .ti { font-size: 20px; }
+  .tool .badge { top: -2px; right: 0; min-width: 16px; height: 16px; font-size: 10px; padding: 0 4px; border-radius: 8px; }
+  .top-actions .round { width: 40px; height: 40px; font-size: 18px; }
+  .zoom-btns .round.sm { width: 34px; height: 34px; font-size: 15px; }
+  .tutorial { bottom: calc(56px + var(--safe-bottom)); }
+  .sheet { bottom: calc(56px + var(--safe-bottom)); }
+  /* thanh chọn hạt: 1 hàng, vuốt ngang khi nhiều hạt */
+  .seedbar { max-width: min(640px, calc(100vw - 130px)); overflow-x: auto; flex-wrap: nowrap; gap: 4px; padding: 4px; scrollbar-width: none; }
+  .seedbar::-webkit-scrollbar { display: none; }
+  .seed { flex: none; white-space: nowrap; padding: 4px 8px; gap: 4px; }
+  .seed span { font-size: 18px; }
+  .seed small { font-size: 12px; }
+  .seed b { font-size: 12px; }
 }

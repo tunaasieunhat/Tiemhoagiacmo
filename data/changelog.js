@@ -4,6 +4,14 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.15.2',
+    notes: [
+      '📱 Giao diện điện thoại gọn hơn: các nút bên trái nhỏ lại, xếp 2 cột dưới ví tiền',
+      '☰ Nút thu gọn / mở cột nút bên trái (game nhớ lựa chọn); khi thu gọn mà có việc cần làm thì nút ☰ hiện chấm đỏ',
+      'Thanh công cụ dưới cùng nhỏ và vừa khít các nút; thanh chọn hạt 1 hàng, vuốt ngang khi nhiều hạt',
+    ],
+  },
+  {
     version: '0.15.1',
     notes: [
       '🔧 Sửa lỗi không chạm được Cô Ngân khi cô đang bán cà phê trước Quán Mây',
