@@ -587,7 +587,7 @@ export class Game {
     if (tip) setTimeout(() => this.toast(`💝 ${npc.name} cho thêm ${tip} 💰 tiền bo!`, 'good'), 900);
     const newTier = shop.tierOf(s.player.reputation);
     if (newTier > oldTier) setTimeout(() => this.toast(`🎉 Tiệm lên bậc "${shop.tierInfo(s.player.reputation).name}"! Khách sẽ đến đông hơn.`, 'good'), 1800);
-    this.gainXp(Math.floor((ev.price + tip) / 10) * XP.sellPer10Coins + (bouquet ? XP.bouquet : 0) + (ev.mood === 'perfect' ? XP.perfect : 0));
+    this.gainXp(Math.floor(((ev.price + tip) / 10) * XP.sellPer10Coins) + (bouquet ? XP.bouquet : 0) + (ev.mood === 'perfect' ? XP.perfect : 0));
     this.questEvent('serve');
     this.questEvent('earn', ev.price + tip);
     if (bouquet) this.questEvent('bouquet');
@@ -873,7 +873,7 @@ export class Game {
     this.gainXp(rw.xp);
     // 🍀 vé Vận May: mỗi nhiệm vụ tuần 1 vé vàng, nhận đủ nhiệm vụ ngày được 1 vé may mắn
     let tk = null;
-    if (kind === 'weekly') tk = luck.grantTickets(this.save, TICKET_SOURCES.weeklyQuest);
+    if (kind === 'weekly') { if ((this.save.quests.weekly || []).every((q) => q.claimed)) tk = luck.grantTickets(this.save, TICKET_SOURCES.weeklyQuestsAll); }
     else if ((this.save.quests.daily || []).length && this.save.quests.daily.every((q) => q.claimed)) tk = luck.grantTickets(this.save, TICKET_SOURCES.dailyQuestsAll);
     const tkText = tk ? `${tk.luck ? ` +${tk.luck} 🎟️` : ''}${tk.gold ? ` +${tk.gold} 🎫` : ''}` : '';
     if (tk) this.emitter.emit('luck');

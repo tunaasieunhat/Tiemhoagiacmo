@@ -4,6 +4,15 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.16.0',
+    notes: [
+      '⚖️ Cân bằng lại game: lên cấp chậm hơn ~3 lần, đồ trong Chợ đắt hơn (nâng cấp, đất, nhà kính, máy móc, trang trí, hạt giống)',
+      '🍀 Vận May hiếm hơn thật sự: Gói Vàng 3% ra Cây Vận May, bảo hiểm 50 lần (trước 10); vé vàng chỉ khi xong đủ 3 nhiệm vụ tuần hoặc mỗi 5 cấp',
+      '🏪 Khách đến thưa hơn một chút, hoa 3⭐ bán ×1,6 (trước ×1,8), bán sỉ 40% giá — chăm khách ở tiệm quan trọng hơn',
+      '🪡 Mini game Xỏ kim dễ hơn: kim chạy chậm, lỗ kim to, thêm 1 lượt',
+    ],
+  },
+  {
     version: '0.15.3',
     notes: [
       '📱 Các bảng trên điện thoại gọn hơn, hầu như không phải kéo: bảng rộng ra, món xếp nhiều cột',

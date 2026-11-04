@@ -24,7 +24,7 @@ const ENGINES = {
     area.innerHTML = `<div class="ndl"><div class="ndl-thread"><i></i></div><div class="ndl-needle"><span class="eye" style="width:${cfg.eye}px"></span></div><div class="mg-pop"></div></div>`;
     const needle = area.querySelector('.ndl-needle'), thread = area.querySelector('.ndl-thread'), pop = area.querySelector('.mg-pop');
     let phase = Math.random() * 6, speed = cfg.speed, ok = 0, tries = 0, busy = false;
-    const amp = () => Math.min(area.clientWidth * 0.3, 170);
+    const amp = () => Math.min(area.clientWidth * 0.3, 140); // (0.16) biên độ nhỏ hơn: kim chạy chậm hơn qua lỗ chỉ
     let x = 0;
     const status = () => api.status(`Đã xỏ ${ok}/${cfg.need} · Lượt ${tries}/${cfg.tries}`);
     status();

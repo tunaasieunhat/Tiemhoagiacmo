@@ -9,7 +9,7 @@ export const FAVOR_RULES = {
   // theo số sao: [0⭐, 1⭐, 2⭐, 3⭐]
   fp: [6, 25, 40, 60],        // điểm tình thân
   coins: [0, 20, 40, 70],     // tiền công
-  xp: [2, 6, 10, 15],
+  xp: [1, 3, 5, 8],
 };
 
 // Việc nhờ của từng người. game: needle | hammer | fishing | pour | math | rhyme | memory
@@ -51,7 +51,8 @@ export const FAVORS = {
 
 // Số liệu từng mini game (chỉnh độ khó ở đây)
 export const MINIGAMES = {
-  needle: { need: 3, tries: 5, speed: 2.2, accel: 1.28, eye: 22, help: 'Chạm màn hình khi lỗ kim nằm ngay dưới sợi chỉ. Cần xỏ 3 lần (tối đa 5 lượt).' },
+  // (0.16) dễ hơn: kim chạy chậm hơn, tăng tốc ít hơn, lỗ kim to hơn, thêm 1 lượt
+  needle: { need: 3, tries: 6, speed: 1.45, accel: 1.12, eye: 32, help: 'Chạm màn hình khi lỗ kim nằm ngay dưới sợi chỉ. Cần xỏ 3 lần (tối đa 5 lượt).' },
   hammer: { need: 6, tries: 9, speed: 2.6, accel: 1.08, zone: 0.16, help: 'Chạm khi kim lực nằm trong vùng xanh. Mỗi cây đinh cần 2 cú đóng chuẩn.' },
   fishing: { rounds: 3, waitMin: 1.2, waitMax: 3.4, window: [0.85, 0.7, 0.58], help: 'Đợi phao chìm xuống và hiện ❗ rồi chạm thật nhanh. Chạm sớm cá sẽ sợ chạy mất!' },
   pour: { layers: [{ name: 'cà phê', color: '#6b4a3a', to: 52 }, { name: 'kem muối', color: '#f3e1c2', to: 86 }], rate: 30, accel: 18, help: 'Giữ ngón tay trên màn hình để rót, thả ra khi chạm vạch. Rót quá 100% là tràn ly!' },

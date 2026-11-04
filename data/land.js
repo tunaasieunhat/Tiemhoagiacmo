@@ -28,7 +28,7 @@ export const MOODS = {
 // Mảnh đất. x, z = tâm lô. owner = mã dân làng (data/village.js, data/regulars.js)
 export const PARCELS = {
   tu_garden: {
-    name: 'Mảnh vườn cũ của Bà Tư', owner: 'ba_tu', x: -2.6, z: 11.3, price: 1500, minHearts: 3, level: 3,
+    name: 'Mảnh vườn cũ của Bà Tư', owner: 'ba_tu', x: -2.6, z: 11.3, price: 3800, minHearts: 3, level: 3,
     story: 'Ngày xưa ông bà trồng rau ở đây. Giờ bà già rồi, không chăm nổi nữa.',
     lines: {
       refuse: 'Đất này ông bà giữ mấy chục năm... bà chưa nỡ bán cho người lạ đâu con.',
@@ -41,7 +41,7 @@ export const PARCELS = {
     },
   },
   ba_yard: {
-    name: 'Bãi phơi gỗ của Ông Ba', owner: 'ong_ba', x: 2.6, z: 11.3, price: 2200, minHearts: 4, level: 4,
+    name: 'Bãi phơi gỗ của Ông Ba', owner: 'ong_ba', x: 2.6, z: 11.3, price: 5500, minHearts: 4, level: 4,
     story: 'Ông Ba từng phơi gỗ ở đây, giờ xưởng có lán mới nên bỏ trống.',
     lines: {
       refuse: 'Hừm. Đất của ông, ông chỉ bán cho người ông tin.',
@@ -54,7 +54,7 @@ export const PARCELS = {
     },
   },
   ngan_lot: {
-    name: 'Đất trống của Cô Ngân', owner: 'co_ngan', x: 9.6, z: 4.0, price: 3000, minHearts: 5, level: 5,
+    name: 'Đất trống của Cô Ngân', owner: 'co_ngan', x: 9.6, z: 4.0, price: 7500, minHearts: 5, level: 5,
     story: 'Cô Ngân định mở quán thứ hai ở đây nhưng chưa đủ vốn.',
     lines: {
       refuse: 'Đất này cô định mở quán đấy... thân hơn chút nữa cô mới tính chuyện bán.',
@@ -67,7 +67,7 @@ export const PARCELS = {
     },
   },
   duy_plot: {
-    name: 'Vườn thực hành của thầy Duy', owner: 'anh_duy', x: -9.6, z: 10.0, price: 4000, minHearts: 6, level: 6,
+    name: 'Vườn thực hành của thầy Duy', owner: 'anh_duy', x: -9.6, z: 10.0, price: 10000, minHearts: 6, level: 6,
     story: 'Thầy Duy định làm vườn thực hành cho học trò, nhưng thấy bạn chăm vườn giỏi hơn.',
     lines: {
       refuse: 'Mình định cho học trò trồng cây ở đây... khi nào thân hơn mình mới bán được.',

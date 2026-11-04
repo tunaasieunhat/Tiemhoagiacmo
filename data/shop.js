@@ -8,14 +8,14 @@ export const SHOP = {
   closeHour: 21,            // giờ đóng cửa (khách đang chờ vẫn được phục vụ)
   maxQueue: 3,              // số khách chờ tối đa (nâng cấp Quầy hàng ở Khu Chợ để tăng)
   firstCustomerDelay: 15,   // khách đầu tiên đến sau bao lâu kể từ lần thu hoạch đầu
-  spawnEvery: [60, 100],    // khoảng cách giữa 2 khách (ngẫu nhiên trong khoảng) khi uy tín thấp nhất
+  spawnEvery: [80, 130],    // khoảng cách giữa 2 khách (ngẫu nhiên trong khoảng) khi uy tín thấp nhất (0.16: thưa hơn)
   spawnFasterPerTier: 0.15, // mỗi bậc uy tín: khách đến nhanh hơn 15%
   patience: [150, 240],     // khách chờ được bao lâu
   patienceBonusPerTier: 0.1,// mỗi bậc uy tín: khách kiên nhẫn hơn 10%
 
-  qualityMult: { 1: 1, 2: 1.35, 3: 1.8 }, // giá theo số sao
+  qualityMult: { 1: 1, 2: 1.3, 3: 1.6 }, // giá theo số sao (0.16: 3★ từ ×1,8 xuống ×1,6)
   bouquetMult: 1.3,         // bó hoa bán đắt hơn hoa lẻ 30%
-  wholesaleMult: 0.55,      // bán sỉ (không cần khách) chỉ được 55% giá
+  wholesaleMult: 0.4,       // bán sỉ (không cần khách) chỉ được 40% giá (0.16: giảm để khách ở tiệm quan trọng hơn)
 
   tip: {
     baseChance: 0.12,       // xác suất cho tiền bo ở bậc uy tín thấp nhất

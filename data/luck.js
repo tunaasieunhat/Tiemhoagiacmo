@@ -17,12 +17,13 @@ export const TICKETS = {
 };
 
 // Cách kiếm vé (đều nằm TRONG game)
+// (0.16) vé vàng hiếm hơn: chỉ khi xong ĐỦ 3 nhiệm vụ tuần và mỗi 5 cấp
 export const TICKET_SOURCES = {
   daily: { luck: 1 },          // mỗi ngày (theo ngày thật, giờ Việt Nam) lần đầu vào game
   dailyQuestsAll: { luck: 1 }, // nhận thưởng đủ 3 nhiệm vụ ngày
-  weeklyQuest: { gold: 1 },    // mỗi nhiệm vụ tuần
-  levelUp: { luck: 2 },        // mỗi lần lên cấp
-  levelUpGoldEvery: 2,         // cấp chẵn (2, 4, 6...) tặng thêm 1 vé vàng
+  weeklyQuestsAll: { gold: 1 },// nhận thưởng đủ 3 nhiệm vụ tuần
+  levelUp: { luck: 1 },        // mỗi lần lên cấp
+  levelUpGoldEvery: 5,         // cấp 5, 10, 15... tặng thêm 1 vé vàng
   favor3: { luck: 1 },         // giúp dân làng đạt 3⭐ trong mini game
 };
 
@@ -32,15 +33,15 @@ export const TICKET_SOURCES = {
 //   pity  : BẢO HIỂM — mở "every" lần liền mà chưa ra bậc "tier" (hoặc cao hơn) thì lần đó chắc chắn ra
 export const PACKS = {
   normal: {
-    name: 'Gói Thường', icon: '🎁', level: 2, cost: { luck: 1 }, coins: 250, shards: 1,
-    odds: { common: 0.62, uncommon: 0.30, rare: 0.08 },
-    pity: { every: 10, tier: 'rare' },
+    name: 'Gói Thường', icon: '🎁', level: 2, cost: { luck: 1 }, coins: 600, shards: 1,
+    odds: { common: 0.66, uncommon: 0.30, rare: 0.04 },
+    pity: { every: 25, tier: 'rare' },
     desc: 'Hạt giống, vật tư, hạt màu lạ, mở khóa sớm hạt & đồ trang trí chưa tới cấp, nâng cấp dụng cụ',
   },
   gold: {
-    name: 'Gói Vàng', icon: '🌟', level: 4, cost: { gold: 1 }, coins: 1500, shards: 4,
-    odds: { uncommon: 0.52, rare: 0.40, legend: 0.08 },
-    pity: { every: 10, tier: 'legend' },
+    name: 'Gói Vàng', icon: '🌟', level: 4, cost: { gold: 1 }, coins: 5000, shards: 2,
+    odds: { uncommon: 0.67, rare: 0.30, legend: 0.03 },
+    pity: { every: 50, tier: 'legend' },
     desc: 'Như Gói Thường nhưng toàn đồ tốt, và có 🌈 Cây Vận May hiếm có hiệu ứng động',
   },
 };
@@ -85,7 +86,7 @@ export const REWARDS = {
     { kind: 'luckDecor', w: 1.5 },
   ],
   legend: [
-    { kind: 'luckFlower', n: [2, 2], w: 1 },
+    { kind: 'luckFlower', n: [1, 1], w: 1 },
   ],
 };
 
@@ -94,8 +95,8 @@ export const DUP_SHARDS = { common: 1, uncommon: 3, rare: 8, legend: 20 };
 
 // Đổi mảnh lấy món mình muốn
 export const SHARD_SHOP = {
-  luckFlower: { name: 'Hạt Cây Vận May (chọn loài)', cost: 40, n: 1 },
-  luckDecor: { name: 'Đồ trang trí Vận May (chọn món)', cost: 30 },
-  gold: { name: 'Vé vàng', cost: 25, n: 1 },
-  luck: { name: 'Vé may mắn', cost: 6, n: 1 },
+  luckFlower: { name: 'Hạt Cây Vận May (chọn loài)', cost: 150, n: 1 },
+  luckDecor: { name: 'Đồ trang trí Vận May (chọn món)', cost: 100 },
+  gold: { name: 'Vé vàng', cost: 80, n: 1 },
+  luck: { name: 'Vé may mắn', cost: 15, n: 1 },
 };

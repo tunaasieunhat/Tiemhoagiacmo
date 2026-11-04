@@ -72,9 +72,9 @@ export const DISEASE = {
 
 // Đồ phòng hộ
 export const PROTECTION = {
-  cover: { name: 'Bạt che', icon: '⛺', price: 25, level: 2, desc: 'Che 1 lô đất đến hết ngày mai: chống bão, mưa đá, sương giá, nắng nóng, ốc sên (gió lớn: bạt đỡ được 1 lần rồi bay mất)' },
-  medicine: { name: 'Thuốc trừ bệnh', icon: '💊', price: 10, level: 2, desc: 'Chữa ô bị bệnh, hoặc phun phòng để không bị lây đến hết ngày mai' },
-  greenhouse: { name: 'Nhà kính', icon: '🏠', price: 900, level: 5, desc: 'Xây cho 1 lô: chống mọi thiên tai, trồng trái mùa không bị chậm, giảm nửa nguy cơ bệnh. Lô có nhà kính không được mưa tưới.' },
+  cover: { name: 'Bạt che', icon: '⛺', price: 40, level: 2, desc: 'Che 1 lô đất đến hết ngày mai: chống bão, mưa đá, sương giá, nắng nóng, ốc sên (gió lớn: bạt đỡ được 1 lần rồi bay mất)' },
+  medicine: { name: 'Thuốc trừ bệnh', icon: '💊', price: 18, level: 2, desc: 'Chữa ô bị bệnh, hoặc phun phòng để không bị lây đến hết ngày mai' },
+  greenhouse: { name: 'Nhà kính', icon: '🏠', price: 2800, level: 5, desc: 'Xây cho 1 lô: chống mọi thiên tai, trồng trái mùa không bị chậm, giảm nửa nguy cơ bệnh. Lô có nhà kính không được mưa tưới.' },
   offlineDamageFactor: 0.5, // thiên tai xảy ra lúc bạn không chơi chỉ gây hại một nửa
 };
 

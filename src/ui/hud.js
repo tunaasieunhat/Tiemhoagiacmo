@@ -1127,7 +1127,7 @@ export class Hud {
     const INV_TABS = [['flowers', '🌸 Hoa'], ['seeds', '🌱 Hạt giống'], ['wraps', '🎀 Giấy gói'], ['items', '🧪 Vật phẩm']];
     const tab = this.invTab || 'flowers';
     const body = {
-      flowers: `<div class="grid">${flowers}</div><p class="muted small">Bán sỉ nhanh nhưng chỉ được khoảng một nửa giá. Bán cho khách ở 🏪 Tiệm Hoa lời hơn và có uy tín.</p>`,
+      flowers: `<div class="grid">${flowers}</div><p class="muted small">Bán sỉ nhanh nhưng chỉ được chưa tới một nửa giá. Bán cho khách ở 🏪 Tiệm Hoa lời hơn và có uy tín.</p>`,
       seeds: `<div class="grid">${seeds}</div>${DEV_TOOLS ? '<button class="btn primary wide" data-act="free-seeds">🎁 Nhận gói hạt giống miễn phí (1 lần/ngày game)</button>' : ''}`,
       wraps: `<div class="grid">${wraps}</div>`,
       items: `<div class="grid">${items}</div>`,

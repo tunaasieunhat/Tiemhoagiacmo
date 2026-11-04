@@ -6,8 +6,9 @@
 export const QUESTS = {
   perDay: 3,
   perWeek: 3,
-  dailyReward: [{ coins: 60, xp: 15 }, { coins: 120, xp: 25 }, { coins: 200, xp: 40 }],
-  weeklyReward: [{ coins: 400, xp: 80, fertilizer: 3 }, { coins: 800, xp: 140, fertilizer: 5 }, { coins: 1400, xp: 220, fertilizer: 8 }],
+  // (0.16) giảm thưởng cho cân bằng
+  dailyReward: [{ coins: 40, xp: 8 }, { coins: 80, xp: 12 }, { coins: 130, xp: 18 }],
+  weeklyReward: [{ coins: 250, xp: 40, fertilizer: 3 }, { coins: 500, xp: 70, fertilizer: 5 }, { coins: 900, xp: 110, fertilizer: 8 }],
 };
 
 export const QUEST_TEMPLATES = {

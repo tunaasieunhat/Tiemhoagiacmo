@@ -13,7 +13,10 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
 
 ## Tiến độ
 
-- ✅ GĐ1–15 xong (xem `README.md`) — hết kế hoạch đã thống nhất ngày 03/11/2026. Việc tiếp theo: hỏi người dùng.
+- ✅ GĐ1–15 xong (xem `README.md`). 0.16.0 (04/11/2026): cân bằng lại theo góp ý "quá dễ" — XP mỗi việc giảm, giá Chợ tăng,
+  Vận May hiếm hơn (vàng 3%, bảo hiểm 50), xỏ kim dễ hơn. **Giữ nguyên `LEVEL_XP`** vì SQL `level_from_xp` (migration GĐ8) dùng
+  cùng bảng — muốn đổi phải thêm migration mới. Mô phỏng tiến độ: chạy thử với số liệu `data/*` (cấp 10 ≈ 3 giờ chơi chăm).
+  Đã đề xuất GĐ16 (chăm sóc có kỹ năng), GĐ17 (mini game hay hơn), GĐ18 (mục tiêu dài hạn) — chờ người dùng chọn.
 - Đưa lên mạng: Netlify (`netlify.toml`, `docs/HUONG_DAN_DUA_LEN_MANG.md`) — trang thật: https://tiem-hoa-giac-mo.netlify.app
   (Netlify đang deploy nhánh `ccr-845954e0-2hh7a1`; `main` chỉ có commit đầu tiên). APK: Capacitor + GitHub Actions
   (`.github/workflows/android.yml`, `android-keystore.yml`, `docs/HUONG_DAN_APK.md`); thư mục `android/` KHÔNG commit,

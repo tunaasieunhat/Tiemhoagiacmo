@@ -74,10 +74,10 @@ export class LuckPanel {
         <ul>
           <li>Mỗi ngày vào game: +${src.daily.luck} 🎟️</li>
           <li>Nhận thưởng đủ 3 nhiệm vụ ngày: +${src.dailyQuestsAll.luck} 🎟️</li>
-          <li>Mỗi nhiệm vụ tuần: +${src.weeklyQuest.gold} 🎫</li>
-          <li>Mỗi lần lên cấp: +${src.levelUp.luck} 🎟️, cấp chẵn thêm 1 🎫</li>
+          <li>Nhận thưởng đủ 3 nhiệm vụ tuần: +${src.weeklyQuestsAll.gold} 🎫</li>
+          <li>Mỗi lần lên cấp: +${src.levelUp.luck} 🎟️, cứ ${src.levelUpGoldEvery} cấp thêm 1 🎫</li>
           <li>Giúp dân làng đạt 3⭐: +${src.favor3.luck} 🎟️</li>
-          <li>Mỗi lần mở gói được ${PACKS.normal.shards}–${PACKS.gold.shards} 🧩, đồ trùng đổi thành 🧩 → đổi lấy vé hoặc món bạn muốn</li>
+          <li>Mỗi lần mở gói được ${Math.min(PACKS.normal.shards, PACKS.gold.shards)}–${Math.max(PACKS.normal.shards, PACKS.gold.shards)} 🧩, đồ trùng đổi thành 🧩 → đổi lấy vé hoặc món bạn muốn</li>
         </ul>
       </details>`;
   }
