@@ -52,6 +52,10 @@ import * as land from './systems/land.js';
 import { PARCELS } from '../data/land.js';
 import { createPlot } from './save/schema.js';
 import * as luck from './systems/luck.js';
+import * as orders from './systems/orders.js';
+import { BugView } from './render/bugs.js';
+import { BUGS, HARVEST_FUN, FRESH } from '../data/care.js';
+import { VARIANTS } from '../data/variants.js';
 import { TICKET_SOURCES } from '../data/luck.js';
 
 const ACTIONS = {
@@ -93,6 +97,13 @@ export class Game {
     const start = PLOT_SLOTS[0].clone().add(new THREE.Vector3(2.6, 0, 1.2));
     this.player = new Player(stage.scene, this.save.player.avatar, start);
     this.particles = new Particles(stage.scene);
+    // 🐛 sâu trên luống (GĐ16) — chỉ có lúc đang chơi, không lưu vào save
+    this.bugView = new BugView(stage.scene);
+    this.bugs = new Map();
+    this.bugSeq = 1;
+    this.bugNextAt = 0;
+    this.bugCombo = { n: 0, at: 0 };
+    this.harvestCombo = { n: 0, at: 0 };
     this.customers = new CustomersView(stage.scene);
     this.customers.sync(this.save, true);
     this.fireflies = new Fireflies(stage.scene, world.fireflyAnchors);
@@ -195,6 +206,9 @@ export class Game {
       });
       // nhân viên
       this.runStaff(to, offline);
+      // 🐛 sâu & 📦 đơn hàng (GĐ16)
+      if (!offline) this.bugTick(to);
+      for (const e of orders.ordersTick(s, to, Math.random, { offline, dMin: step })) this.onOrderEvent(e, offline);
       // cửa hàng: khách đến / khách bỏ đi
       const shopEv = shop.shopTick(s, {
         offline, hourFloat: this.clock.hourFloat, flowerIds: this.unlockedFlowers(),
@@ -311,7 +325,13 @@ export class Game {
     }
     if (this.clockT > 0.25) {
       this.clockT = 0;
-      if (!this.visit) this.farmView.sync(this.save);
+      if (!this.visit) {
+        this.farmView.sync(this.save);
+        // ✨ hoa đang trong "giờ vàng" thỉnh thoảng lấp lánh để người chơi để ý hái
+        this.save.farm.plots.forEach((p, pi) => p.tiles.forEach((t, ti) => {
+          if (t.state === 'ready' && (t.readyFor || 0) < FRESH.goldenHours * 60 && Math.random() < 0.05) this.particles.spawn('sparkle', this.farmView.tileWorldPos(pi, ti).clone().setY(1.0));
+        }));
+      }
       this.customers.sync(this.save);
       const ready = breeding.labReady(this.save) && !this.visit;
       this.labIcon.visible = ready;
@@ -331,6 +351,8 @@ export class Game {
     this.dayNight.update(c.hourFloat, this.controls.target, dt);
     this.seasonVisuals.update(dt);
     this.weatherFx.update(dt, this.controls.target, this.clock.hourFloat);
+    this.bugView.root.visible = !this.visit && !this.decorMode;
+    this.bugView.update(dt);
     this.decorView.update(dt);
     this.villagers.update(dt, this.villageCtx());
     for (const m of Object.values(this.staffModels)) if (m.visible) m.position.y = Math.abs(Math.sin(performance.now() / 400)) * 0.03;
@@ -403,6 +425,7 @@ export class Game {
     if (this.visit) { this.onVisitTap(pick); return; }
     if (this.decorMode) { this.onDecorTap(pick, x, y); return; }
     if (!pick) { this.select(null); return; }
+    if (pick.kind === 'bug') { this.catchBug(pick.id); return; }
     if (pick.kind === 'tile') {
       if (this.tool === 'hand') this.select(pick);
       else {
@@ -488,8 +511,9 @@ export class Game {
       if (tile.offSeason) setTimeout(() => this.toast(`🍂 ${fname} đang trái mùa: lớn chậm và khó đạt 3★ (trừ khi có nhà kính)`, 'warn'), 600);
     }
     if (action === 'harvest') {
-      this.emitter.emit('float', { pos: pos.clone().setY(1.2), text: `+1 ${FLOWERS[res.flower].icon} ${'★'.repeat(res.quality)}${res.bonus ? ' 🌈' : ''}` });
-      if (res.bonus) this.particles.spawn('sparkle', pos);
+      this.emitter.emit('float', { pos: pos.clone().setY(1.2), text: `+1 ${FLOWERS[res.flower].icon} ${'★'.repeat(res.quality)}${res.bonus ? ' 🌈' : ''}${res.golden ? ' ✨' : ''}${res.stale ? ' 🥀' : ''}` });
+      if (res.bonus || res.golden) this.particles.spawn('sparkle', pos);
+      this.harvestFun(res, pos);
       this.particles.spawn('leaf', pos);
       if (notebook.recordHarvest(this.save, res.flower, res.variant, res.quality, dayOf(this.now))) {
         const r = variants.rarityOf(res.flower, res.variant);
@@ -701,7 +725,7 @@ export class Game {
       g.visible = !plots.some((p) => p.parcel === id);
       return g.visible && !this.visit;
     }).map(([, g]) => g);
-    this.pickRoots = this.decorMode ? [this.decorView.root] : [this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, ...locked, ...parcels, this.villagers.root, ...this.villagers.housePick()];
+    this.pickRoots = this.decorMode ? [this.decorView.root] : [this.bugView.root, this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, ...locked, ...parcels, this.villagers.root, ...this.villagers.housePick()];
   }
 
   /** Vị trí lô thứ pi (lô của dân làng nằm ở mảnh đất riêng) */
@@ -1322,6 +1346,120 @@ export class Game {
   }
 
   // ---------------- tiện ích ----------------
+  // ---------------- GĐ16: sâu, combo, đột biến, đơn hàng ----------------
+  /** Thả sâu lên luống (chỉ lúc đang chơi trên nông trại của mình) */
+  bugTick(now) {
+    if (this.visit || this.decorMode) return;
+    // sâu không bắt kịp: gặm cây
+    for (const [id, b] of this.bugs) {
+      if (now - b.born < BUGS.lifeMinutes) continue;
+      const tile = this.save.farm.plots[b.pi]?.tiles[b.ti];
+      this.removeBug(id);
+      if (!tile || (tile.state !== 'growing' && tile.state !== 'ready')) continue;
+      tile.health = Math.max(0, tile.health - BUGS.damage);
+      if (tile.health <= 0) tile.state = 'dead';
+      this.toast(`🐛 Sâu gặm mất một ít ${FLOWERS[tile.flower]?.name || 'hoa'}! Thấy sâu thì chạm để bắt nhé`, 'warn');
+      this.refreshFarm();
+      this.saveMgr.markDirty();
+    }
+    if (now < this.bugNextAt) return;
+    this.bugNextAt = now + BUGS.everyMinutes;
+    if (this.bugs.size >= BUGS.max || Math.random() > BUGS.chance) return;
+    const spots = [];
+    this.save.farm.plots.forEach((p, pi) => p.tiles.forEach((t, ti) => {
+      if ((t.state === 'growing' || t.state === 'ready') && (t.guardUntil || 0) < now && ![...this.bugs.values()].some((b) => b.pi === pi && b.ti === ti)) spots.push([pi, ti]);
+    }));
+    if (!spots.length) return;
+    const [pi, ti] = spots[Math.floor(Math.random() * spots.length)];
+    const id = this.bugSeq++;
+    const golden = Math.random() < BUGS.goldenChance;
+    this.bugs.set(id, { pi, ti, born: now, golden });
+    const pos = this.farmView.tileWorldPos(pi, ti).clone().setY(TILE_TOP);
+    this.bugView.add(id, pos, golden);
+  }
+
+  removeBug(id) { this.bugs.delete(id); this.bugView.remove(id); }
+
+  catchBug(id) {
+    const b = this.bugs.get(id);
+    if (!b) return;
+    const pos = this.farmView.tileWorldPos(b.pi, b.ti).clone();
+    this.removeBug(id);
+    const t = performance.now() / 1000;
+    this.bugCombo.n = t - this.bugCombo.at <= BUGS.comboSeconds ? this.bugCombo.n + 1 : 1;
+    this.bugCombo.at = t;
+    let coins = BUGS.coins[0] + Math.floor(Math.random() * (BUGS.coins[1] - BUGS.coins[0] + 1)) + (this.bugCombo.n - 1) * BUGS.comboBonus;
+    let extra = '';
+    if (b.golden) {
+      coins += BUGS.golden.coins;
+      luck.grantTickets(this.save, { shard: BUGS.golden.shards });
+      extra = ` +${BUGS.golden.shards} 🧩`;
+      this.emitter.emit('luck');
+      this.toast(`🐞 Bắt được bọ rùa vàng hiếm! +${coins} 💰${extra}`, 'good');
+    }
+    this.save.player.coins += coins;
+    this.save.stats.bugs = (this.save.stats.bugs || 0) + 1;
+    this.particles.spawn('sparkle', pos);
+    this.emitter.emit('float', { pos: pos.setY(1.1), text: `${b.golden ? '🐞' : '🐛'} +${coins} 💰${extra}${this.bugCombo.n > 1 ? ` · Combo ×${this.bugCombo.n}!` : ''}` });
+    this.audio?.sfx?.chime?.(Math.min(6, 1 + this.bugCombo.n));
+    this.questEvent('bug');
+    this.saveMgr.markDirty();
+    this.emitter.emit('xp');
+  }
+
+  /** Combo thu hoạch nhanh + hạt đột biến */
+  harvestFun(res, pos) {
+    const t = performance.now() / 1000;
+    const c = this.harvestCombo;
+    c.n = t - c.at <= HARVEST_FUN.comboSeconds ? c.n + 1 : 1;
+    c.at = t;
+    if (c.n >= 3) {
+      const bonus = HARVEST_FUN.comboCoins * (c.n - 2);
+      this.save.player.coins += bonus;
+      setTimeout(() => this.emitter.emit('float', { pos: pos.clone().setY(1.7), text: `🔥 Combo ×${c.n}! +${bonus} 💰`, small: true }), 250);
+    }
+    if (Math.random() < HARVEST_FUN.mutationChance) {
+      const vs = Object.entries(VARIANTS[res.flower] || {}).filter(([, d]) => !d.default && d.rarity !== 'legend');
+      const rare = vs.filter(([, d]) => d.rarity === 'rare'), unc = vs.filter(([, d]) => d.rarity === 'uncommon');
+      const pool = (Math.random() < HARVEST_FUN.mutationRare && rare.length) ? rare : unc.length ? unc : rare;
+      if (pool.length) {
+        const [v] = pool[Math.floor(Math.random() * pool.length)];
+        const k = `${res.flower}:${v}`;
+        this.save.inventory.seeds[k] = (this.save.inventory.seeds[k] || 0) + 1;
+        this.particles.spawn('sparkle', pos);
+        setTimeout(() => this.toast(`🧬 Đột biến! Cây vừa hái rơi ra 1 hạt ${variants.variantName(res.flower, v)}`, 'good'), 500);
+      }
+    }
+  }
+
+  onOrderEvent(e, offline) {
+    this.saveMgr.markDirty();
+    this.emitter.emit('quests');
+    if (offline) return;
+    const k = orders.kindOf(e.order);
+    if (e.type === 'new') this.toast(`📦 Đơn hàng mới: ${k.icon} ${k.name}! Xem ở 📋 Nhiệm vụ › Đơn hàng`, 'info');
+    else if (e.type === 'expired') this.toast(`⌛ Trễ hạn đơn "${k.name}" — tiệm mất uy tín`, 'bad');
+  }
+
+  deliverOrder(id) {
+    const res = orders.deliverOrder(this.save, id);
+    if (!res.ok) { this.toast(res.msg, 'warn'); return res; }
+    const o = res.order, k = orders.kindOf(o);
+    if (o.ticket) luck.grantTickets(this.save, { luck: 1 });
+    this.questEvent('order');
+    this.gainXp(o.xp);
+    this.toast(`📦 Đã giao đơn ${k.icon} ${k.name}: +${o.coins} 💰 +${o.xp} XP${o.ticket ? ' +1 🎟️' : ''}`, 'good');
+    this.particles.spawn('sparkle', this.player.root.position.clone().setY(1.2));
+    this.audio?.sfx?.chime?.(5);
+    this.saveMgr.markDirty();
+    this.saveMgr.saveNow('manual');
+    this.emitter.emit('inventory');
+    this.emitter.emit('quests');
+    this.emitter.emit('luck');
+    this.emitter.emit('xp');
+    return res;
+  }
+
   // ---------------- 🍀 Vận May (GĐ15) ----------------
   /** Vé mỗi ngày (ngày thật, giờ VN) — gọi khi vào game và định kỳ */
   claimDailyLuck() {

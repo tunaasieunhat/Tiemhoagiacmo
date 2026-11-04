@@ -21,10 +21,11 @@ import { createRegularsState } from '../systems/regulars.js';
 import { createQuestState } from '../systems/quests.js';
 import { createAutomationState } from '../systems/automation.js';
 import { createLuckState } from '../systems/luck.js';
+import { createOrdersState } from '../systems/orders.js';
 
 const toVkeys = (obj) => Object.fromEntries(Object.entries(obj).map(([k, n]) => [k.includes(':') ? k : vkey(k), n]));
 
-export const SAVE_VERSION = 11;
+export const SAVE_VERSION = 12;
 
 export function newId() {
   if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
@@ -89,6 +90,7 @@ export function createNewSave() {
     village: createVillageState(),   // kết thân với dân làng: điểm tình thân, sự kiện đã xem, dấu cốt truyện (GĐ12)
     land: { deals: {} },             // mua đất của dân làng: trạng thái trả giá trong ngày (GĐ13)
     luck: createLuckState(),         // 🍀 Vận May: vé, mảnh, bảo hiểm, lịch sử mở gói (GĐ15)
+    orders: createOrdersState(),     // 📦 đơn hàng lớn có hạn chót (GĐ16)
     farm: {
       plots: [{ ...createPlot('plot-1'), slot: 0 }], // slot = vị trí trong nông trại; lô mua của dân làng có parcel (GĐ13)
     },
@@ -195,6 +197,18 @@ export const MIGRATIONS = {
   // v10 -> v11 (Giai đoạn 15): Vận May — tặng vé chào mừng
   10: (s) => {
     s.luck = s.luck || createLuckState();
+    return s;
+  },
+  // v11 -> v12 (Giai đoạn 16): độ tươi, độ màu đất, luân canh từng ô; đơn hàng lớn
+  11: (s) => {
+    for (const p of s.farm.plots) for (const t of p.tiles) {
+      t.readyFor = t.readyFor || 0;
+      t.soil = t.soil ?? 100;
+      t.last = t.last ?? null;
+      t.streak = t.streak || 0;
+      t.rotation = !!t.rotation;
+    }
+    s.orders = s.orders || createOrdersState();
     return s;
   },
 };

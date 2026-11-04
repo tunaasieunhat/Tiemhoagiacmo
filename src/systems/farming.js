@@ -9,6 +9,7 @@ import { SEASON_EFFECT, DISEASE, DISEASES, WEATHER } from '../../data/seasons.js
 import { protectUntil } from './weather.js';
 import { parseVkey, flowerKey, variantName } from './variants.js';
 import { formatDuration } from './time.js';
+import { FRESH, SOIL } from '../../data/care.js';
 
 export const TILE_STATES = ['untilled', 'tilled', 'growing', 'ready', 'dead'];
 export const STAGE_NAMES = ['Hạt giống', 'Nảy mầm', 'Ra nụ', 'Nở hoa'];
@@ -28,7 +29,35 @@ export function createTile() {
     sick: null,       // mã bệnh trong DISEASES (data/seasons.js) khi bị bệnh (GĐ5, GĐ14)
     guardUntil: 0,    // đã phun thuốc phòng đến phút game này
     offSeason: false, // gieo trái mùa (không có nhà kính)
+    // --- GĐ16 ---
+    readyFor: 0,      // số phút game hoa đã nở mà chưa hái (độ tươi)
+    soil: 100,        // độ màu của đất 0..100 (giữ lại qua các vụ)
+    last: null,       // loài thu hoạch vụ trước (luân canh)
+    streak: 0,        // số vụ liền trồng cùng 1 loài
+    rotation: false,  // vụ này có luân canh (khác loài vụ trước)
   };
+}
+
+/** Dọn ô cho vụ mới nhưng GIỮ độ màu đất & lịch sử luân canh */
+function resetCrop(tile, extra = {}) {
+  const keep = { soil: tile.soil ?? 100, last: tile.last ?? null, streak: tile.streak || 0 };
+  Object.assign(tile, createTile(), keep, extra);
+}
+
+/** Hệ số lớn theo đất (bạc màu lớn chậm, luân canh lớn nhanh) */
+export function soilGrowMult(tile) {
+  const s = Math.max(0, Math.min(100, tile.soil ?? 100)) / 100;
+  return (SOIL.minGrow + (1 - SOIL.minGrow) * s) * (tile.rotation ? SOIL.rotationGrow : 1);
+}
+
+/** Độ tươi của hoa đã nở: { golden, stale, lose, goldenLeft, staleIn } (phút game) */
+export function freshnessOf(tile) {
+  if (tile.state !== 'ready') return null;
+  const r = tile.readyFor || 0;
+  const goldenLeft = Math.max(0, FRESH.goldenHours * 60 - r);
+  const staleIn = Math.max(0, FRESH.freshHours * 60 - r);
+  const lose = r > FRESH.freshHours * 60 ? 1 + Math.floor((r - FRESH.freshHours * 60) / (FRESH.losePerHours * 60)) : 0;
+  return { golden: goldenLeft > 0, stale: lose > 0, lose, goldenLeft, staleIn };
 }
 
 export function growMinutes(flowerId) {
@@ -73,10 +102,18 @@ export function isWilted(tile) {
 export function qualityOf(tile) {
   const def = FLOWERS[tile.flower];
   const fertRatio = def.fertilizerNeeded > 0 ? Math.min(1, tile.fert / def.fertilizerNeeded) : 1;
-  const score = (tile.health / 100) * 0.6 + fertRatio * 0.4 - (tile.offSeason ? SEASON_EFFECT.outSeasonQualityPenalty : 0);
+  const soilLoss = (1 - Math.max(0, Math.min(100, tile.soil ?? 100)) / 100) * SOIL.qualityLoss;
+  const score = (tile.health / 100) * 0.6 + fertRatio * 0.4 - (tile.offSeason ? SEASON_EFFECT.outSeasonQualityPenalty : 0)
+    - soilLoss + (tile.rotation ? SOIL.rotationQuality : 0);
   if (score >= CARE.quality3Stars) return 3;
   if (score >= CARE.quality2Stars) return 2;
   return 1;
+}
+
+/** Số sao dự kiến nếu hái ngay bây giờ (đã trừ phần héo) */
+export function expectedQuality(tile) {
+  const fr = freshnessOf(tile);
+  return Math.max(1, qualityOf(tile) - (fr?.lose || 0));
 }
 
 export function canFertilize(tile) {
@@ -111,8 +148,10 @@ function stepTile(tile, d, { offline = false, env = {} }) {
   const waterMult = env.waterMult ?? 1;
   if (tile.state === 'tilled') {
     tile.water = Math.max(0, tile.water - d * TILLED_SOIL_DRY_PER_MIN);
+    tile.soil = Math.min(100, (tile.soil ?? 100) + (d / 60) * SOIL.restPerHour); // đất nghỉ thì hồi màu
     return null;
   }
+  if (tile.state === 'ready') tile.readyFor = (tile.readyFor || 0) + d * (offline ? FRESH.offlineFactor : 1);
   if (tile.state !== 'growing' && tile.state !== 'ready') return null;
 
   const def = FLOWERS[tile.flower];
@@ -126,10 +165,11 @@ function stepTile(tile, d, { offline = false, env = {} }) {
   const sickGrow = dis ? (dis.growMult ?? 0) : 1; // bệnh làm cây ngừng / chậm lớn
   if (tile.state === 'growing' && sickGrow > 0) {
     const growMin = CARE.growWhenDry ? d : wetMin;
-    tile.growth += growMin * growSpeed(tile) * growMult * sickGrow;
+    tile.growth += growMin * growSpeed(tile) * growMult * sickGrow * soilGrowMult(tile);
     if (tile.growth >= growMinutes(tile.flower)) {
       tile.growth = growMinutes(tile.flower);
       tile.state = 'ready';
+      tile.readyFor = 0;
       event = 'ready';
     }
   }
@@ -152,8 +192,10 @@ export function till(tile, save) {
   if (!save.tools.shovel) return fail('Bạn cần có xẻng để xới đất!');
   if (tile.state === 'untilled' || tile.state === 'dead') {
     const wasDead = tile.state === 'dead';
-    Object.assign(tile, createTile(), { state: 'tilled' });
-    return { ok: true, msg: wasDead ? 'Đã dọn cây héo và xới đất' : 'Đã xới đất' };
+    const compost = wasDead && tile.flower ? SOIL.compost : 0;
+    resetCrop(tile, { state: 'tilled' });
+    if (compost) tile.soil = Math.min(100, (tile.soil ?? 100) + compost);
+    return { ok: true, msg: wasDead ? `Đã dọn cây héo${compost ? ` · ủ làm phân +${compost} màu đất` : ''}` : 'Đã xới đất' };
   }
   return fail('Ô này không cần xới');
 }
@@ -168,10 +210,11 @@ export function plant(tile, seedKey, save, nowMin, opts = {}) {
   if (def.greenhouseOnly && opts.plot && !opts.plot.greenhouse) return fail(`${def.name} chỉ trồng được trong lô có 🏠 nhà kính`);
   if (!(save.inventory.seeds[vkey] > 0)) return fail(`Hết hạt ${name}!`);
   save.inventory.seeds[vkey] -= 1;
+  const rotation = !!tile.last && tile.last !== species;
   Object.assign(tile, {
-    state: 'growing', flower: species, variant, growth: 0, health: 100, fert: 0, lastFertStage: -1, plantedAt: nowMin,
+    state: 'growing', flower: species, variant, growth: 0, health: 100, fert: 0, lastFertStage: -1, plantedAt: nowMin, readyFor: 0, rotation,
   });
-  return { ok: true, msg: `Đã gieo ${name}` };
+  return { ok: true, msg: `Đã gieo ${name}${rotation ? ' · 🔄 luân canh: lớn nhanh hơn' : ''}`, rotation };
 }
 
 /** Lượng nước sau 1 lần tưới (nâng cấp bình tưới thì nhiều hơn 1) */
@@ -207,6 +250,7 @@ export function fertilize(tile, save) {
   save.inventory.items.fertilizer -= 1;
   tile.fert += 1;
   tile.lastFertStage = stageOf(tile);
+  tile.soil = Math.min(100, (tile.soil ?? 100) + SOIL.fertilize);
   return { ok: true, msg: `Đã bón phân (${tile.fert}/${def.fertilizerNeeded})` };
 }
 
@@ -219,14 +263,25 @@ export function harvest(tile, save, opts = {}) {
   let note = '';
   const dis = tile.sick ? DISEASES[tile.sick] : null;
   if (dis?.qPenalty && quality > 1) { quality = Math.max(1, quality - dis.qPenalty); note = ` (${dis.icon} −${dis.qPenalty}⭐)`; }
+  const rng = opts.rng || Math.random;
+  // độ tươi: để héo thì mất sao; hái trong giờ vàng có cơ hội thêm sao
+  const fr = freshnessOf(tile);
+  const golden = !!fr?.golden;
+  if (fr?.lose) { const before = quality; quality = Math.max(1, quality - fr.lose); if (quality < before) note += ` (🥀 héo −${before - quality}⭐)`; }
+  if (golden && quality < 3 && rng() < FRESH.goldenStarChance) { quality += 1; note += ' ✨ +1⭐'; }
   const W = WEATHER[save.weather?.today?.type];
   let bonus = false;
-  if (W?.bonusStarChance && quality < 3 && (opts.rng || Math.random)() < W.bonusStarChance) { quality += 1; bonus = true; note += ` ${W.icon} +1⭐`; }
+  if (W?.bonusStarChance && quality < 3 && rng() < W.bonusStarChance) { quality += 1; bonus = true; note += ` ${W.icon} +1⭐`; }
   const key = flowerKey(flower, variant, quality);
   save.inventory.flowers[key] = (save.inventory.flowers[key] || 0) + 1;
   save.stats.harvested = (save.stats.harvested || 0) + 1;
-  Object.assign(tile, createTile());
-  return { ok: true, msg: `Thu hoạch ${variantName(flower, variant)} ${'★'.repeat(quality)}${note}`, flower, variant: parseVkey(key.split('|')[0]).variant, quality, bonus };
+  // đất: mỗi vụ mất màu, trồng cùng loài liên tiếp mất nhiều hơn
+  const same = tile.last === flower;
+  const streak = same ? (tile.streak || 0) + 1 : 1;
+  const soil = Math.max(0, (tile.soil ?? 100) - SOIL.harvestCost * (same ? SOIL.sameSpeciesMult : 1));
+  resetCrop(tile);
+  Object.assign(tile, { soil, last: flower, streak });
+  return { ok: true, msg: `Thu hoạch ${variantName(flower, variant)} ${'★'.repeat(quality)}${note}`, flower, variant: parseVkey(key.split('|')[0]).variant, quality, bonus, golden, stale: !!fr?.lose, soil };
 }
 
 /** Phun thuốc: chữa bệnh, hoặc phòng bệnh đến hết ngày mai */

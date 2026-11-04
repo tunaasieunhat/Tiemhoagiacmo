@@ -1,5 +1,7 @@
 // Giao diện HTML phủ lên trên 3D: thanh trên, thanh công cụ, bảng ô đất, kho đồ, cài đặt, thông báo.
 import { FLOWERS, FLOWER_IDS } from '../../data/flowers.js';
+import { SOIL as SOIL_RULES } from '../../data/care.js';
+import { canDeliver as orderCanDeliver } from '../systems/orders.js';
 import { CARE, DEV_TOOLS, GRAPHICS } from '../../data/config.js';
 import * as auth from '../online/auth.js';
 import * as farming from '../systems/farming.js';
@@ -75,7 +77,7 @@ export class Hud {
       this.updateLabBadge();
     });
     em.on('inventory', () => {
-      this.updateToolbar(); this.updateProfile();
+      this.updateToolbar(); this.updateProfile(); this.updateQuestBadge();
       if (this.modal === 'inventory') this.openInventory();
       if (this.modal === 'market') this.marketPanel.render(true);
     });
@@ -428,7 +430,8 @@ export class Hud {
 
   // ---------- nhiệm vụ & trang trí ----------
   updateQuestBadge() {
-    const n = claimableCount(this.game.save);
+    const s = this.game.save;
+    const n = claimableCount(s) + (s.orders?.list || []).filter((o) => orderCanDeliver(s, o)).length;
     const b = $('.q-badge', this.root);
     b.classList.toggle('hidden', !n);
     b.textContent = n;
@@ -1048,7 +1051,12 @@ export class Hud {
       case 'untilled': icon = '🟫'; title = 'Đất chưa xới'; status = 'Dùng xẻng để xới đất trước khi gieo hạt.'; break;
       case 'tilled': icon = '🟤'; title = 'Đất đã xới'; status = tile.water > 0.02 ? 'Đất ẩm, sẵn sàng gieo hạt.' : 'Sẵn sàng gieo hạt.'; break;
       case 'growing': icon = def.icon; title = variants.variantName(tile.flower, tile.variant); status = `${farming.STAGE_NAMES[farming.stageOf(tile)]} · còn ${formatDuration(farming.remainingMinutes(tile))}${tile.water <= 0.001 ? ' (đang ngừng lớn vì khô!)' : ''}`; break;
-      case 'ready': icon = def.icon; title = variants.variantName(tile.flower, tile.variant); status = '✨ Hoa đã nở, thu hoạch thôi!'; break;
+      case 'ready': {
+        icon = def.icon; title = variants.variantName(tile.flower, tile.variant);
+        const f = farming.freshnessOf(tile);
+        status = f.golden ? `✨ Giờ vàng — hái trong ${formatDuration(f.goldenLeft)} có thể +1⭐` : f.stale ? `🥀 Đang héo: mất ${f.lose}⭐ — hái ngay!` : `🌸 Đã nở · còn tươi ${formatDuration(f.staleIn)}`;
+        break;
+      }
       case 'dead': icon = '🥀'; title = `${variants.variantName(tile.flower, tile.variant)} (héo khô)`; status = 'Cây đã chết. Dùng xẻng để dọn.'; break;
       default: icon = '?'; title = '';
     }
@@ -1066,12 +1074,19 @@ export class Hud {
       else if (!inS && !plot.greenhouse) notes.push('<div class="note warn">🍂 Đang trái mùa: lớn chậm hơn</div>');
       else if (inS) notes.push('<div class="note good">🌸 Đúng mùa: lớn nhanh hơn</div>');
     }
+    // GĐ16: độ tươi, đất & luân canh
+    const fr = farming.freshnessOf(tile);
+    if (tile.rotation && ['growing', 'ready'].includes(tile.state)) notes.push('<div class="note good">🔄 Luân canh (khác loài vụ trước): lớn nhanh hơn, hoa đẹp hơn</div>');
+    else if ((tile.streak || 0) >= 2 && tile.state !== 'untilled') notes.push(`<div class="note warn">♻️ Ô này đã trồng ${FLOWERS[tile.last]?.name || 'cùng loài'} ${tile.streak} vụ liền: đất mau bạc màu — vụ sau đổi loài khác nhé</div>`);
+    if (tile.state !== 'untilled') bars.push(bar('🟫 Độ màu đất', (tile.soil ?? 100) / 100, (tile.soil ?? 100) < SOIL_RULES.poorBelow ? '#d9a26b' : '#8b6a4e'));
+    if ((tile.soil ?? 100) < SOIL_RULES.poorBelow && tile.state !== 'untilled') notes.push('<div class="note warn">🟫 Đất bạc màu: cây lớn chậm, khó 3★. Để đất nghỉ, bón phân, dọn cây héo ủ phân, hoặc trồng loài khác</div>');
     if (['growing', 'ready'].includes(tile.state)) {
       bars.push(bar('🌱 Lớn', farming.progressOf(tile), '#8fd18b'));
       bars.push(bar('💧 Nước', tile.water / waterCapacity(g.save), tile.water < CARE.thirstyBelow ? '#f29a8a' : '#6fbbe8'));
       bars.push(bar('❤️ Sức khỏe', tile.health / 100, tile.health < CARE.wiltBelow ? '#f29a8a' : '#f6a6b9'));
       bars.push(`<div class="kv"><span>🧪 Phân bón</span><b>${tile.fert}/${def.fertilizerNeeded}</b></div>`);
-      bars.push(`<div class="kv"><span>⭐ Chất lượng dự kiến</span><b class="stars">${'★'.repeat(farming.qualityOf(tile))}${'☆'.repeat(3 - farming.qualityOf(tile))}</b></div>`);
+      const eq = farming.expectedQuality(tile);
+      bars.push(`<div class="kv"><span>⭐ Chất lượng dự kiến</span><b class="stars">${'★'.repeat(eq)}${'☆'.repeat(3 - eq)}</b></div>`);
       const vk = variants.vkey(tile.flower, tile.variant);
       const mean = g.save.book?.meanings[vk] ? variants.meaningsOf(tile.flower, tile.variant).map(variants.meaningText).join(', ') : '??? (khám phá khi bán cho khách)';
       bars.push(`<div class="hint">Cần tưới ${def.waterPerDay} lần/ngày · ${def.growHours} giờ để nở · Ý nghĩa: ${esc(mean)}</div>`);
@@ -1099,8 +1114,8 @@ export class Hud {
     return `
       <div class="sheet-head"><span class="big">${icon}</span><div><b>${esc(title)}</b><small>${status}</small></div>
         <button class="round sm" data-act="close-tile" aria-label="Đóng">✕</button></div>
-      <div class="bars">${bars.join('')}</div>
       ${notes.join('')}
+      <div class="bars">${bars.join('')}</div>
       <div class="actions">${actions}${!plot.greenhouse && (plot.coverUntil || 0) < protectUntil(now) && tile.state !== 'untilled' ? `<button class="btn" data-act="cover-plot">⛺ Che bạt cả lô (${g.save.inventory.items.cover || 0})</button>` : ''}</div>`;
   }
 

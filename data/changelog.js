@@ -4,6 +4,15 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.17.0',
+    notes: [
+      '🥀 Độ tươi: hoa nở để quá 6 giờ không hái sẽ héo dần và mất sao · ✨ hái trong "giờ vàng" (2 giờ đầu) có 30% cơ hội +1⭐',
+      '🐛 Bắt sâu: sâu bò lên luống lúc bạn đang chơi — chạm để bắt lấy tiền, bắt liên tiếp được combo, hiếm có 🐞 bọ rùa vàng tặng 🧩',
+      '🟫 Độ màu đất & 🔄 luân canh: trồng mãi 1 loài đất bạc màu (lớn chậm, khó 3⭐); đổi loài thì lớn nhanh, hoa đẹp hơn; dọn cây héo ủ thành phân',
+      '📦 Đơn hàng lớn có hạn chót (từ cấp 3): tiệc cưới, khai trương... thưởng lớn + có thể kèm 🎟️ · 🔥 combo thu hoạch nhanh · 🧬 2% rơi hạt đột biến màu lạ',
+    ],
+  },
+  {
     version: '0.16.0',
     notes: [
       '⚖️ Cân bằng lại game: lên cấp chậm hơn ~3 lần, đồ trong Chợ đắt hơn (nâng cấp, đất, nhà kính, máy móc, trang trí, hạt giống)',

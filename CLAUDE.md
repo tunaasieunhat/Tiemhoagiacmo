@@ -16,7 +16,7 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
 - ✅ GĐ1–15 xong (xem `README.md`). 0.16.0 (04/11/2026): cân bằng lại theo góp ý "quá dễ" — XP mỗi việc giảm, giá Chợ tăng,
   Vận May hiếm hơn (vàng 3%, bảo hiểm 50), xỏ kim dễ hơn. **Giữ nguyên `LEVEL_XP`** vì SQL `level_from_xp` (migration GĐ8) dùng
   cùng bảng — muốn đổi phải thêm migration mới. Mô phỏng tiến độ: chạy thử với số liệu `data/*` (cấp 10 ≈ 3 giờ chơi chăm).
-  Đã đề xuất GĐ16 (chăm sóc có kỹ năng), GĐ17 (mini game hay hơn), GĐ18 (mục tiêu dài hạn) — chờ người dùng chọn.
+  ✅ GĐ16 (0.17.0) chăm sóc có kỹ năng. Còn đề xuất: GĐ17 (mini game hay hơn), GĐ18 (mục tiêu dài hạn) — chờ người dùng chọn.
 - Đưa lên mạng: Netlify (`netlify.toml`, `docs/HUONG_DAN_DUA_LEN_MANG.md`) — trang thật: https://tiem-hoa-giac-mo.netlify.app
   (Netlify đang deploy nhánh `ccr-845954e0-2hh7a1`; `main` chỉ có commit đầu tiên). APK: Capacitor + GitHub Actions
   (`.github/workflows/android.yml`, `android-keystore.yml`, `docs/HUONG_DAN_APK.md`); thư mục `android/` KHÔNG commit,
@@ -111,6 +111,12 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   (dùng `NORMAL_FLOWER_IDS`), không lai tạo. Mô hình + hiệu ứng `src/models/luckFlowers.js` (`root.userData.fx`, chạy trong
   `farmView.update`, `farmView.night`; vật liệu riêng ⇒ `disposeLuckFx` khi bỏ cây). Đồ trang trí `luck: true` (mỗi món 1 cái).
   Edge Function có thể tự deploy qua `.github/workflows/supabase-functions.yml` khi người dùng thêm secret `SUPABASE_ACCESS_TOKEN`.
+- **Chăm sóc có kỹ năng** (GĐ16): số liệu `data/care.js` (FRESH, BUGS, SOIL, HARVEST_FUN) + `data/orders.js`. Ô đất thêm
+  `readyFor` (phút đã nở, offline héo chậm), `soil` 0–100, `last`/`streak`/`rotation` (luân canh) — SAVE_VERSION 12. Reset ô
+  phải qua `resetCrop` trong `farming.js` để GIỮ độ màu đất. `freshnessOf`, `expectedQuality`, `soilGrowMult` ở `farming.js`.
+  Sâu chỉ sống trong bộ nhớ (`game.bugs`, `bugTick` khi online, `BugView` ở `src/render/bugs.js`, pick `bug` ưu tiên trong
+  `pickRoots`). Đơn hàng `src/systems/orders.js` (`save.orders`; offline thì dời hạn), UI thẻ "📦 Đơn hàng" trong bảng Nhiệm vụ.
+  Combo thu hoạch + hạt đột biến: `game.harvestFun`. Biểu tượng ô `golden` / `stale` ở `src/render/icons.js`.
 - **Dò chạm** (0.9.7): `game.pickAt` bỏ qua vật ẩn (three.js không tự bỏ), chạm sát mặt đất / khe thì lấy ô dưới ngón tay
   (`farmView.tileNear`). (0.15.1) Vùng chạm nhà (`house`) to hơn nhà ⇒ trúng nhà thì dò tiếp, có dân làng phía sau thì ưu tiên
   dân làng; nhiều dân làng trùng tia chạm ⇒ `nearestVillagerHit` chọn người gần tia nhất. Bảng nhà: chủ nhà làm việc ngay trước
@@ -139,7 +145,7 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
 - Code chỉ dành cho app Android nằm ở `src/online/native.js` (kiểm tra `isNative()`); trên web các hàm không làm gì.
 - Đồ họa theo mức `GRAPHICS` trong `data/config.js` (`settings.quality`: auto/high/medium/low); bundle build thành
   1 file JS (`inlineDynamicImports`) để ghép được bản xem thử.
-- **Save có phiên bản** (hiện `SAVE_VERSION = 11`). Đổi cấu trúc save ⇒ tăng `SAVE_VERSION` và thêm
+- **Save có phiên bản** (hiện `SAVE_VERSION = 12`). Đổi cấu trúc save ⇒ tăng `SAVE_VERSION` và thêm
   `MIGRATIONS[phiên_bản_cũ]` trong `src/save/schema.js`; **không bao giờ làm mất tiến độ**. `fillDefaults` tự bổ sung
   trường thiếu (vì vậy số lượng hạt về 0 thì giữ khóa với giá trị 0, không xóa khóa).
 - **Mã vật phẩm**: hạt `"loài:màu"` (vd `rose:red`), hoa trong kho `"loài:màu|sao"` (vd `rose:red|3`).

@@ -7,8 +7,8 @@ function drawIcon(kind) {
   const c = document.createElement('canvas');
   c.width = c.height = 128;
   const x = c.getContext('2d');
-  const bg = { thirsty: '#e3f4ff', ready: '#fff6d6', dead: '#f3e6da', fert: '#f1ead8', sick: '#eaf7dc' }[kind];
-  const border = { thirsty: '#6fbbe8', ready: '#f4b42a', dead: '#b39a74', fert: '#b8935f', sick: '#7aa83c' }[kind];
+  const bg = { thirsty: '#e3f4ff', ready: '#fff6d6', dead: '#f3e6da', fert: '#f1ead8', sick: '#eaf7dc', golden: '#fff3b0', stale: '#efe3d6' }[kind];
+  const border = { thirsty: '#6fbbe8', ready: '#f4b42a', dead: '#b39a74', fert: '#b8935f', sick: '#7aa83c', golden: '#ff9f1c', stale: '#a8875f' }[kind];
   x.fillStyle = bg; x.strokeStyle = border; x.lineWidth = 8;
   x.beginPath(); x.arc(64, 58, 46, 0, Math.PI * 2); x.fill(); x.stroke();
   // đuôi bong bóng
@@ -20,6 +20,18 @@ function drawIcon(kind) {
   } else if (kind === 'ready') {
     x.fillStyle = '#f7b500';
     star(x, 64, 60, 32, 14, 5);
+  } else if (kind === 'golden') {
+    // giờ vàng: ngôi sao vàng có tia sáng
+    x.strokeStyle = '#ffb703'; x.lineWidth = 5; x.lineCap = 'round';
+    for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; x.beginPath(); x.moveTo(64 + Math.cos(a) * 30, 58 + Math.sin(a) * 30); x.lineTo(64 + Math.cos(a) * 40, 58 + Math.sin(a) * 40); x.stroke(); }
+    x.fillStyle = '#ffb703';
+    star(x, 64, 58, 26, 11, 5);
+  } else if (kind === 'stale') {
+    // hoa rũ: bông nghiêng, cánh nâu
+    x.strokeStyle = '#7c9a55'; x.lineWidth = 6; x.lineCap = 'round';
+    x.beginPath(); x.moveTo(52, 88); x.quadraticCurveTo(56, 50, 80, 50); x.stroke();
+    x.fillStyle = '#c7a37a';
+    [[80, 60], [90, 52], [76, 46], [86, 66]].forEach(([cx, cy]) => { x.beginPath(); x.ellipse(cx, cy, 10, 7, 0.6, 0, 7); x.fill(); });
   } else if (kind === 'dead') {
     x.strokeStyle = '#8a6c4a'; x.lineWidth = 10; x.lineCap = 'round';
     x.beginPath(); x.moveTo(44, 38); x.lineTo(84, 78); x.moveTo(84, 38); x.lineTo(44, 78); x.stroke();

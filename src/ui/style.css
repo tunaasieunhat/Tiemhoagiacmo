@@ -986,3 +986,11 @@ h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
   .stack .si { font-size: 20px; }
   .stack .step b { min-width: 18px; }
 }
+
+/* 📦 Đơn hàng (GĐ16) */
+.mk-item.ord { align-items: flex-start; }
+.mk-item.ord.done { border-color: #7cc27f; background: #f3fbef; }
+.ord-line { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 700; padding: 2px 8px; margin-top: 2px; border-radius: 8px; background: #fff6ec; }
+.ord-line.ok { background: #e5f6dd; color: #3f8b4a; }
+.mk-info small .bad, .mk-info .bad { color: #d0675a; }
+.mk-body:has(> .ord) { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }

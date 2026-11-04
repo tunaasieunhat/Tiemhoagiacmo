@@ -6,7 +6,8 @@ import { mat } from '../models/materials.js';
 import { grassTuft } from '../models/environment.js';
 import { buildPlant } from '../models/flowers.js';
 import { animateLuckFx, disposeLuckFx } from '../models/luckFlowers.js';
-import { stageOf, isThirsty, isWilted, isSick } from '../systems/farming.js';
+import { stageOf, isThirsty, isWilted, isSick, freshnessOf } from '../systems/farming.js';
+import { SOIL as SOIL_RULES } from '../../data/care.js';
 import { uniqueMat } from '../models/materials.js';
 import { PLOT_SLOTS, plotPosition } from './world.js';
 import { iconMaterial } from './icons.js';
@@ -16,6 +17,9 @@ const SOIL = {
   untilled: '#cfae86',
   dry: '#a7714f', dryRidge: '#94603f',
   wet: '#7a4f3a', wetRidge: '#69432f',
+  // đất bạc màu (GĐ16): nhạt và xám hơn
+  poorDry: '#b8987a', poorDryRidge: '#a5876a',
+  poorWet: '#8e7461', poorWetRidge: '#7d6453',
 };
 const TILE_H = 0.22;
 const _tmp = new THREE.Vector3();
@@ -183,15 +187,17 @@ export class FarmView {
 
   syncTile(v, tile, instant) {
     const wet = tile.water > 0.02;
-    const soilColor = tile.state === 'untilled' ? SOIL.untilled : wet ? SOIL.wet : SOIL.dry;
+    const poor = (tile.soil ?? 100) < SOIL_RULES.poorBelow;
+    const soilColor = tile.state === 'untilled' ? SOIL.untilled : wet ? (poor ? SOIL.poorWet : SOIL.wet) : (poor ? SOIL.poorDry : SOIL.dry);
     v.soil.material = mat(soilColor);
     v.ridges.visible = tile.state !== 'untilled';
-    if (v.ridges.visible) v.ridges.children.forEach((r) => { r.material = mat(wet ? SOIL.wetRidge : SOIL.dryRidge); });
+    if (v.ridges.visible) v.ridges.children.forEach((r) => { r.material = mat(wet ? (poor ? SOIL.poorWetRidge : SOIL.wetRidge) : (poor ? SOIL.poorDryRidge : SOIL.dryRidge)); });
     v.tufts.visible = tile.state === 'untilled';
 
     const stage = stageOf(tile);
     const hasPlant = tile.state === 'growing' || tile.state === 'ready' || tile.state === 'dead';
-    const wilted = isWilted(tile);
+    const fr = freshnessOf(tile);
+    const wilted = isWilted(tile) || !!fr?.stale; // hoa để quá lâu cũng rũ xuống
     const key = hasPlant ? `${tile.flower}:${tile.variant}|${tile.state === 'dead' ? 'dead' : stage}|${wilted ? 1 : 0}` : '';
     if (key !== v.key) {
       if (v.plant) { v.plantHolder.remove(v.plant); disposeLuckFx(v.plant.userData.fx); }
@@ -208,7 +214,7 @@ export class FarmView {
     let iconKind = '';
     if (tile.state === 'dead') iconKind = 'dead';
     else if (isSick(tile)) iconKind = 'sick';
-    else if (tile.state === 'ready') iconKind = 'ready';
+    else if (tile.state === 'ready') iconKind = fr?.golden ? 'golden' : fr?.stale ? 'stale' : 'ready';
     else if (isThirsty(tile)) iconKind = 'thirsty';
     if (iconKind !== v.iconKey) {
       v.icon.visible = !!iconKind;
