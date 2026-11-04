@@ -849,3 +849,140 @@ h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
   .seed small { font-size: 12px; }
   .seed b { font-size: 12px; }
 }
+
+/* ---------- Bảng gọn trên điện thoại xoay ngang (0.15.3) ----------
+   Mục tiêu: hiện đủ nội dung, hạn chế phải kéo. Bảng rộng gần hết màn hình; bảng có thẻ (Chợ, Sổ tay, Vận May...)
+   chuyển tiêu đề + thẻ sang cột trái; danh sách món xếp nhiều cột. */
+.m-side, .m-main { display: contents; }
+@media (max-height: 480px) {
+  .modal-wrap { padding: 4px calc(6px + var(--safe-right)) 4px calc(6px + var(--safe-left)); }
+  .modal, .modal.wide { width: min(860px, 100%); max-height: calc(100% - 2px); padding: 10px 14px; border-radius: 20px; border-width: 2px; }
+  .modal h2 { font-size: 19px; margin: 0 40px 6px 0; }
+  .modal h3 { font-size: 14px; margin: 8px 0 4px; }
+  .modal p { margin: 4px 0; }
+  .modal .close { top: 7px; right: 7px; width: 32px; height: 32px; font-size: 14px; }
+  .btn.wide { margin-top: 6px; padding-top: 8px; padding-bottom: 8px; }
+  .btn { padding: 8px 12px; font-size: 14px; }
+
+  /* bảng có thẻ: 2 cột (trái: tiêu đề + thẻ, phải: nội dung tự cuộn) */
+  .modal.has-side { display: grid; grid-template-columns: 150px 1fr; gap: 12px; height: calc(100% - 2px); overflow: hidden; padding: 10px 8px 10px 12px; }
+  .modal.has-side .m-side { display: flex; flex-direction: column; gap: 6px; min-height: 0; overflow-y: auto; }
+  .modal.has-side .m-main { display: block; min-height: 0; overflow-y: auto; padding: 0 6px 4px 0; }
+  .modal.has-side h2 { margin: 0; font-size: 17px; line-height: 1.15; }
+  .modal.has-side .mk-tabs { flex-direction: column; flex-wrap: nowrap; gap: 3px; margin: 0; }
+  .modal.has-side .mk-tabs button { text-align: left; padding: 6px 10px; font-size: 12.5px; border-radius: 12px; }
+  .modal.has-side .m-side .close { position: static; order: 99; margin-top: auto; flex: none; align-self: flex-start; }
+  .modal.has-side .mk-wallet, .modal.has-side .lk-wallet { flex-wrap: wrap; gap: 4px; margin: 0; font-size: 12px; }
+  .modal.has-side .lk-wallet span { padding: 2px 7px; font-size: 12px; }
+  .modal.has-side .book-prog { margin: 0; }
+  .modal.has-side .book-prog small { font-size: 11px; }
+
+  /* danh sách món: nhiều cột */
+  .mk-body { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: 6px; align-items: stretch; }
+  .mk-body > *:not(.mk-item) { grid-column: 1 / -1; }
+  .mk-body > h3 { margin: 4px 0 0; }
+  .mk-item { padding: 6px 8px; gap: 8px; border-radius: 14px; border-width: 1.5px; }
+  .mk-icon { font-size: 24px; width: 30px; }
+  .mk-info b { font-size: 13px; }
+  .mk-info small { font-size: 11px; }
+  .mk-buy { gap: 3px; }
+  .mk-buy .btn { padding: 4px 9px; font-size: 12px; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; }
+  .cell { padding: 5px; border-radius: 12px; }
+  .cell span { font-size: 22px; }
+  .empty-shop { font-size: 26px; padding: 6px; }
+  .empty-shop p { font-size: 13px; }
+
+  /* sổ tay */
+  .bk-sec h3 { margin: 6px 0 3px; }
+  .bk-grid { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 4px; }
+  .bk-card { padding: 5px; gap: 1px; border-radius: 12px; }
+  .bk-card b { font-size: 12.5px; }
+  .bk-card small { font-size: 10.5px; }
+  .mile { font-size: 11px; }
+
+  /* dự báo */
+  .seasons-row span { padding: 3px 2px; font-size: 12px; }
+  .fc-card { padding: 7px 9px; gap: 2px; border-radius: 14px; }
+  .todo { padding: 5px 8px; }
+  .todo .btn { padding: 5px 10px; font-size: 12px; }
+  .fests li { padding: 4px 8px; font-size: 12px; }
+
+  /* dân làng */
+  .vg-say { padding: 7px 10px; margin: 5px 0; font-size: 14px; }
+  .vg-acts { margin: 4px 0; gap: 6px; }
+}
+
+/* Sổ tay: hàng chọn loài hoa (0.15.3) */
+.sp-chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 4px; margin: 6px 0 2px; }
+.sp-chip { display: flex; flex-direction: column; align-items: center; padding: 3px 0 2px; border-radius: 12px; background: #fff; border: 2px solid var(--line); line-height: 1.1; }
+.sp-chip span { font-size: 20px; }
+.sp-chip small { font-size: 10px; font-weight: 800; color: var(--ink-soft); }
+.sp-chip.on { border-color: var(--pink); background: #fff0f4; }
+.sp-chip.full small { color: #3f9b6b; }
+/* 2 cột (Cài đặt, Dự báo) — màn hình thường vẫn 1 cột */
+.two-cols > div > :first-child { margin-top: 0; }
+@media (max-height: 480px) {
+  .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+  .mk-body > .rg-card, .mk-body > .lk-tier { grid-column: auto; }
+  .mk-body { grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); }
+  .sp-chips { grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 3px; }
+  .sp-chip span { font-size: 17px; }
+  .modal.m-notebook .bk-grid { grid-template-columns: repeat(5, 1fr); }
+  .modal.m-notebook .bk-card .mrow { flex-wrap: wrap; justify-content: center; }
+  .rg-card { padding: 6px 8px; gap: 8px; margin: 0; }
+  .lk-tier { margin: 0; }
+  .lk-pack { padding: 8px 10px; margin-bottom: 6px; }
+  .lk-box { font-size: 34px; width: 44px; }
+  .profile-edit { gap: 8px; }
+  .audio-row { margin: 2px 0; }
+  .vg-head { margin-bottom: 2px; }
+}
+@media (max-height: 480px) {
+  /* thẻ món: tên + mô tả ở trên, giá + nút ở hàng dưới (không bóp chữ) */
+  .mk-item:has(> .mk-icon):has(> .mk-buy) { display: grid; grid-template-columns: 28px 1fr; column-gap: 8px; row-gap: 3px; align-items: start; align-content: start; }
+  .mk-item:has(> .mk-icon):has(> .mk-buy) > .mk-icon { font-size: 22px; width: 28px; }
+  .mk-item:has(> .mk-icon):has(> .mk-buy) > .mk-buy { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 4px; margin-top: auto; }
+  .mk-item:has(> .mk-icon):has(> .mk-buy) > .mk-buy .price { margin-right: auto; font-weight: 800; font-size: 13px; }
+  .mk-item .mk-info small { line-height: 1.25; }
+}
+@media (max-height: 480px) {
+  .modal.m-notebook .mk-body:has(> .rg-card) { grid-template-columns: 1fr 1fr; }
+  .two-cols:has(.fc-grid) { grid-template-columns: 1.15fr 1fr; }
+}
+@media (max-height: 480px) and (max-width: 780px) {
+  .modal.has-side { grid-template-columns: 128px 1fr; gap: 8px; }
+  .modal.has-side .mk-tabs button { padding: 5px 8px; font-size: 12px; }
+  .mk-body { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+}
+
+/* Gói bó hoa: điện thoại xoay ngang chia 2 cột (trái: yêu cầu + xem trước, phải: chọn hoa & giấy gói) */
+.comp-grid, .comp-left, .comp-right { display: contents; }
+@media (max-height: 480px) {
+  .modal.m-shop:has(.comp-grid) { display: flex; flex-direction: column; height: calc(100% - 2px); overflow: hidden; padding: 8px 10px 0; }
+  .modal.m-shop:has(.comp-grid) .m-main { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .comp-grid { display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); gap: 10px; flex: 1; min-height: 0; }
+  .comp-left, .comp-right { display: block; min-height: 0; overflow-y: auto; padding-right: 2px; }
+  .comp-right h3:first-child { margin-top: 0; }
+  .comp-head { gap: 8px; padding-right: 36px; }
+  .comp-head .story-snip { font-size: 12px; margin: 0; }
+  .comp-head p { font-size: 13px; }
+  .comp-main { margin-top: 6px; gap: 8px; padding: 6px; border-radius: 16px; }
+  .preview { width: 104px; }
+  .preview svg { width: 104px; height: 104px; }
+  .checks { font-size: 12px; gap: 1px; }
+  .stacks { gap: 4px; }
+  .stack { padding: 4px 6px; border-radius: 12px; border-width: 1.5px; }
+  .stack .round.sm { width: 30px; height: 30px; }
+  .wrap { padding: 4px 8px; font-size: 12px; border-radius: 12px; }
+  .comp-tip { display: none; }
+  .comp-foot { position: static; margin: 6px -10px 0; padding: 6px 10px; flex: none; }
+  .comp-foot .btn { padding: 8px; }
+}
+@media (max-height: 480px) {
+  .stack .sn { display: flex; flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 6px; row-gap: 0; font-size: 13px; line-height: 1.25; }
+  .stack .sn small { font-size: 11px; }
+  .stack .sn .mrow { width: 100%; margin-top: 1px; }
+  .stack .si { font-size: 20px; }
+  .stack .step b { min-width: 18px; }
+}

@@ -42,7 +42,7 @@ export class FriendsPanel {
   }
 
   render(keepScroll = false) {
-    const m = this.hud.root.querySelector('.modal');
+    const m = this.hud.scrollBox();
     const top = keepScroll && this.hud.modal === 'friends' ? m?.scrollTop || 0 : 0;
     const acc = this.game.account || {};
     let body;
@@ -57,7 +57,7 @@ export class FriendsPanel {
       return `<button class="${id === this.tab ? 'on' : ''}" data-fr="tab" data-id="${id}">${label}${n ? ` <span class="pill">${n}</span>` : ''}</button>`;
     }).join('')}</div>` : '';
     this.hud.openModal('friends', `<h2>👥 Bạn bè</h2>${tabs}<div class="mk-body">${body}</div>`, 'wide');
-    if (top) this.hud.root.querySelector('.modal').scrollTop = top;
+    if (top) this.hud.scrollBox().scrollTop = top;
   }
 
   person(p, extra = '', buttons = '') {

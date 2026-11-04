@@ -53,7 +53,7 @@ export class RankPanel {
   }
 
   render(keep = false) {
-    const m = this.hud.root.querySelector('.modal');
+    const m = this.hud.scrollBox();
     const top = keep && this.hud.modal === 'rank' ? m?.scrollTop || 0 : 0;
     let body;
     if (!this.online) {
@@ -63,7 +63,7 @@ export class RankPanel {
     } else body = this.tab === 'board' ? this.boardHtml() : this.contestHtml();
     const tabs = `<div class="mk-tabs"><button class="${this.tab === 'board' ? 'on' : ''}" data-rk="tab" data-id="board">🏆 Xếp hạng</button><button class="${this.tab === 'contest' ? 'on' : ''}" data-rk="tab" data-id="contest">🌸 Cuộc thi hoa</button></div>`;
     this.hud.openModal('rank', `<h2>🏆 Vinh danh</h2>${tabs}<div class="mk-body">${body}</div>`, 'wide');
-    if (top) this.hud.root.querySelector('.modal').scrollTop = top;
+    if (top) this.hud.scrollBox().scrollTop = top;
   }
 
   seg(name, opts) {

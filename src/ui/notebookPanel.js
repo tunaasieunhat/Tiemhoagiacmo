@@ -61,7 +61,14 @@ export class NotebookPanel {
   flowers() {
     const s = this.save;
     const ms = BOOK_MILESTONES.map((m) => `<span class="mile ${s.book.milestones.includes(m.pct) ? 'on' : ''}" title="${esc(m.text)}">${m.pct}% · ${m.coins}💰</span>`).join('');
-    const sections = FLOWER_IDS.map((sp) => {
+    // chọn 1 loài để xem (bảng gọn, không phải kéo qua cả 22 loài)
+    const cur = FLOWERS[this.sp] ? this.sp : FLOWER_IDS[0];
+    const chips = FLOWER_IDS.map((id) => {
+      const all = Object.keys(VARIANTS[id]);
+      const got = all.filter((v) => s.book.found[`${id}:${v}`]).length;
+      return `<button class="sp-chip ${id === cur ? 'on' : ''} ${got === all.length ? 'full' : ''}" data-nb="sp" data-id="${id}" title="${esc(FLOWERS[id].name)}"><span>${FLOWERS[id].icon}</span><small>${got}/${all.length}</small></button>`;
+    }).join('');
+    const sections = [cur].map((sp) => {
       const f = FLOWERS[sp];
       const cards = Object.entries(VARIANTS[sp]).map(([v, d]) => {
         const k = `${sp}:${v}`;
@@ -84,7 +91,7 @@ export class NotebookPanel {
       const locked = s.player.level < f.unlockLevel;
       return `<div class="bk-sec"><h3>${f.icon} ${f.name} <small class="muted">${f.luck ? '🍀 Cây Vận May · trồng được mọi mùa' : f.seasons.map((x) => SEASON_NAMES[x]).join(', ')}${locked ? ` · 🔒 cấp ${f.unlockLevel}` : ''}</small></h3><div class="bk-grid">${cards}</div></div>`;
     }).join('');
-    return `<div class="miles">${ms}</div>${sections}`;
+    return `<div class="miles">${ms}</div><div class="sp-chips">${chips}</div>${sections}`;
   }
 
   meanings() {
@@ -116,5 +123,6 @@ export class NotebookPanel {
 
   onAction(act, el) {
     if (act === 'tab') { this.tab = el.dataset.id; this.render(); }
+    if (act === 'sp') { this.sp = el.dataset.id; this.render(); }
   }
 }

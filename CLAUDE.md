@@ -122,6 +122,11 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   Kiểm tra giao diện ở khổ 844×390 và 740×360 (không còn cần khổ dọc 390×800 cho điện thoại).
   (0.15.2) Cột nút trái = `.nav-btns` > nút `☰` (`data-act="nav-toggle"`, lưu `localStorage` khóa `thgm:nav`) + `.nav-grid`;
   khi `max-height: 480px` nút 36px 2 cột đặt dưới ví, thanh công cụ `width: auto` nút 50×40, thanh hạt 1 hàng cuộn ngang.
+  (0.15.3) Bảng: `hud.openModal` bọc nội dung thành `.m-side` (h2/.mk-wallet/.lk-wallet/.book-prog/.mk-tabs đứng đầu) +
+  `.m-main`, lớp `m-<tên>`; có `.mk-tabs` ⇒ `has-side`. Màn thường 2 phần `display: contents` (như cũ); điện thoại ngang:
+  cột trái thẻ + cột phải tự cuộn, `.mk-body` lưới nhiều cột (`.mk-item` không phải thẻ thì chiếm cả hàng). Giữ vị trí cuộn
+  dùng `hud.scrollBox()`. Bố cục 2 cột tùy bảng: `.two-cols` (Cài đặt, Dự báo), `.comp-grid` (gói bó hoa). Đo bảng nào
+  phải kéo: bài thử mở từng bảng ở 844×390 / 740×360, so `scrollHeight` với `clientHeight`.
 - **App Android toàn màn hình** (0.9.5): `scripts/android-setup.mjs` viết lại `MainActivity.java` (ẩn status + navigation bar,
   `BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE`, ẩn lại khi resume/focus) + `capacitor.config.json` `SystemBars.hidden: true`.
   CSS dùng `--safe-top/bottom/left/right` = max(env(safe-area-inset-*), --safe-area-inset-* do Capacitor gửi) để né tai thỏ.

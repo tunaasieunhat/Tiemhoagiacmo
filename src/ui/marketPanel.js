@@ -42,7 +42,7 @@ export class MarketPanel {
   }
 
   render(keepScroll = false) {
-    const m = this.hud.root.querySelector('.modal');
+    const m = this.hud.scrollBox();
     const top = keepScroll && this.hud.modal === 'market' ? m?.scrollTop || 0 : 0;
     const s = this.save;
     const body = { seeds: this.seeds, supplies: this.supplies, upgrades: this.upgrades, protect: this.protect, land: this.land, auto: this.auto, decor: this.decor, sell: this.sell }[this.tab].call(this);
@@ -51,7 +51,7 @@ export class MarketPanel {
       <div class="mk-wallet"><span>💰 <b>${s.player.coins}</b></span><span>⭐ Cấp <b>${s.player.level}</b></span></div>
       <div class="mk-tabs" role="tablist">${TABS.map((t) => `<button class="${t.id === this.tab ? 'on' : ''}" data-mk="tab" data-id="${t.id}" role="tab">${t.label}</button>`).join('')}</div>
       <div class="mk-body">${body}</div>`, 'wide');
-    if (top) this.hud.root.querySelector('.modal').scrollTop = top;
+    if (top) this.hud.scrollBox().scrollTop = top;
   }
 
   // ----- thẻ hàng dùng chung -----

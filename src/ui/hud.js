@@ -234,6 +234,7 @@ export class Hud {
     if (b.dataset.do) { this.doAction(b.dataset.do); return; }
     switch (b.dataset.act) {
       case 'inventory': this.openInventory(); break;
+      case 'inv-tab': this.invTab = b.dataset.id; this.openInventory(); break;
       case 'settings': this.openSettings(); break;
       case 'close-modal': this.closeModal(); break;
       case 'close-tile': g.select(null); break;
@@ -937,12 +938,15 @@ export class Hud {
       <h2>📅 Lịch & Dự báo</h2>
       <div class="seasons-row">${seasonsRow}</div>
       <p class="muted small">Năm ${cal.year} · ${cal.season.name}, ngày ${cal.dayOfSeason}/7</p>
+      <div class="two-cols"><div>
       <div class="fc-grid">${dayCard('Hôm nay', w.today)}${dayCard('Ngày mai', tm)}</div>
       ${todo.length ? `<h3>Việc nên làm</h3><div class="todos">${todo.join('')}</div>` : '<p class="muted">Không có gì đáng lo, trồng hoa thôi! 🌷</p>'}
+      </div><div>
       <h3>Hoa theo mùa</h3>
       <p class="small"><b>Đúng mùa</b> (lớn nhanh, dễ đạt 3★): ${inS.map((f) => `${FLOWERS[f].icon} ${FLOWERS[f].name}`).join(', ') || '—'}</p>
       <p class="small muted"><b>Trái mùa</b> (lớn chậm, khó 3★ — trừ khi trồng trong nhà kính): ${outS.map((f) => `${FLOWERS[f].icon} ${FLOWERS[f].name}`).join(', ') || '—'}</p>
-      <h3>Lễ hội sắp tới</h3><ul class="fests">${fests || '<li>—</li>'}</ul>`);
+      <h3>Lễ hội sắp tới</h3><ul class="fests">${fests || '<li>—</li>'}</ul>
+      </div></div>`);
   }
 
   openShop(customerId = null) {
@@ -1109,23 +1113,29 @@ export class Hud {
       return `<div class="cell"><span>${FLOWERS[f.species].icon}${vdot(f.species, f.variant)}</span><small>${esc(variants.variantName(f.species, f.variant))} <i class="stars">${'★'.repeat(f.q)}</i></small><b>×${n}</b>
         <button class="mini" data-act="sell" data-k="${k}" data-n="${n}" data-total="${wholesalePrice(k) * n}">Bán sỉ</button></div>`;
     }).join('') || '<p class="muted">Chưa có hoa nào. Hãy trồng và thu hoạch nhé!</p>';
-    this.openModal('inventory', `
-      <h2>🎒 Kho đồ</h2>
-      <h3>Hoa đã thu hoạch</h3><div class="grid">${flowers}</div>
-      <p class="muted small">Bán sỉ nhanh nhưng chỉ được khoảng một nửa giá. Bán cho khách ở 🏪 Tiệm Hoa lời hơn và có uy tín.</p>
-      <h3>Hạt giống</h3><div class="grid">${seeds}</div>
-      <h3>Giấy gói & ruy băng</h3><div class="grid">${[
-        ...Object.entries(PAPERS).map(([id, w]) => `<div class="cell"><span class="swatch-dot" style="--c:${w.color}"></span><small>${w.name}</small><b>${w.free ? '∞' : '×' + (s.inventory.papers[id] || 0)}</b></div>`),
-        ...Object.entries(RIBBONS).map(([id, w]) => `<div class="cell"><span class="swatch-dot ribbon" style="--c:${w.color}"></span><small>${w.name}</small><b>${w.free ? '∞' : '×' + (s.inventory.ribbons[id] || 0)}</b></div>`),
-      ].join('')}</div>
-      <h3>Vật phẩm & dụng cụ</h3><div class="grid">
+    const wraps = [
+      ...Object.entries(PAPERS).map(([id, w]) => `<div class="cell"><span class="swatch-dot" style="--c:${w.color}"></span><small>${w.name}</small><b>${w.free ? '∞' : '×' + (s.inventory.papers[id] || 0)}</b></div>`),
+      ...Object.entries(RIBBONS).map(([id, w]) => `<div class="cell"><span class="swatch-dot ribbon" style="--c:${w.color}"></span><small>${w.name}</small><b>${w.free ? '∞' : '×' + (s.inventory.ribbons[id] || 0)}</b></div>`),
+    ].join('');
+    const items = `
         <div class="cell"><span>🧪</span><small>Phân bón</small><b>×${s.inventory.items.fertilizer || 0}</b></div>
         <div class="cell"><span>⛺</span><small>Bạt che</small><b>×${s.inventory.items.cover || 0}</b></div>
         <div class="cell"><span>💊</span><small>Thuốc</small><b>×${s.inventory.items.medicine || 0}</b></div>
         <div class="cell"><span>🪏</span><small>Xẻng</small><b>${s.tools.shovel ? '✔' : '—'}</b></div>
-        <div class="cell"><span>🚿</span><small>Bình tưới</small><b>${s.tools.wateringCan ? '✔' : '—'}</b></div>
-      </div>
-      ${DEV_TOOLS ? '<button class="btn primary wide" data-act="free-seeds">🎁 Nhận gói hạt giống miễn phí (1 lần/ngày game)</button>' : ''}
+        <div class="cell"><span>🚿</span><small>Bình tưới</small><b>${s.tools.wateringCan ? '✔' : '—'}</b></div>`;
+    // chia thẻ để bảng gọn, không phải kéo dài
+    const INV_TABS = [['flowers', '🌸 Hoa'], ['seeds', '🌱 Hạt giống'], ['wraps', '🎀 Giấy gói'], ['items', '🧪 Vật phẩm']];
+    const tab = this.invTab || 'flowers';
+    const body = {
+      flowers: `<div class="grid">${flowers}</div><p class="muted small">Bán sỉ nhanh nhưng chỉ được khoảng một nửa giá. Bán cho khách ở 🏪 Tiệm Hoa lời hơn và có uy tín.</p>`,
+      seeds: `<div class="grid">${seeds}</div>${DEV_TOOLS ? '<button class="btn primary wide" data-act="free-seeds">🎁 Nhận gói hạt giống miễn phí (1 lần/ngày game)</button>' : ''}`,
+      wraps: `<div class="grid">${wraps}</div>`,
+      items: `<div class="grid">${items}</div>`,
+    }[tab];
+    this.openModal('inventory', `
+      <h2>🎒 Kho đồ</h2>
+      <div class="mk-tabs">${INV_TABS.map(([id, label]) => `<button class="${id === tab ? 'on' : ''}" data-act="inv-tab" data-id="${id}">${label}</button>`).join('')}</div>
+      ${body}
       <button class="btn wide" data-act="go-market">🧺 Mua thêm ở Khu Chợ</button>
     `);
   }
@@ -1157,10 +1167,12 @@ export class Hud {
     }
     this.openModal('settings', `
       <h2>⚙️ Cài đặt</h2>
+      <div class="two-cols"><div>
       ${account}
       <h3>🎨 Đồ họa</h3>
       <div class="seg">${[['auto', 'Tự động'], ['high', 'Cao'], ['medium', 'Vừa'], ['low', 'Tiết kiệm pin']].map(([v, l]) => `<button class="${(s.settings.quality || 'auto') === v ? 'on' : ''}" data-act="quality" data-level="${v}">${l}</button>`).join('')}</div>
       <p class="muted small">Đang dùng: ${GRAPHICS.levels[g.graphicsLevel].name}${(s.settings.quality || 'auto') === 'auto' ? ' (tự giảm khi máy chậm)' : ''}. "Tiết kiệm pin" tắt bóng đổ, giảm độ nét và chạy 30 khung hình/giây.</p>
+      </div><div>
       ${this.audioSettingsHTML()}
       <p class="muted small">Đã lưu trên máy lúc ${last}.</p>
       ${DEV_TOOLS ? `<h3>🧪 Công cụ thử nghiệm</h3>
@@ -1171,6 +1183,7 @@ export class Hud {
       </div>` : ''}
       <p class="muted small">Điều khiển: kéo để di chuyển bản đồ · cuộn chuột hoặc chụm 2 ngón để phóng to/thu nhỏ · máy tính có thể dùng phím W A S D.</p>
       <p class="muted small">Tiệm Hoa Giấc Mơ · phiên bản ${GAME_VERSION} (${GAME_STAGE})</p>
+      </div></div>
     `);
   }
 
@@ -1272,9 +1285,22 @@ export class Hud {
   openModal(name, html, size = '') {
     this.modal = name;
     const wrap = $('.modal-wrap', this.root);
-    $('.modal', wrap).className = `modal ${size}`;
-    $('.modal', wrap).innerHTML = `<button class="round sm close" data-act="close-modal" aria-label="Đóng">✕</button>${html}`;
+    const m = $('.modal', wrap);
+    m.className = `modal m-${name} ${size}`;
+    // Bảng chia 2 phần: m-side (tiêu đề, ví, các thẻ) + m-main (nội dung).
+    // Màn hình thường: 2 phần "display: contents" nên trông như cũ; điện thoại xoay ngang: thẻ chuyển sang cột trái.
+    m.innerHTML = `<div class="m-side"><button class="round sm close" data-act="close-modal" aria-label="Đóng">✕</button></div><div class="m-main">${html}</div>`;
+    const side = $('.m-side', m), main = $('.m-main', m);
+    while (main.firstElementChild?.matches('h2, .mk-wallet, .lk-wallet, .book-prog, .mk-tabs')) side.appendChild(main.firstElementChild);
+    m.classList.toggle('has-side', !!side.querySelector('.mk-tabs'));
     wrap.classList.remove('hidden');
+  }
+
+  /** Phần đang cuộn của bảng (để giữ vị trí cuộn khi vẽ lại) */
+  scrollBox() {
+    const m = $('.modal', this.root);
+    const main = m?.querySelector('.m-main');
+    return main && getComputedStyle(main).overflowY !== 'visible' && main.scrollHeight > main.clientHeight ? main : m;
   }
 
   closeModal() {

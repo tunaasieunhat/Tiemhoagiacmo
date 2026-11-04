@@ -176,6 +176,7 @@ export class ShopPanel {
     const [mIcon, mText] = MOOD[ev.mood];
     const total = items.reduce((a, b) => a + b.n, 0);
     return `
+      <div class="comp-grid"><div class="comp-left">
       <div class="comp-head">
         <button class="round sm" data-sp="back" aria-label="Quay lại">←</button>
         <div class="cust-av">${avatarSVG(npc.look, 44)}</div>
@@ -193,13 +194,15 @@ export class ShopPanel {
           ${partBars}
         </div>
       </div>
+      </div><div class="comp-right">
       <h3>Chọn hoa</h3><div class="stacks">${rows}</div>
       ${wraps}
+      ${req.type === 'bouquet' ? '<p class="muted small comp-tip">Mẹo: chọn hoa đúng ý nghĩa, hợp tông; 1 loài chủ đạo + hoa điểm xuyết; tặng số lẻ cành. Ý nghĩa hoa khám phá dần khi bán cho khách (xem 📖 Sổ tay).</p>' : ''}
+      </div></div>
       <div class="comp-foot">
         <button class="btn" data-sp="auto">✨ Tự chọn</button>
         <button class="btn primary ${ev.ok ? '' : 'disabled'}" data-sp="deliver">${req.type === 'bouquet' ? '💐 Gói & giao' : '🌸 Giao hoa'}</button>
-      </div>
-      ${req.type === 'bouquet' ? '<p class="muted small">Mẹo: chọn hoa đúng ý nghĩa, hợp tông; 1 loài chủ đạo + hoa điểm xuyết; tặng số lẻ cành. Ý nghĩa hoa khám phá dần khi bán cho khách (xem 📖 Sổ tay).</p>' : ''}`;
+      </div>`;
   }
 
   // ---------------- xử lý nút ----------------
@@ -269,10 +272,9 @@ export class ShopPanel {
   }
 
   renderKeepScroll() {
-    const m = this.hud.root.querySelector('.modal');
-    const top = m?.scrollTop || 0;
+    const top = this.hud.scrollBox()?.scrollTop || 0;
     this.render();
-    const m2 = this.hud.root.querySelector('.modal');
+    const m2 = this.hud.scrollBox();
     if (m2) m2.scrollTop = top;
   }
 }

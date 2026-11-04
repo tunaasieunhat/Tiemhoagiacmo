@@ -4,6 +4,15 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.15.3',
+    notes: [
+      '📱 Các bảng trên điện thoại gọn hơn, hầu như không phải kéo: bảng rộng ra, món xếp nhiều cột',
+      'Bảng có thẻ (Chợ, Sổ tay, Vận May, Kho đồ...): tên bảng và các thẻ nằm ở cột trái, nội dung bên phải',
+      '💐 Gói bó hoa chia 2 cột: yêu cầu của khách bên trái, chọn hoa bên phải, nút Gói & giao luôn ở dưới',
+      '🎒 Kho đồ chia thẻ Hoa / Hạt giống / Giấy gói / Vật phẩm · 📖 Sổ tay chọn từng loài hoa để xem · Cài đặt & Dự báo 2 cột',
+    ],
+  },
+  {
     version: '0.15.2',
     notes: [
       '📱 Giao diện điện thoại gọn hơn: các nút bên trái nhỏ lại, xếp 2 cột dưới ví tiền',
