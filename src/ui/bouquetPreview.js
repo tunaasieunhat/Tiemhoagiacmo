@@ -69,6 +69,31 @@ function flowerSVG(id, variant, x, y, s) {
       + e(-0.5, -0.1, 0.5, 0.4, -15, c.petal) + e(0.5, -0.1, 0.5, 0.4, 15, c.petal)
       + e(0, 0.3, 0.2, 0.28, 0, c.petalDark) + `<circle cx="${x}" cy="${y - s * 0.05}" r="${s * 0.12}" fill="#fff3c2"/>`;
   }
+  // ---- 🍀 Cây Vận May ----
+  if (id === 'crystal') {
+    let p = '';
+    for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; const cx = x + Math.cos(a) * s * 0.55, cy = y + Math.sin(a) * s * 0.55, r = (a * 180) / Math.PI + 90; p += `<path d="M${cx} ${cy - s * 0.45} L${cx + s * 0.2} ${cy} L${cx} ${cy + s * 0.45} L${cx - s * 0.2} ${cy}Z" transform="rotate(${r} ${cx} ${cy})" fill="${c.petal}" stroke="${c.petalDark}" stroke-width=".8" opacity=".9"/>`; }
+    return p + `<circle cx="${x}" cy="${y}" r="${s * 0.2}" fill="#fff"/><path d="M${x + s} ${y - s} l2 -5 l2 5 l5 2 l-5 2 l-2 5 l-2 -5 l-5 -2z" fill="#fff" stroke="#bfe9ff" stroke-width=".6"/>`;
+  }
+  if (id === 'firefly') {
+    return `<circle cx="${x}" cy="${y}" r="${s * 1.05}" fill="#fff7b0" opacity=".45"/><path d="M${x - s * 0.6} ${y - s * 0.3} Q${x} ${y + s * 1.1} ${x + s * 0.6} ${y - s * 0.3}Z" fill="${c.petal}" stroke="${c.petalDark}" stroke-width="1"/><circle cx="${x}" cy="${y}" r="${s * 0.28}" fill="#fffbe0"/>`
+      + `<circle cx="${x + s * 1.1}" cy="${y - s * 0.6}" r="1.8" fill="#d9ff7a"/><circle cx="${x - s * 1.05}" cy="${y - s * 0.1}" r="1.5" fill="#d9ff7a"/>`;
+  }
+  if (id === 'prism') {
+    let p = '';
+    for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; const cx = x + Math.cos(a) * s * 0.55, cy = y + Math.sin(a) * s * 0.55; p += `<ellipse cx="${cx}" cy="${cy}" rx="${s * 0.4}" ry="${s * 0.22}" transform="rotate(${(a * 180) / Math.PI} ${cx} ${cy})" fill="hsl(${i * 45} 80% 72%)"/>`; }
+    return p + `<circle cx="${x}" cy="${y}" r="${s * 0.28}" fill="#ffe066"/>`;
+  }
+  if (id === 'wisp') {
+    const f = (dx, k) => `<path d="M${x + dx} ${y + s * 0.5} Q${x + dx - s * 0.5 * k} ${y} ${x + dx} ${y - s * 1.0 * k} Q${x + dx + s * 0.5 * k} ${y} ${x + dx} ${y + s * 0.5}Z" fill="${c.petal}" opacity=".85"/>`;
+    return f(-s * 0.4, 0.7) + f(s * 0.4, 0.75) + f(0, 1) + `<ellipse cx="${x}" cy="${y + s * 0.3}" rx="${s * 0.18}" ry="${s * 0.3}" fill="#e6f0ff"/><path d="M${x - s * 0.7} ${y + s * 0.45} Q${x} ${y + s * 0.95} ${x + s * 0.7} ${y + s * 0.45}Z" fill="${c.petalDark}"/>`;
+  }
+  if (id === 'snowbell') {
+    let p = '';
+    for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; p += `<line x1="${x}" y1="${y}" x2="${x + Math.cos(a) * s * 0.95}" y2="${y + Math.sin(a) * s * 0.95}" stroke="${c.petalDark}" stroke-width="${s * 0.32}" stroke-linecap="round"/>`; }
+    for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; p += `<line x1="${x}" y1="${y}" x2="${x + Math.cos(a) * s * 0.85}" y2="${y + Math.sin(a) * s * 0.85}" stroke="${c.petal}" stroke-width="${s * 0.2}" stroke-linecap="round"/>`; }
+    return p + `<circle cx="${x}" cy="${y}" r="${s * 0.22}" fill="#bfe0ff"/>`;
+  }
   // hoa hồng
   return `<circle cx="${x}" cy="${y}" r="${s * 0.85}" fill="${c.petal}"/>
     <circle cx="${x}" cy="${y}" r="${s * 0.55}" fill="${c.petalDark}"/>

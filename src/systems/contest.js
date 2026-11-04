@@ -45,7 +45,7 @@ export function contestScore(theme, sel) {
   if (total < theme.min || total > theme.max) return { ok: false, reason: `Bó hoa cần từ ${theme.min} đến ${theme.max} cành`, total };
   if (!PAPERS[sel.paper] || !RIBBONS[sel.ribbon]) return { ok: false, reason: 'Hãy chọn giấy gói và ruy băng', total };
   const r = scoreBouquet({ tone: theme.tone, meaning: theme.meaning, min: theme.min, max: theme.max }, items, sel.paper, sel.ribbon);
-  const rareN = items.reduce((a, it) => { const rar = variantData(it.species, it.variant).rarity; return a + it.n * (rar === 'rare' ? 1 : rar === 'uncommon' ? 0.5 : 0); }, 0);
+  const rareN = items.reduce((a, it) => { const rar = variantData(it.species, it.variant).rarity; return a + it.n * (rar === 'rare' || rar === 'legend' ? 1 : rar === 'uncommon' ? 0.5 : 0); }, 0);
   const rareBonus = Math.round(Math.min(CONTEST.rareBonusMax, (rareN / total) * CONTEST.rareBonusMax * 2));
   const score = Math.min(110, Math.round(r.score + rareBonus));
   return { ok: true, score, base: r.score, parts: r.parts, tips: r.tips, rareBonus, total };

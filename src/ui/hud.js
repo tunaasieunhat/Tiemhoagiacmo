@@ -23,6 +23,7 @@ import { MarketPanel } from './marketPanel.js';
 import { LabPanel } from './labPanel.js';
 import { FriendsPanel, messagesHtml } from './friendsPanel.js';
 import { QuestsPanel } from './questsPanel.js';
+import { LuckPanel } from './luckPanel.js';
 import { RankPanel } from './rankPanel.js';
 import { claimableCount } from '../systems/quests.js';
 import { DECOR, DECOR_RULES } from '../../data/decor.js';
@@ -94,6 +95,7 @@ export class Hud {
     // app Android: có APK mới => màn hình bắt buộc tải; save trên mạng thuộc bản mới hơn => cũng bắt cập nhật app
     em.on('app-update-required', (v) => this.showForceUpdate(v));
     em.on('update-required', (v) => (isNative() ? this.showForceUpdate({ ...v, apkUrl: ONLINE.apkDownloadUrl, cloud: true }) : this.showUpdate(v, true)));
+    em.on('xp', () => this.updateLuckBadge());
     em.on('quests', () => { this.updateQuestBadge(); if (this.modal === 'quests') this.quests.render(); });
     em.on('decor-mode', (on) => { this.root.classList.toggle('decorating', on); $('.decor-bar', this.root).classList.toggle('hidden', !on); });
     em.on('decor-edit', () => this.renderDecorBar());
@@ -118,8 +120,10 @@ export class Hud {
     this.notebook = new NotebookPanel(this);
     this.friends = new FriendsPanel(this);
     this.quests = new QuestsPanel(this);
+    this.luck = new LuckPanel(this);
     this.rank = new RankPanel(this);
     this.updateQuestBadge();
+    this.updateLuckBadge();
     this.updateAlert();
     this.updateWallet();
   }
@@ -156,6 +160,7 @@ export class Hud {
         <button class="round" data-act="quests" aria-label="Nhiệm vụ">📋<span class="badge hidden q-badge"></span></button>
         <button class="round" data-act="rank" aria-label="Xếp hạng và cuộc thi">🏆</button>
         <button class="round" data-act="decor-mode" aria-label="Trang trí">🎨</button>
+        <button class="round" data-act="luck" aria-label="Vận May">🍀<span class="badge hidden lk-badge"></span></button>
       </div>
       <button class="alert-chip hidden" data-act="forecast"></button>
       <div class="saved-badge">💾 Đã lưu</div>
@@ -191,6 +196,8 @@ export class Hud {
   }
 
   onClick(e) {
+    const lk = e.target.closest('[data-lk]');
+    if (lk) { this.luck.onAction(lk.dataset.lk, lk); return; }
     const qq = e.target.closest('[data-q]');
     if (qq) { this.quests.onAction(qq.dataset.q, qq); return; }
     const rk = e.target.closest('[data-rk]');
@@ -258,6 +265,7 @@ export class Hud {
       case 'knock': this.openVillager(b.dataset.id); break;
       case 'friends': this.friends.open(); break;
       case 'quests': this.quests.open(); break;
+      case 'luck': this.luck.open(); break;
       case 'rank': this.rank.open(); break;
       case 'decor-mode': this.closeModal(); g.setDecorMode(true); break;
       case 'decor-done': this.closeModal(); g.setDecorMode(false); break;
@@ -393,6 +401,17 @@ export class Hud {
     if (btn.dataset.apk) { await openExternal(btn.dataset.apk); btn.disabled = false; btn.textContent = 'Tải bản mới'; return; }
     try { const regs = await navigator.serviceWorker?.getRegistrations?.(); await Promise.all((regs || []).map((r) => r.update())); } catch { /* bỏ qua */ }
     location.reload();
+  }
+
+  /** Chấm số trên nút 🍀: số gói mở được bằng vé đang có */
+  updateLuckBadge() {
+    const b = $('.lk-badge', this.root);
+    if (!b) return;
+    const s = this.game.save;
+    const t = s.luck?.tickets || {};
+    const n = s.player.level >= 2 ? (t.luck || 0) + (s.player.level >= 4 ? t.gold || 0 : 0) : 0;
+    b.classList.toggle('hidden', !n);
+    b.textContent = n > 9 ? '9+' : n;
   }
 
   // ---------- nhiệm vụ & trang trí ----------

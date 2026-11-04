@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { FLOWERS } from '../../data/flowers.js';
 import { variantColors } from '../systems/variants.js';
 import { sphere, cyl, cone, at, group } from './primitives.js';
+import { buildLuckHead } from './luckFlowers.js';
 
 const DRY = '#b39a74';
 const DEAD_STEM = '#9b7f5c';
@@ -70,7 +71,7 @@ export function buildPlant(flowerId, stage, { wilted = false, dead = false, vari
   }
 
   // từ giai đoạn 2 trở đi: thân + lá + nụ/hoa
-  const h = { rose: 0.75, tulip: 0.7, sunflower: 1.15, daisy: 0.6, lavender: 0.55, hydrangea: 0.5, cosmos: 0.7, carnation: 0.62, marigold: 0.45, lily: 1.0, peony: 0.58, orchid: 0.18 }[def.model] ?? 0.8;
+  const h = { rose: 0.75, tulip: 0.7, sunflower: 1.15, daisy: 0.6, lavender: 0.55, hydrangea: 0.5, cosmos: 0.7, carnation: 0.62, marigold: 0.45, lily: 1.0, peony: 0.58, orchid: 0.18, crystal: 0.72, firefly: 0.78, prism: 0.7, wisp: 0.66, snowbell: 0.62 }[def.model] ?? 0.8;
   const H = stage === 2 ? h * 0.8 : h;
   const r = def.model === 'sunflower' ? 0.055 : 0.04;
   sway.add(stem(H, C.stem, r));
@@ -137,6 +138,9 @@ export function buildPlant(flowerId, stage, { wilted = false, dead = false, vari
     buildPeony(head, C);
   } else if (def.model === 'orchid') {
     buildOrchid(head, sway, C, H);
+  } else if (def.luck) {
+    const fx = buildLuckHead(def.model, head, C);
+    if (!dead) root.userData.fx = fx;
   }
 
   if (dead) {

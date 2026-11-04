@@ -115,6 +115,29 @@ export class Sfx {
     return this.ctx;
   }
 
+  /** Tiếng chuông leng keng khi mở gói Vận May (notes: số nốt, càng hiếm càng nhiều nốt) */
+  chime(notes = 3) {
+    const vol = this.prefs.sfx;
+    if (vol <= 0) return;
+    const ctx = this.ensure();
+    if (!ctx || ctx.state !== 'running') return;
+    const scale = [784, 988, 1175, 1319, 1568, 1976];
+    for (let i = 0; i < notes; i++) {
+      const t = ctx.currentTime + i * 0.09;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.16 * vol, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+      g.connect(ctx.destination);
+      const o = ctx.createOscillator();
+      o.type = 'triangle';
+      o.frequency.value = scale[i % scale.length];
+      o.connect(g);
+      o.start(t);
+      o.stop(t + 0.55);
+    }
+  }
+
   tap(strength = 1) {
     const vol = this.prefs.sfx * strength;
     if (vol <= 0) return;

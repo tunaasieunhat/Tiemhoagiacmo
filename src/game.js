@@ -3,7 +3,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { TIME, STARTER, GRAPHICS } from '../data/config.js';
-import { FLOWERS, FLOWER_IDS } from '../data/flowers.js';
+import { FLOWERS, FLOWER_IDS, NORMAL_FLOWER_IDS } from '../data/flowers.js';
 import { PAPERS, RIBBONS } from '../data/wrapping.js';
 import * as shop from './systems/shop.js';
 import { CustomersView } from './render/customers.js';
@@ -51,6 +51,8 @@ import { PLOT_SLOTS, ZONES, plotPosition } from './render/world.js';
 import * as land from './systems/land.js';
 import { PARCELS } from '../data/land.js';
 import { createPlot } from './save/schema.js';
+import * as luck from './systems/luck.js';
+import { TICKET_SOURCES } from '../data/luck.js';
 
 const ACTIONS = {
   till: (t, s) => farming.till(t, s),
@@ -320,6 +322,7 @@ export class Game {
 
     this.controls.update(dt);
     this.player.update(dt);
+    this.farmView.night = this.dayNight.night || 0;
     this.farmView.update(dt);
     // bạt che / nhà kính mờ dần khi phóng to hoặc khi chọn ô trong lô đó
     this.farmView.updateSeeThrough(dt, this.controls.zoom, !this.visit && this.selected?.kind === 'tile' ? this.selected.plot : -1);
@@ -495,7 +498,7 @@ export class Game {
 
   // ---------------- cửa hàng ----------------
   unlockedFlowers() {
-    return FLOWER_IDS.filter((id) => FLOWERS[id].unlockLevel <= this.save.player.level);
+    return NORMAL_FLOWER_IDS.filter((id) => FLOWERS[id].unlockLevel <= this.save.player.level);
   }
 
   /** Giao hoa cho khách. sel = { items: {"rose|3": 2}, paper, ribbon } */
@@ -607,6 +610,11 @@ export class Game {
     const ups = progression.addXp(this.save, amount);
     this.emitter.emit('xp');
     if (ups.length) {
+      // 🍀 vé Vận May khi lên cấp
+      const tk = { luck: 0, gold: 0 };
+      for (const u of ups) { const r = luck.levelUpTickets(this.save, u.level); tk.luck += r.luck || 0; tk.gold += r.gold || 0; u.tickets = r; }
+      if (tk.luck || tk.gold) setTimeout(() => this.toast(`🍀 Quà lên cấp: ${tk.luck ? `+${tk.luck} 🎟️ vé may mắn` : ''}${tk.luck && tk.gold ? ', ' : ''}${tk.gold ? `+${tk.gold} 🎫 vé vàng` : ''}`, 'good'), 1500);
+      this.emitter.emit('luck');
       this.particles.spawn('sparkle', this.player.root.position.clone());
       this.emitter.emit('levelup', ups);
       this.emitter.emit('inventory');
@@ -834,7 +842,13 @@ export class Game {
     const rw = quests.claimQuest(this.save, kind, i);
     if (!rw) return null;
     this.gainXp(rw.xp);
-    this.toast(`🎁 Nhận thưởng: +${rw.coins} 💰 +${rw.xp} XP${rw.fertilizer ? ` +${rw.fertilizer} 🧪` : ''}`, 'good');
+    // 🍀 vé Vận May: mỗi nhiệm vụ tuần 1 vé vàng, nhận đủ nhiệm vụ ngày được 1 vé may mắn
+    let tk = null;
+    if (kind === 'weekly') tk = luck.grantTickets(this.save, TICKET_SOURCES.weeklyQuest);
+    else if ((this.save.quests.daily || []).length && this.save.quests.daily.every((q) => q.claimed)) tk = luck.grantTickets(this.save, TICKET_SOURCES.dailyQuestsAll);
+    const tkText = tk ? `${tk.luck ? ` +${tk.luck} 🎟️` : ''}${tk.gold ? ` +${tk.gold} 🎫` : ''}` : '';
+    if (tk) this.emitter.emit('luck');
+    this.toast(`🎁 Nhận thưởng: +${rw.coins} 💰 +${rw.xp} XP${rw.fertilizer ? ` +${rw.fertilizer} 🧪` : ''}${tkText}`, 'good');
     this.saveMgr.markDirty();
     this.emitter.emit('inventory');
     this.emitter.emit('quests');
@@ -1023,6 +1037,7 @@ export class Game {
   /** Xong mini game nhờ việc: stars 0–3 */
   finishFavorGame(id, favor, stars) {
     const res = favors.finishFavor(this.save, id, favor, stars, this.today);
+    if (res.stars >= 3) { res.tickets = luck.grantTickets(this.save, TICKET_SOURCES.favor3); this.emitter.emit('luck'); }
     if (res.xp) this.gainXp(res.xp);
     this.afterBond(id, res);
     this.emitter.emit('inventory');
@@ -1057,7 +1072,7 @@ export class Game {
   buyDecor(id, n = 1) {
     const d = DECOR[id];
     const s = this.save;
-    if (!d) return false;
+    if (!d || d.luck) return false;
     if (d.event && !decorSys.eventOpen(d.event, this.seasonId())) { const ev = DECOR_EVENTS[d.event]; this.toast(`${ev.icon} Đồ ${ev.name} chỉ bán trong Mùa Thu`, 'warn'); return false; }
     if (s.player.level < d.level) { this.toast(`Cần đạt cấp ${d.level}`, 'warn'); return false; }
     if (s.player.coins < d.price * n) { this.toast(`Không đủ tiền (cần ${d.price * n} 💰)`, 'warn'); return false; }
@@ -1278,6 +1293,44 @@ export class Game {
   }
 
   // ---------------- tiện ích ----------------
+  // ---------------- 🍀 Vận May (GĐ15) ----------------
+  /** Vé mỗi ngày (ngày thật, giờ VN) — gọi khi vào game và định kỳ */
+  claimDailyLuck() {
+    if (this.visit) return null;
+    const rw = luck.claimDaily(this.save);
+    if (!rw) return null;
+    this.saveMgr.markDirty();
+    this.emitter.emit('luck');
+    this.toast(`🍀 Quà hằng ngày: +${rw.luck} 🎟️ vé may mắn! ${this.save.player.level >= 2 ? 'Bấm 🍀 để mở gói' : 'Vận May mở khi đạt cấp 2'}`, 'good');
+    return rw;
+  }
+
+  /** Mở gói. pay: 'ticket' | 'coins' */
+  openLuckPack(packId, pay = 'ticket') {
+    const res = luck.openPack(this.save, packId, pay);
+    if (!res.ok) { this.toast(res.msg, 'warn'); return res; }
+    const rw = res.reward;
+    if (rw.type === 'upgrade') this.applyUpgradeEffects();
+    if (rw.luckFlower && rw.isNew) this.emitter.emit('book');
+    this.saveMgr.markDirty();
+    this.saveMgr.saveNow('manual');
+    this.emitter.emit('inventory');
+    this.emitter.emit('luck');
+    this.emitter.emit('tool', this.tool);
+    return res;
+  }
+
+  exchangeShards(what, id) {
+    const res = luck.exchangeShards(this.save, what, id);
+    this.toast(res.ok ? `🧩 Đã đổi: ${res.text}` : res.msg, res.ok ? 'good' : 'warn');
+    if (!res.ok) return res;
+    this.saveMgr.markDirty();
+    this.emitter.emit('inventory');
+    this.emitter.emit('luck');
+    this.emitter.emit('tool', this.tool);
+    return res;
+  }
+
   claimFreeSeeds() {
     const day = this.clock.day;
     if (this.save.stats.lastFreePackDay === day) {

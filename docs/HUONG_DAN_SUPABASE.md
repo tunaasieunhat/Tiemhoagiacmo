@@ -51,6 +51,20 @@ Không cần dán khóa bí mật nào: Supabase tự cấp khóa `service_role`
 (khóa này không bao giờ xuống trình duyệt). Mỗi khi game cập nhật luật chấm điểm,
 mình sẽ báo bạn dán lại file này.
 
+## Bước 2c — (Nên làm) Để GitHub tự đưa Edge Function lên, khỏi dán tay
+
+Làm 1 lần, từ đó mỗi khi game đổi luật chấm điểm, GitHub tự cập nhật `contest-submit`.
+Làm được trên điện thoại.
+
+1. Mở https://supabase.com/dashboard/account/tokens → **Generate new token** → đặt tên `github` →
+   **Generate token** → bấm nút sao chép mã (bắt đầu bằng `sbp_`). Mã chỉ hiện 1 lần.
+2. Mở repo trên GitHub → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**.
+3. Name: `SUPABASE_ACCESS_TOKEN` · Secret: dán mã vừa sao chép → **Add secret**.
+4. Tab **Actions** → chọn **Đưa Edge Function lên Supabase** → **Run workflow** để chạy thử lần đầu.
+   Thấy dấu ✅ xanh là xong.
+
+⚠️ Mã `sbp_...` là chìa khóa quản lý project: **chỉ dán vào GitHub Secrets**, không gửi cho ai (kể cả Claude).
+
 ## Bước 3 — Lấy 2 giá trị cần thiết cho game
 
 Menu trái **Project Settings** (bánh răng) → **API** (hoặc **Data API** / **API Keys**):

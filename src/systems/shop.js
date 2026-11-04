@@ -246,7 +246,8 @@ export function tipAmount(rng, tier, ev) {
 export function estimateReward(req) {
   const m = req.priceMult || 1;
   if (req.type !== 'bouquet') return Math.round(FLOWERS[req.flower].basePrice * SHOP.qualityMult[req.minQuality] * req.count * m);
-  const avg = Object.values(FLOWERS).reduce((a, f) => a + f.basePrice, 0) / Object.keys(FLOWERS).length;
+  const normal = Object.values(FLOWERS).filter((f) => !f.luck);
+  const avg = normal.reduce((a, f) => a + f.basePrice, 0) / normal.length;
   return Math.round(avg * req.min * SHOP.bouquetMult * SHOP.qualityMult[req.minQuality] * m);
 }
 

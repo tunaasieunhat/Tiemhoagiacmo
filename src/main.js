@@ -156,6 +156,9 @@ async function boot() {
     notices.push([profile ? `🌷 Chào mừng ${save.player.name} đến Tiệm Hoa Giấc Mơ!` : "🌷 Chào mừng đến Tiệm Hoa Giấc Mơ!", "good"]);
   }
   notices.forEach(([t, k], i) => setTimeout(() => hud.toast(t, k), 500 + i * 900));
+  // 🍀 vé may mắn mỗi ngày (hỏi lại mỗi 10 phút để qua nửa đêm vẫn nhận được)
+  setTimeout(() => game.claimDailyLuck(), 1500 + notices.length * 900);
+  setInterval(() => game.claimDailyLuck(), 10 * 60 * 1000);
 
   // xung đột phát sinh khi đang chơi (vd vừa chơi trên máy khác)
   emitter.on('cloud-conflict', async ({ local, cloud: c }) => {

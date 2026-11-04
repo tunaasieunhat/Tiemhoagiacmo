@@ -102,6 +102,9 @@ export class DecorView {
       }
       if (u.dangle) u.dangle.position.y = 1.1 + Math.sin(t * 1.2) * 0.12;
       if (u.flicker) u.flicker.forEach((f, i) => { const k = 1 + Math.sin(t * 13 + i * 2.1) * 0.12 + Math.sin(t * 7.3 + i) * 0.08; f.scale.set(k, 1.7 * k, k); });
+      if (u.spinY) u.spinY.rotation.y += dt * 0.9;
+      if (u.hover) u.hover.position.y = u.hoverBase + Math.sin(t * 1.8) * 0.07;
+      if (u.wave) u.wave.rotation.z = 0.35 + Math.sin(t * 4) * 0.45;
       if (u.bubbles) u.bubbles.forEach((b) => { const k = ((t * 0.8 + b.userData.phase) % 1); b.position.y = 0.98 + k * 0.35; b.scale.setScalar(1 - k * 0.7); });
     };
     for (const it of this.items.values()) if (it.obj.visible) each(it.obj);

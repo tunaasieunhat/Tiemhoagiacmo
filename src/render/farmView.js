@@ -5,6 +5,7 @@ import { rbox, mesh } from '../models/primitives.js';
 import { mat } from '../models/materials.js';
 import { grassTuft } from '../models/environment.js';
 import { buildPlant } from '../models/flowers.js';
+import { animateLuckFx, disposeLuckFx } from '../models/luckFlowers.js';
 import { stageOf, isThirsty, isWilted, isSick } from '../systems/farming.js';
 import { uniqueMat } from '../models/materials.js';
 import { PLOT_SLOTS, plotPosition } from './world.js';
@@ -20,7 +21,7 @@ const TILE_H = 0.22;
 const _tmp = new THREE.Vector3();
 export const TILE_TOP = TILE_H + 0.04;
 const PLANT_SCALE = 1.25; // phóng to cây cho dễ nhìn kiểu chibi
-const PLANT_TOP = { rose: 2.0, tulip: 1.95, sunflower: 2.75, daisy: 1.8, lavender: 1.95, hydrangea: 1.85, cosmos: 1.95, carnation: 1.8, marigold: 1.55, lily: 2.5, peony: 1.85, orchid: 1.75 };
+const PLANT_TOP = { rose: 2.0, tulip: 1.95, sunflower: 2.75, daisy: 1.8, lavender: 1.95, hydrangea: 1.85, cosmos: 1.95, carnation: 1.8, marigold: 1.55, lily: 2.5, peony: 1.85, orchid: 1.75, crystal: 2.05, firefly: 2.1, prism: 1.95, wisp: 2.05, snowbell: 1.9 };
 
 export class FarmView {
   constructor(scene) {
@@ -30,6 +31,7 @@ export class FarmView {
     this.plots = []; // [{ group, tiles: [{...view}] }]
     this.time = 0;
     this.wind = 0; // 0..1 (bão = 1)
+    this.night = 0; // 0 ngày → 1 đêm (Hoa Đom Đóm sáng hơn ban đêm)
 
     this.hoverCursor = makeCursor('#ffffff', 0.55);
     this.selectCursor = makeCursor('#ffd34e', 0.95);
@@ -192,7 +194,7 @@ export class FarmView {
     const wilted = isWilted(tile);
     const key = hasPlant ? `${tile.flower}:${tile.variant}|${tile.state === 'dead' ? 'dead' : stage}|${wilted ? 1 : 0}` : '';
     if (key !== v.key) {
-      if (v.plant) v.plantHolder.remove(v.plant);
+      if (v.plant) { v.plantHolder.remove(v.plant); disposeLuckFx(v.plant.userData.fx); }
       v.plant = null;
       if (hasPlant) {
         const dead = tile.state === 'dead';
@@ -230,6 +232,7 @@ export class FarmView {
           if (sway && v.key.indexOf('dead') < 0) {
             sway.rotation.x = Math.sin(t * (1.6 + this.wind * 3) + v.phase) * (0.05 + this.wind * 0.18);
           }
+          if (v.plant.userData.fx) animateLuckFx(v.plant.userData.fx, t + v.phase, this.night);
           if (v.pop < 1) {
             v.pop = Math.min(1, v.pop + dt * 2.5);
             const k = v.pop;

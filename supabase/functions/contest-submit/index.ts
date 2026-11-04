@@ -137,6 +137,22 @@ var VARIANTS = {
     white: { name: "tr\u1EAFng", petal: "#ffffff", petalDark: "#f0e6f5", tones: ["cool", "pastel", "natural"], meanings: ["purity", "congrats"], rarity: "uncommon", breed: [["purple", "purple", 0.18]] },
     pink: { name: "h\u1ED3ng", petal: "#ff9fcf", petalDark: "#f079b5", tones: ["warm", "pastel"], meanings: ["love", "joy"], rarity: "uncommon", breed: [["purple", "white", 0.15]] },
     yellow: { name: "v\xE0ng ho\xE0ng kim", petal: "#ffd84d", petalDark: "#f2b630", tones: ["warm"], meanings: ["hope", "congrats"], rarity: "rare", breed: [["pink", "white", 0.06]] }
+  },
+  // ---- 🍀 Cây Vận May: mỗi loài 1 màu, không lai tạo ----
+  crystal: {
+    clear: { name: "trong su\u1ED1t", petal: "#cdf3ff", petalDark: "#8fd8f2", tones: ["cool", "pastel"], meanings: ["purity", "loyalty"], rarity: "legend", default: true }
+  },
+  firefly: {
+    glow: { name: "ph\xE1t s\xE1ng", petal: "#fff29a", petalDark: "#e8d04f", tones: ["warm", "natural"], meanings: ["hope", "friendship"], rarity: "legend", default: true }
+  },
+  prism: {
+    rainbow: { name: "b\u1EA3y s\u1EAFc", petal: "#ff9fb8", petalDark: "#8fb8ff", tones: ["warm", "cool"], meanings: ["joy", "congrats"], rarity: "legend", default: true }
+  },
+  wisp: {
+    blue: { name: "lam huy\u1EC1n \u1EA3o", petal: "#8fa8ff", petalDark: "#6b5bd6", tones: ["cool"], meanings: ["longing", "respect"], rarity: "legend", default: true }
+  },
+  snowbell: {
+    white: { name: "tuy\u1EBFt tr\u1EAFng", petal: "#ffffff", petalDark: "#dcecff", tones: ["cool", "pastel"], meanings: ["purity", "health"], rarity: "legend", default: true }
   }
 };
 
@@ -340,9 +356,102 @@ var FLOWERS = {
     meaning: "Sang tr\u1ECDng, t\xECnh y\xEAu \u0111\u1EB9p",
     tones: ["cool", "pastel"],
     colors: { petal: "#c98be0", petalDark: "#a865c7", center: "#ffd34e", stem: "#4f8f5a", leaf: "#5fa86a" }
+  },
+  // ---------------- 🍀 CÂY VẬN MAY (GĐ15) ----------------
+  crystal: {
+    id: "crystal",
+    name: "Hoa Pha L\xEA",
+    icon: "\u{1F48E}",
+    model: "crystal",
+    luck: true,
+    fx: "sparkle",
+    growHours: 10,
+    waterPerDay: 2,
+    fertilizerNeeded: 2,
+    seasons: ["xuan", "ha", "thu", "dong"],
+    basePrice: 150,
+    seedPrice: 0,
+    unlockLevel: 1,
+    meaning: "T\xECnh c\u1EA3m trong s\xE1ng, b\u1EC1n l\xE2u",
+    tones: ["cool", "pastel"],
+    colors: { petal: "#cdf3ff", petalDark: "#8fd8f2", center: "#ffffff", stem: "#6fb6a8", leaf: "#8fd1c4" }
+  },
+  firefly: {
+    id: "firefly",
+    name: "Hoa \u0110om \u0110\xF3m",
+    icon: "\u2728",
+    model: "firefly",
+    luck: true,
+    fx: "fireflies",
+    growHours: 12,
+    waterPerDay: 2,
+    fertilizerNeeded: 2,
+    seasons: ["xuan", "ha", "thu", "dong"],
+    basePrice: 170,
+    seedPrice: 0,
+    unlockLevel: 1,
+    meaning: "\xC1nh s\xE1ng d\u1EABn \u0111\u01B0\u1EDDng, hy v\u1ECDng",
+    tones: ["warm", "natural"],
+    colors: { petal: "#fff29a", petalDark: "#e8d04f", center: "#fffbe0", stem: "#4f8f5a", leaf: "#6aa86a" }
+  },
+  prism: {
+    id: "prism",
+    name: "Hoa C\u1EA7u V\u1ED3ng",
+    icon: "\u{1F308}",
+    model: "prism",
+    luck: true,
+    fx: "hue",
+    growHours: 14,
+    waterPerDay: 3,
+    fertilizerNeeded: 2,
+    seasons: ["xuan", "ha", "thu", "dong"],
+    basePrice: 210,
+    seedPrice: 0,
+    unlockLevel: 1,
+    meaning: "Ni\u1EC1m vui r\u1EF1c r\u1EE1, \u01B0\u1EDBc m\u01A1 th\xE0nh th\u1EADt",
+    tones: ["warm", "cool"],
+    colors: { petal: "#ff9fb8", petalDark: "#8fb8ff", center: "#ffe066", stem: "#5c9f62", leaf: "#71b672" }
+  },
+  wisp: {
+    id: "wisp",
+    name: "Hoa L\u1EEDa Ma",
+    icon: "\u{1F525}",
+    model: "wisp",
+    luck: true,
+    fx: "flame",
+    growHours: 9,
+    waterPerDay: 2,
+    fertilizerNeeded: 2,
+    seasons: ["xuan", "ha", "thu", "dong"],
+    basePrice: 160,
+    seedPrice: 0,
+    unlockLevel: 1,
+    meaning: "B\xED \u1EA9n, n\u1ED7i nh\u1EDB ng\u01B0\u1EDDi xa",
+    tones: ["cool"],
+    colors: { petal: "#8fa8ff", petalDark: "#6b5bd6", center: "#e6f0ff", stem: "#4a5f7a", leaf: "#5d7a8f" }
+  },
+  snowbell: {
+    id: "snowbell",
+    name: "Hoa Tuy\u1EBFt",
+    icon: "\u2744\uFE0F",
+    model: "snowbell",
+    luck: true,
+    fx: "snow",
+    growHours: 12,
+    waterPerDay: 2,
+    fertilizerNeeded: 2,
+    seasons: ["xuan", "ha", "thu", "dong"],
+    basePrice: 180,
+    seedPrice: 0,
+    unlockLevel: 1,
+    meaning: "Thu\u1EA7n khi\u1EBFt, kh\u1EDFi \u0111\u1EA7u m\u1EDBi",
+    tones: ["cool", "pastel"],
+    colors: { petal: "#ffffff", petalDark: "#dcecff", center: "#bfe0ff", stem: "#6a9fb0", leaf: "#8cc0cc" }
   }
 };
 var FLOWER_IDS = Object.keys(FLOWERS);
+var NORMAL_FLOWER_IDS = FLOWER_IDS.filter((id) => !FLOWERS[id].luck);
+var LUCK_FLOWER_IDS = FLOWER_IDS.filter((id) => FLOWERS[id].luck);
 
 // src/systems/variants.js
 var DEFAULT_VARIANT = Object.fromEntries(Object.entries(VARIANTS).map(([sp, vs]) => [sp, Object.keys(vs).find((k) => vs[k].default) || Object.keys(vs)[0]]));
@@ -482,7 +591,7 @@ function contestScore(theme, sel) {
   const r = scoreBouquet({ tone: theme.tone, meaning: theme.meaning, min: theme.min, max: theme.max }, items, sel.paper, sel.ribbon);
   const rareN = items.reduce((a, it) => {
     const rar = variantData(it.species, it.variant).rarity;
-    return a + it.n * (rar === "rare" ? 1 : rar === "uncommon" ? 0.5 : 0);
+    return a + it.n * (rar === "rare" || rar === "legend" ? 1 : rar === "uncommon" ? 0.5 : 0);
   }, 0);
   const rareBonus = Math.round(Math.min(CONTEST.rareBonusMax, rareN / total * CONTEST.rareBonusMax * 2));
   const score = Math.min(110, Math.round(r.score + rareBonus));

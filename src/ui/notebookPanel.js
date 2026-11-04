@@ -75,14 +75,14 @@ export class NotebookPanel {
             return `${na} × ${nb}`;
           }).join(' hoặc ');
           return `<div class="bk-card unknown"><i class="vdot big q">?</i><b>???</b><small style="color:${r.color}">${r.name}</small>
-            <small class="hint">${d.default ? 'Mua hạt ở Khu Chợ' : `Lai: ${esc(hint)}`}</small></div>`;
+            <small class="hint">${f.luck ? '🍀 Có trong Gói Vàng (Vận May)' : d.default ? 'Mua hạt ở Khu Chợ' : `Lai: ${esc(hint)}`}</small></div>`;
         }
         return `<div class="bk-card"><i class="vdot big" style="--c:${d.petal}"></i><b>${esc(d.name)}</b><small style="color:${r.color}">${r.name}</small>
           <div class="mrow">${known ? d.meanings.map((m) => `<span class="mchip sm ${MEANINGS[m].negative ? 'neg' : ''}">${MEANINGS[m].icon} ${MEANINGS[m].name}</span>`).join('') : '<span class="mchip sm unk">❔ chưa rõ ý nghĩa</span>'}</div>
           <small>Thu hoạch ${found.harvested} lần · tốt nhất <i class="stars">${'★'.repeat(found.bestQ)}</i></small></div>`;
       }).join('');
       const locked = s.player.level < f.unlockLevel;
-      return `<div class="bk-sec"><h3>${f.icon} ${f.name} <small class="muted">${f.seasons.map((x) => SEASON_NAMES[x]).join(', ')}${locked ? ` · 🔒 cấp ${f.unlockLevel}` : ''}</small></h3><div class="bk-grid">${cards}</div></div>`;
+      return `<div class="bk-sec"><h3>${f.icon} ${f.name} <small class="muted">${f.luck ? '🍀 Cây Vận May · trồng được mọi mùa' : f.seasons.map((x) => SEASON_NAMES[x]).join(', ')}${locked ? ` · 🔒 cấp ${f.unlockLevel}` : ''}</small></h3><div class="bk-grid">${cards}</div></div>`;
     }).join('');
     return `<div class="miles">${ms}</div>${sections}`;
   }

@@ -35,7 +35,7 @@ export class LabPanel {
 
   stacks(filterSpecies = null) {
     return Object.entries(this.save.inventory.flowers).filter(([, n]) => n > 0).map(([k, n]) => ({ k, n, ...variants.parseFlowerKey(k) }))
-      .filter((s) => !filterSpecies || s.species === filterSpecies)
+      .filter((s) => !FLOWERS[s.species]?.luck && (!filterSpecies || s.species === filterSpecies))
       .sort((x, y) => x.species.localeCompare(y.species) || x.variant.localeCompare(y.variant) || y.q - x.q);
   }
 

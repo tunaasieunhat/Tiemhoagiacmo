@@ -20,10 +20,11 @@ import { createLabState } from '../systems/breeding.js';
 import { createRegularsState } from '../systems/regulars.js';
 import { createQuestState } from '../systems/quests.js';
 import { createAutomationState } from '../systems/automation.js';
+import { createLuckState } from '../systems/luck.js';
 
 const toVkeys = (obj) => Object.fromEntries(Object.entries(obj).map(([k, n]) => [k.includes(':') ? k : vkey(k), n]));
 
-export const SAVE_VERSION = 10;
+export const SAVE_VERSION = 11;
 
 export function newId() {
   if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
@@ -87,6 +88,7 @@ export function createNewSave() {
     decor: { owned: {}, placed: [], nextUid: 1 },  // đồ trang trí: số lượng trong kho, đồ đã đặt tự do [{u,id,x,z,r}] (GĐ10)
     village: createVillageState(),   // kết thân với dân làng: điểm tình thân, sự kiện đã xem, dấu cốt truyện (GĐ12)
     land: { deals: {} },             // mua đất của dân làng: trạng thái trả giá trong ngày (GĐ13)
+    luck: createLuckState(),         // 🍀 Vận May: vé, mảnh, bảo hiểm, lịch sử mở gói (GĐ15)
     farm: {
       plots: [{ ...createPlot('plot-1'), slot: 0 }], // slot = vị trí trong nông trại; lô mua của dân làng có parcel (GĐ13)
     },
@@ -188,6 +190,11 @@ export const MIGRATIONS = {
   9: (s) => {
     s.farm.plots.forEach((p, i) => { if (p.slot == null && !p.parcel) p.slot = i; });
     s.land = s.land || { deals: {} };
+    return s;
+  },
+  // v10 -> v11 (Giai đoạn 15): Vận May — tặng vé chào mừng
+  10: (s) => {
+    s.luck = s.luck || createLuckState();
     return s;
   },
 };

@@ -3,6 +3,7 @@
 // =============================================================
 import { VARIANTS, BREEDING } from '../../data/variants.js';
 import { parseFlowerKey, vkey } from './variants.js';
+import { FLOWERS } from '../../data/flowers.js';
 
 /** Các kết quả có thể có khi lai màu a với màu b (cùng loài). avgQ = trung bình số sao */
 export function breedOutcomes(species, a, b, avgQ = 1) {
@@ -38,6 +39,7 @@ export function startBreeding(save, keyA, keyB, rng = Math.random) {
   if (save.player.level < BREEDING.unlockLevel) return { ok: false, msg: `Cần đạt cấp ${BREEDING.unlockLevel}` };
   const A = parseFlowerKey(keyA), B = parseFlowerKey(keyB);
   if (A.species !== B.species) return { ok: false, msg: 'Chỉ lai được 2 cành cùng loài hoa' };
+  if (FLOWERS[A.species]?.luck) return { ok: false, msg: 'Cây Vận May không lai tạo được' };
   const inv = save.inventory.flowers;
   const need = keyA === keyB ? 2 : 1;
   if ((inv[keyA] || 0) < need || (inv[keyB] || 0) < 1) return { ok: false, msg: 'Không đủ hoa trong kho' };

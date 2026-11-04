@@ -44,5 +44,5 @@ export function upcomingFestivals(fromDay, count = 3) {
 
 export function seasonFlowers(day) {
   const id = calendarOf(day).season.id;
-  return Object.keys(FLOWERS).filter((f) => FLOWERS[f].seasons.includes(id));
+  return Object.keys(FLOWERS).filter((f) => !FLOWERS[f].luck && FLOWERS[f].seasons.includes(id));
 }

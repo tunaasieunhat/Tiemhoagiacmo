@@ -6,7 +6,7 @@
 //  petal/petalDark : màu cánh hoa (mã HEX)
 //  tones     : tông màu (warm ấm, cool mát, pastel, natural mộc mạc)
 //  meanings  : ý nghĩa (xem MEANINGS bên dưới) — người chơi khám phá dần
-//  rarity    : common (thường) · uncommon (ít gặp) · rare (hiếm)
+//  rarity    : common (thường) · uncommon (ít gặp) · rare (hiếm) · legend (huyền thoại — Cây Vận May)
 //  breed     : công thức lai: [màu cha, màu mẹ, xác suất ra màu này]
 // =============================================================
 
@@ -101,12 +101,29 @@ export const VARIANTS = {
     pink: { name: 'hồng', petal: '#ff9fcf', petalDark: '#f079b5', tones: ['warm', 'pastel'], meanings: ['love', 'joy'], rarity: 'uncommon', breed: [['purple', 'white', 0.15]] },
     yellow: { name: 'vàng hoàng kim', petal: '#ffd84d', petalDark: '#f2b630', tones: ['warm'], meanings: ['hope', 'congrats'], rarity: 'rare', breed: [['pink', 'white', 0.06]] },
   },
+  // ---- 🍀 Cây Vận May: mỗi loài 1 màu, không lai tạo ----
+  crystal: {
+    clear: { name: 'trong suốt', petal: '#cdf3ff', petalDark: '#8fd8f2', tones: ['cool', 'pastel'], meanings: ['purity', 'loyalty'], rarity: 'legend', default: true },
+  },
+  firefly: {
+    glow: { name: 'phát sáng', petal: '#fff29a', petalDark: '#e8d04f', tones: ['warm', 'natural'], meanings: ['hope', 'friendship'], rarity: 'legend', default: true },
+  },
+  prism: {
+    rainbow: { name: 'bảy sắc', petal: '#ff9fb8', petalDark: '#8fb8ff', tones: ['warm', 'cool'], meanings: ['joy', 'congrats'], rarity: 'legend', default: true },
+  },
+  wisp: {
+    blue: { name: 'lam huyền ảo', petal: '#8fa8ff', petalDark: '#6b5bd6', tones: ['cool'], meanings: ['longing', 'respect'], rarity: 'legend', default: true },
+  },
+  snowbell: {
+    white: { name: 'tuyết trắng', petal: '#ffffff', petalDark: '#dcecff', tones: ['cool', 'pastel'], meanings: ['purity', 'health'], rarity: 'legend', default: true },
+  },
 };
 
 export const RARITY = {
   common: { name: 'Thường', color: '#9b7b6c', priceMult: 1 },
   uncommon: { name: 'Ít gặp', color: '#3f9b6b', priceMult: 1.3 },
   rare: { name: 'Hiếm', color: '#c86682', priceMult: 1.8 },
+  legend: { name: 'Huyền thoại', color: '#e0a21a', priceMult: 2.2 },
 };
 
 // ---- Nhà lai tạo ----

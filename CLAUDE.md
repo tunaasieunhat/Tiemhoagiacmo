@@ -13,8 +13,7 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
 
 ## Tiến độ
 
-- ✅ GĐ1–14 xong (xem `README.md`). Kế hoạch đã thống nhất với người dùng (03/11/2026), mỗi GĐ xong thì DỪNG chờ đồng ý:
-  còn GĐ15 Vận May (gói Thường/Vàng bằng tiền & vé TRONG GAME, công khai tỉ lệ, bảo hiểm, mảnh; cây hiếm có hiệu ứng động).
+- ✅ GĐ1–15 xong (xem `README.md`) — hết kế hoạch đã thống nhất ngày 03/11/2026. Việc tiếp theo: hỏi người dùng.
 - Đưa lên mạng: Netlify (`netlify.toml`, `docs/HUONG_DAN_DUA_LEN_MANG.md`) — trang thật: https://tiem-hoa-giac-mo.netlify.app
   (Netlify đang deploy nhánh `ccr-845954e0-2hh7a1`; `main` chỉ có commit đầu tiên). APK: Capacitor + GitHub Actions
   (`.github/workflows/android.yml`, `android-keystore.yml`, `docs/HUONG_DAN_APK.md`); thư mục `android/` KHÔNG commit,
@@ -101,6 +100,14 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   `blowsCover`, `spawnMult`, `bonusStarChance`, `giftHour`) — logic ở `src/systems/weather.js` / `farming.js`, không ghi cứng tên.
   Hiệu ứng `src/render/weatherFx.js`: Points dùng `sizeAttenuation: false` (camera trực giao ⇒ kích thước tính bằng px);
   cầu vồng & sao băng vẽ theo khung camera (`depthTest: false`) vì nhìn xuống không thấy trời.
+- **Vận May** (GĐ15): số liệu `data/luck.js` (PACKS odds/pity/cost/coins, REWARDS theo bậc common→legend, TICKET_SOURCES,
+  DUP_SHARDS, SHARD_SHOP). Logic thuần `src/systems/luck.js` (openPack, rollTier có bảo hiểm, generateReward thử loại khác
+  nếu hết đồ, oddsTable cho bảng tỉ lệ công khai, exchangeShards, claimDaily theo ngày thật giờ VN). Save `save.luck`
+  (SAVE_VERSION 11). Chỉ dùng vé/tiền TRONG game — không bán bằng tiền thật. UI `src/ui/luckPanel.js` (nút 🍀, `data-lk`).
+  Cây Vận May = loài có `luck: true` (+ `fx`) trong `data/flowers.js`, màu rarity `legend`; KHÔNG bán ở Chợ, khách không hỏi
+  (dùng `NORMAL_FLOWER_IDS`), không lai tạo. Mô hình + hiệu ứng `src/models/luckFlowers.js` (`root.userData.fx`, chạy trong
+  `farmView.update`, `farmView.night`; vật liệu riêng ⇒ `disposeLuckFx` khi bỏ cây). Đồ trang trí `luck: true` (mỗi món 1 cái).
+  Edge Function có thể tự deploy qua `.github/workflows/supabase-functions.yml` khi người dùng thêm secret `SUPABASE_ACCESS_TOKEN`.
 - **Dò chạm** (0.9.7): `game.pickAt` bỏ qua vật ẩn (three.js không tự bỏ), chạm sát mặt đất / khe thì lấy ô dưới ngón tay
   (`farmView.tileNear`).
 - **Âm thanh / intro** (bản 0.9.2): nhạc nền `public/audio/*.mp3` (đã nén 112 kbps), số liệu ở `data/audio.js`.
@@ -120,7 +127,7 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
 - Code chỉ dành cho app Android nằm ở `src/online/native.js` (kiểm tra `isNative()`); trên web các hàm không làm gì.
 - Đồ họa theo mức `GRAPHICS` trong `data/config.js` (`settings.quality`: auto/high/medium/low); bundle build thành
   1 file JS (`inlineDynamicImports`) để ghép được bản xem thử.
-- **Save có phiên bản** (hiện `SAVE_VERSION = 10`). Đổi cấu trúc save ⇒ tăng `SAVE_VERSION` và thêm
+- **Save có phiên bản** (hiện `SAVE_VERSION = 11`). Đổi cấu trúc save ⇒ tăng `SAVE_VERSION` và thêm
   `MIGRATIONS[phiên_bản_cũ]` trong `src/save/schema.js`; **không bao giờ làm mất tiến độ**. `fillDefaults` tự bổ sung
   trường thiếu (vì vậy số lượng hạt về 0 thì giữ khóa với giá trị 0, không xóa khóa).
 - **Mã vật phẩm**: hạt `"loài:màu"` (vd `rose:red`), hoa trong kho `"loài:màu|sao"` (vd `rose:red|3`).
@@ -139,8 +146,8 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   lỗi trả về dạng `SOCIAL: <câu tiếng Việt>` để `viError()` hiển thị. Điểm cuộc thi chỉ ghi qua Edge Function
   `contest-submit` (chấm lại bằng `src/systems/bouquet.js`, khóa service_role chỉ ở máy chủ).
 - File SQL phải **chạy lại được nhiều lần** (`create or replace`, `if not exists`, `drop policy if exists`).
-- Sửa luật chấm cuộc thi (`bouquet.js`, `contest.js`, `variants.js`, `wrapping.js`) ⇒ chạy `npm run build:functions`
-  và báo người dùng dán lại Edge Function.
+- Sửa luật chấm cuộc thi (`bouquet.js`, `contest.js`, `variants.js`, `wrapping.js`, `flowers.js`) ⇒ chạy `npm run build:functions`
+  và báo người dùng dán lại Edge Function (hoặc nếu đã có secret `SUPABASE_ACCESS_TOKEN` thì GitHub tự đưa lên).
 
 ## Giới hạn đã biết
 

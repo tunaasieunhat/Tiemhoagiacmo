@@ -4,6 +4,15 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.15.0',
+    notes: [
+      '🍀 Vận May: mở 🎁 Gói Thường (cấp 2) và 🌟 Gói Vàng (cấp 4) bằng vé hoặc tiền trong game — có bảng tỉ lệ công khai đầy đủ',
+      '🌈 5 Cây Vận May có hiệu ứng động: 💎 Hoa Pha Lê lấp lánh, ✨ Hoa Đom Đóm sáng về đêm, 🌈 Hoa Cầu Vồng đổi màu, 🔥 Hoa Lửa Ma lập lòe, ❄️ Hoa Tuyết rơi tuyết',
+      '🛡️ Bảo hiểm: mở 10 Gói Vàng chắc chắn có Cây Vận May, 10 Gói Thường chắc chắn có quà Hiếm · 🧩 mảnh từ đồ trùng đổi được món mình muốn',
+      '🎟️ Vé kiếm từ: quà mỗi ngày, lên cấp, nhiệm vụ ngày/tuần, giúp dân làng 3⭐ · 3 đồ trang trí độc quyền: cỏ bốn lá, mèo vẫy tay, đèn ngôi sao',
+    ],
+  },
+  {
     version: '0.14.0',
     notes: [
       '🌱 6 loài hoa mới: 🌸 Sao nhái, 💮 Cẩm chướng, 🏵️ Cúc vạn thọ, 🪷 Hoa ly, 🌺 Mẫu đơn, 🪻 Lan hồ điệp (chỉ trồng trong 🏠 nhà kính) — kèm 24 màu mới để lai tạo',

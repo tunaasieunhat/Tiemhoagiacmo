@@ -1,5 +1,5 @@
 // Khu Chợ: mua hạt giống, vật tư, nâng cấp, mở rộng đất, bán sỉ.
-import { FLOWERS, FLOWER_IDS } from '../../data/flowers.js';
+import { FLOWERS, FLOWER_IDS, NORMAL_FLOWER_IDS } from '../../data/flowers.js';
 import { PAPERS, RIBBONS } from '../../data/wrapping.js';
 import { SUPPLIES, UPGRADES, PLOT_UNLOCKS } from '../../data/market.js';
 import { nextUpgrade, nextPlot, ownedSlots } from '../systems/market.js';
@@ -70,7 +70,7 @@ export class MarketPanel {
 
   seeds() {
     const lv = this.save.player.level;
-    return `<p class="muted small">Chợ chỉ bán hạt màu cơ bản. Màu khác có được nhờ 🧬 lai tạo hoặc quà của khách quen.</p>` + FLOWER_IDS.map((id) => {
+    return `<p class="muted small">Chợ chỉ bán hạt màu cơ bản. Màu khác có được nhờ 🧬 lai tạo hoặc quà của khách quen.</p>` + NORMAL_FLOWER_IDS.map((id) => {
       const f = FLOWERS[id];
       return this.card({
         icon: f.icon, name: `Hạt ${variants.variantName(id, null)}`,
@@ -162,7 +162,7 @@ export class MarketPanel {
           : '<span class="maxed">🍁 Mùa Thu</span>',
       });
     };
-    const normal = Object.entries(DECOR).filter(([, d]) => !d.event);
+    const normal = Object.entries(DECOR).filter(([, d]) => !d.event && !d.luck);
     const events = Object.entries(DECOR_EVENTS).map(([eid, ev]) => {
       const items = Object.entries(DECOR).filter(([, d]) => d.event === eid);
       const open = eventOpen(eid, season);

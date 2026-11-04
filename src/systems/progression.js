@@ -44,7 +44,7 @@ export function addXp(save, amount) {
 /** Những thứ mở khóa đúng ở cấp lv */
 export function unlocksAt(lv) {
   const list = [];
-  Object.values(FLOWERS).forEach((f) => { if (f.unlockLevel === lv) list.push(`${f.icon} Hạt ${f.name}`); });
+  Object.values(FLOWERS).forEach((f) => { if (!f.luck && f.unlockLevel === lv) list.push(`${f.icon} Hạt ${f.name}`); });
   Object.values(PAPERS).forEach((w) => { if ((w.unlockLevel || 1) === lv) list.push(`📜 ${w.name}`); });
   Object.values(RIBBONS).forEach((w) => { if ((w.unlockLevel || 1) === lv) list.push(`🎀 ${w.name}`); });
   Object.values(UPGRADES).forEach((u) => u.tiers.forEach((t) => { if (t.level === lv) list.push(`${u.icon} ${t.name}`); }));

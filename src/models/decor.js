@@ -272,6 +272,64 @@ Object.assign(BUILDERS, {
     g.add(at(torus(0.42, 0.06, '#c79cf2'), 0.12, 1.85, 0)); g.children[g.children.length - 1].rotation.x = Math.PI / 2;
     return g;
   },
+
+  // ---- 🍀 Vận May (GĐ15) ----
+  clover() {
+    // tượng cỏ bốn lá trên bệ đá, lá xoay chầm chậm và nhấp nhô
+    const g = new THREE.Group();
+    g.add(at(cyl(0.42, 0.5, 0.25, '#e6e0d8', 16), 0, 0.12, 0));
+    g.add(at(cyl(0.34, 0.34, 0.05, '#ffd34e', 16), 0, 0.27, 0));
+    const top = new THREE.Group(); top.position.y = 1.05;
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2;
+      const leafG = new THREE.Group(); leafG.rotation.y = a;
+      for (const sx of [-1, 1]) { const h = sphere(0.17, '#5fc46a', 12); h.scale.set(1, 1, 0.35); h.position.set(sx * 0.1, 0.06, 0.22); leafG.add(h); }
+      top.add(leafG);
+    }
+    top.add(sphere(0.08, '#ffe066', 10));
+    g.add(at(cyl(0.035, 0.045, 0.8, '#4f9a57', 6), 0, 0.65, 0));
+    g.add(top);
+    g.userData.spinY = top;
+    g.userData.hover = top; g.userData.hoverBase = 1.05;
+    return g;
+  },
+  luckycat() {
+    // mèo may mắn vẫy tay
+    const g = new THREE.Group();
+    g.add(at(rbox(0.7, 0.16, 0.6, '#c8433b', 0.06), 0, 0.08, 0));
+    const body = sphere(0.33, '#fffaf3', 14); body.scale.set(1, 1.05, 0.85); body.position.y = 0.48; g.add(body);
+    const head = sphere(0.3, '#fffaf3', 14); head.position.y = 0.98; g.add(head);
+    for (const x of [-0.17, 0.17]) { const e = cone(0.1, 0.18, '#fffaf3', 6); e.position.set(x, 1.24, 0); e.rotation.z = -x * 1.3; g.add(e); g.add(at(cone(0.05, 0.1, '#ffb3c6', 6), x * 1.02, 1.23, 0.04)); }
+    for (const x of [-0.1, 0.1]) { const eye = torus(0.04, 0.012, '#3b2a22'); eye.position.set(x, 1.0, 0.28); eye.rotation.z = Math.PI; g.add(eye); }
+    g.add(at(sphere(0.03, '#ff8fa3', 6), 0, 0.93, 0.29));
+    g.add(at(torus(0.24, 0.035, '#e23b3b'), 0, 0.75, 0)); g.children[g.children.length - 1].rotation.x = Math.PI / 2;
+    g.add(at(sphere(0.07, '#ffd34e', 8), 0, 0.7, 0.24));
+    const coin = cyl(0.14, 0.14, 0.04, '#ffd34e', 14); coin.rotation.x = Math.PI / 2; coin.position.set(-0.12, 0.45, 0.3); g.add(coin);
+    const arm = new THREE.Group(); arm.position.set(0.27, 0.75, 0.05);
+    const paw = capsule(0.07, 0.3, '#fffaf3'); paw.position.y = 0.2; arm.add(paw);
+    arm.add(at(sphere(0.08, '#fffaf3', 8), 0, 0.4, 0));
+    g.add(arm);
+    g.userData.wave = arm;
+    return g;
+  },
+  starlamp() {
+    // đèn ngôi sao bay lơ lửng trên cột, ban đêm tự sáng
+    const g = new THREE.Group();
+    g.add(at(cyl(0.3, 0.36, 0.14, '#7c6a8f', 12), 0, 0.07, 0));
+    g.add(at(cyl(0.04, 0.05, 1.3, '#a89cc0', 8), 0, 0.75, 0));
+    g.add(at(torus(0.22, 0.03, '#ffd34e'), 0, 1.45, 0));
+    const star = new THREE.Group(); star.position.y = 1.85;
+    const shape = new THREE.Shape();
+    for (let i = 0; i < 10; i++) { const r = i % 2 ? 0.14 : 0.32; const a = (i / 10) * Math.PI * 2 + Math.PI / 2; if (i) shape.lineTo(Math.cos(a) * r, Math.sin(a) * r); else shape.moveTo(Math.cos(a) * r, Math.sin(a) * r); }
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.12, bevelEnabled: true, bevelSize: 0.03, bevelThickness: 0.03, bevelSegments: 1 });
+    geo.center();
+    const sm = new THREE.Mesh(geo, GLOW); star.add(sm);
+    for (let i = 0; i < 3; i++) { const sp = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 4), basic('#fff6d0')); sp.position.set(Math.cos(i * 2.1) * 0.5, 0, Math.sin(i * 2.1) * 0.5); star.add(sp); }
+    g.add(star);
+    g.userData.spinY = star;
+    g.userData.hover = star; g.userData.hoverBase = 1.85;
+    return g;
+  },
 });
 
 export function buildDecor(id) {

@@ -15,6 +15,8 @@
 //  colors           : màu mô hình 3D (mã màu HEX)
 //  greenhouseOnly   : true = chỉ trồng được trong lô có nhà kính (GĐ14)
 //  tall             : cây cao, dễ bị gió lớn làm gãy (GĐ14)
+//  luck             : Cây Vận May (GĐ15) — chỉ có hạt từ 🍀 Vận May, không bán ở Chợ, không lai tạo được
+//  fx               : hiệu ứng động của cây (sparkle lấp lánh, fireflies đom đóm, hue đổi màu, flame lửa ma, snow tuyết)
 // =============================================================
 
 export const FLOWERS = {
@@ -159,6 +161,46 @@ export const FLOWERS = {
     meaning: 'Sang trọng, tình yêu đẹp', tones: ['cool', 'pastel'],
     colors: { petal: '#c98be0', petalDark: '#a865c7', center: '#ffd34e', stem: '#4f8f5a', leaf: '#5fa86a' },
   },
+
+  // ---------------- 🍀 CÂY VẬN MAY (GĐ15) ----------------
+  crystal: {
+    id: 'crystal', name: 'Hoa Pha Lê', icon: '💎', model: 'crystal', luck: true, fx: 'sparkle',
+    growHours: 10, waterPerDay: 2, fertilizerNeeded: 2,
+    seasons: ['xuan', 'ha', 'thu', 'dong'], basePrice: 150, seedPrice: 0, unlockLevel: 1,
+    meaning: 'Tình cảm trong sáng, bền lâu', tones: ['cool', 'pastel'],
+    colors: { petal: '#cdf3ff', petalDark: '#8fd8f2', center: '#ffffff', stem: '#6fb6a8', leaf: '#8fd1c4' },
+  },
+  firefly: {
+    id: 'firefly', name: 'Hoa Đom Đóm', icon: '✨', model: 'firefly', luck: true, fx: 'fireflies',
+    growHours: 12, waterPerDay: 2, fertilizerNeeded: 2,
+    seasons: ['xuan', 'ha', 'thu', 'dong'], basePrice: 170, seedPrice: 0, unlockLevel: 1,
+    meaning: 'Ánh sáng dẫn đường, hy vọng', tones: ['warm', 'natural'],
+    colors: { petal: '#fff29a', petalDark: '#e8d04f', center: '#fffbe0', stem: '#4f8f5a', leaf: '#6aa86a' },
+  },
+  prism: {
+    id: 'prism', name: 'Hoa Cầu Vồng', icon: '🌈', model: 'prism', luck: true, fx: 'hue',
+    growHours: 14, waterPerDay: 3, fertilizerNeeded: 2,
+    seasons: ['xuan', 'ha', 'thu', 'dong'], basePrice: 210, seedPrice: 0, unlockLevel: 1,
+    meaning: 'Niềm vui rực rỡ, ước mơ thành thật', tones: ['warm', 'cool'],
+    colors: { petal: '#ff9fb8', petalDark: '#8fb8ff', center: '#ffe066', stem: '#5c9f62', leaf: '#71b672' },
+  },
+  wisp: {
+    id: 'wisp', name: 'Hoa Lửa Ma', icon: '🔥', model: 'wisp', luck: true, fx: 'flame',
+    growHours: 9, waterPerDay: 2, fertilizerNeeded: 2,
+    seasons: ['xuan', 'ha', 'thu', 'dong'], basePrice: 160, seedPrice: 0, unlockLevel: 1,
+    meaning: 'Bí ẩn, nỗi nhớ người xa', tones: ['cool'],
+    colors: { petal: '#8fa8ff', petalDark: '#6b5bd6', center: '#e6f0ff', stem: '#4a5f7a', leaf: '#5d7a8f' },
+  },
+  snowbell: {
+    id: 'snowbell', name: 'Hoa Tuyết', icon: '❄️', model: 'snowbell', luck: true, fx: 'snow',
+    growHours: 12, waterPerDay: 2, fertilizerNeeded: 2,
+    seasons: ['xuan', 'ha', 'thu', 'dong'], basePrice: 180, seedPrice: 0, unlockLevel: 1,
+    meaning: 'Thuần khiết, khởi đầu mới', tones: ['cool', 'pastel'],
+    colors: { petal: '#ffffff', petalDark: '#dcecff', center: '#bfe0ff', stem: '#6a9fb0', leaf: '#8cc0cc' },
+  },
 };
 
 export const FLOWER_IDS = Object.keys(FLOWERS);
+/** Các loài bán ở Chợ / khách hỏi mua (không gồm Cây Vận May) */
+export const NORMAL_FLOWER_IDS = FLOWER_IDS.filter((id) => !FLOWERS[id].luck);
+export const LUCK_FLOWER_IDS = FLOWER_IDS.filter((id) => FLOWERS[id].luck);
