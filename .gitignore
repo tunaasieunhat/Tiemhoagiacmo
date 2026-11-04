@@ -9,3 +9,5 @@ dist
 android/
 *.apk
 *.jks
+scripts/trailer/frames/
+*.mp4
