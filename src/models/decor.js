@@ -312,6 +312,62 @@ Object.assign(BUILDERS, {
     g.userData.wave = arm;
     return g;
   },
+  // ---- 📅 Sự kiện tuần (GĐ18) ----
+  flowercart() {
+    // xe đẩy gỗ chở đầy hoa, bánh xe quay chầm chậm
+    const g = new THREE.Group();
+    g.add(at(rbox(1.3, 0.5, 0.8, WOOD, 0.08), 0, 0.6, 0));
+    g.add(at(rbox(1.36, 0.08, 0.86, WOOD2, 0.04), 0, 0.88, 0));
+    const wheels = new THREE.Group();
+    for (const z of [-0.45, 0.45]) { const w = torus(0.26, 0.06, '#8a5a3c'); w.position.set(-0.3, 0.3, z); wheels.add(w); wheels.add(at(sphere(0.07, '#c9926a', 8), -0.3, 0.3, z)); }
+    g.add(wheels);
+    g.add(at(cyl(0.04, 0.04, 0.9, WOOD, 6), 0.95, 0.75, 0)); g.children[g.children.length - 1].rotation.z = 1.1;
+    g.add(at(cyl(0.05, 0.05, 0.6, WOOD, 6), 0.45, 0.35, 0)); // chân chống
+    const cols = ['#f47a93', '#ffd34e', '#c79cf2', '#ff9f7a', '#ffffff', '#8fd8ff'];
+    for (let i = 0; i < 16; i++) {
+      const x = -0.5 + (i % 4) * 0.33, z = -0.27 + Math.floor(i / 4) * 0.18;
+      g.add(at(sphere(0.13, cols[i % cols.length], 8), x, 1.02 + (i % 3) * 0.04, z));
+    }
+    for (let i = 0; i < 6; i++) g.add(at(sphere(0.12, '#8fd18b', 8), -0.55 + i * 0.22, 0.95, i % 2 ? 0.33 : -0.33));
+    return g;
+  },
+  trophy() {
+    // cúp vàng trên bệ, ngôi sao xoay phía trên
+    const g = new THREE.Group();
+    g.add(at(rbox(0.6, 0.3, 0.6, '#7c6a8f', 0.06), 0, 0.15, 0));
+    g.add(at(cyl(0.08, 0.12, 0.35, '#f2c14e', 10), 0, 0.48, 0));
+    const cup = cyl(0.32, 0.14, 0.45, '#f7c531', 16); cup.position.y = 0.88; g.add(cup);
+    for (const x of [-0.36, 0.36]) { const h = torus(0.12, 0.035, '#f2c14e'); h.position.set(x, 0.9, 0); h.rotation.y = Math.PI / 2; g.add(h); }
+    const star = new THREE.Group(); star.position.y = 1.35;
+    const s = sphere(0.13, '#fff2a8', 10); s.scale.set(1, 1, 0.4); star.add(s);
+    for (let i = 0; i < 5; i++) { const sp = cone(0.07, 0.18, '#ffd34e', 6); const a = (i / 5) * Math.PI * 2; sp.position.set(Math.cos(a) * 0.15, Math.sin(a) * 0.15, 0); sp.rotation.z = a - Math.PI / 2; star.add(sp); }
+    g.add(star);
+    g.userData.spinY = star;
+    g.userData.hover = star; g.userData.hoverBase = 1.35;
+    return g;
+  },
+  carousel() {
+    // đu quay mini có ngựa gỗ & mái sọc, quay tròn
+    const g = new THREE.Group();
+    g.add(at(cyl(0.95, 1.0, 0.18, '#f3dcc0', 20), 0, 0.09, 0));
+    const top = new THREE.Group();
+    top.add(at(cyl(0.07, 0.07, 1.7, '#f6d67a', 8), 0, 0.95, 0));
+    const roof = cone(1.05, 0.55, '#f6a6b9', 12); roof.position.y = 1.95; top.add(roof);
+    top.add(at(sphere(0.1, '#ffd34e', 8), 0, 2.28, 0));
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2;
+      const pole = cyl(0.03, 0.03, 1.5, '#ffffff', 6); pole.position.set(Math.cos(a) * 0.7, 1.0, Math.sin(a) * 0.7); top.add(pole);
+      const horse = new THREE.Group();
+      horse.add(rbox(0.36, 0.2, 0.14, ['#ffffff', '#ffd3df', '#d8f0ff', '#fff3c4'][i], 0.06));
+      horse.add(at(rbox(0.14, 0.22, 0.12, ['#ffffff', '#ffd3df', '#d8f0ff', '#fff3c4'][i], 0.05), 0.18, 0.14, 0));
+      horse.position.set(Math.cos(a) * 0.7, 0.75 + (i % 2) * 0.15, Math.sin(a) * 0.7);
+      horse.rotation.y = -a;
+      top.add(horse);
+    }
+    g.add(top);
+    g.userData.spinY = top;
+    return g;
+  },
   starlamp() {
     // đèn ngôi sao bay lơ lửng trên cột, ban đêm tự sáng
     const g = new THREE.Group();

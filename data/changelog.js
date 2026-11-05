@@ -4,6 +4,15 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.18.0',
+    notes: [
+      '🏅 14 thành tựu, mỗi cái 3 huy chương 🥉🥈🥇 có thưởng (tiền, vé, mảnh) · đạt 🥈 mở DANH HIỆU — bạn bè thấy khi ghé thăm',
+      '📅 Sự kiện tuần theo ngày thật (giờ VN): mỗi tuần 1 chủ đề (Tuần lễ Hoa Hồng, Nắng Vàng, Pastel...), tích điểm qua 5 mốc quà, về đích nhận đồ trang trí độc quyền',
+      '🏪 Nâng quy mô tiệm 4 bậc: Tiệm nhỏ → Cửa hàng hoa → Tiệm hoa lớn → Chuỗi tiệm Giấc Mơ — tiệm to đẹp dần, khách trả cao hơn, có khách 👑 VIP',
+      'Tất cả nằm trong bảng 📋 Nhiệm vụ (thẻ Sự kiện, Thành tựu) và Chợ › Nâng cấp',
+    ],
+  },
+  {
     version: '0.17.0',
     notes: [
       '🥀 Độ tươi: hoa nở để quá 6 giờ không hái sẽ héo dần và mất sao · ✨ hái trong "giờ vàng" (2 giờ đầu) có 30% cơ hội +1⭐',

@@ -4,6 +4,7 @@ import { tierInfo } from '../systems/shop.js';
 import { bookProgress } from '../systems/notebook.js';
 import { placedToSnapshot, beautyOf } from '../systems/decor.js';
 import { PARCELS } from '../../data/land.js';
+import { titleOf, medalCount } from '../systems/goals.js';
 
 const STATE = { untilled: 0, tilled: 1, growing: 2, ready: 3, dead: 4 };
 const STATE_BACK = ['untilled', 'tilled', 'growing', 'ready', 'dead'];
@@ -23,6 +24,8 @@ export function buildSnapshot(save) {
     harvested: save.stats.harvested || 0,
     book: save.book ? bookProgress(save).pct : 0,
     hearts,
+    ti: titleOf(save)?.text || undefined,   // danh hiệu đang đeo (GĐ18)
+    md: medalCount(save) || undefined,       // số huy chương thành tựu
     // đồ trang trí đặt tự do: [[loại, x, z, góc], ...] (GĐ10)
     deco: placedToSnapshot(save.decor?.placed || []),
     beauty: beautyOf(save.decor?.placed || []),

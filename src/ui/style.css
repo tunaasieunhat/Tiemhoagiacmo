@@ -994,3 +994,41 @@ h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
 .ord-line.ok { background: #e5f6dd; color: #3f8b4a; }
 .mk-info small .bad, .mk-info .bad { color: #d0675a; }
 .mk-body:has(> .ord) { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.tag.vip { background: linear-gradient(#fff3b0, #ffd76a); color: #8a5a00; border-color: #e0a21a; }
+
+/* 📅 Sự kiện tuần & 🏅 Thành tựu (GĐ18) */
+.ev-head { display: flex; gap: 10px; align-items: center; background: color-mix(in srgb, var(--ec) 14%, #fff); border: 2px solid var(--ec); border-radius: 18px; padding: 8px 12px; }
+.ev-head > div { display: flex; flex-direction: column; gap: 2px; }
+.ev-head small { font-size: 12px; font-weight: 700; color: var(--ink-soft); }
+.ev-icon { font-size: 34px; }
+.ev-bar { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+.ev-bar .track { flex: 1; }
+.ev-miles { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; }
+.ev-mile { display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 6px; font-size: 12px; font-weight: 700; }
+.ev-mile b { font-size: 15px; }
+.ev-mile.can { border-color: #f4b42a; background: #fffbe8; }
+.ev-mile.got { opacity: .65; }
+.ev-mile i { font-style: normal; }
+.ev-mile .btn { padding: 4px 12px; font-size: 12px; }
+.mk-item.ach.can { border-color: #f4b42a; background: #fffbe8; }
+.ach-row { display: flex; align-items: center; gap: 6px; }
+.mds .md { font-size: 15px; opacity: .45; }
+.mds .md.on { opacity: 1; }
+.mk-item.ach .mk-buy small { font-size: 11px; font-weight: 700; color: var(--ink-soft); }
+.title-row { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-bottom: 6px; font-size: 13px; }
+.chip-btn { background: #fff; border: 2px solid var(--line); border-radius: 999px; padding: 3px 10px; font-weight: 800; font-size: 12px; }
+.chip-btn.on { border-color: var(--pink); background: #fff0f4; }
+.p-title { display: block; font-size: 11px; font-weight: 800; color: #b07a12; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.plevel { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 32vw; }
+/* 🏪 Quy mô tiệm (GĐ18) */
+.shop-tier { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; background: linear-gradient(135deg, #fff7ef, #ffeef3); border: 2px solid var(--pink); border-radius: 18px; padding: 10px 12px; margin-bottom: 6px; }
+.st-top { display: flex; gap: 10px; align-items: center; }
+.st-top > div:nth-child(2) { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.st-top small, .shop-tier > small { font-size: 12px; font-weight: 700; color: var(--ink-soft); }
+.st-icon { font-size: 34px; }
+.st-steps { display: flex; align-items: center; gap: 2px; font-size: 18px; }
+.st-steps i { font-style: normal; color: var(--ink-soft); font-size: 12px; }
+.st-step { opacity: .35; } .st-step.on { opacity: 1; }
+.st-checks { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; font-weight: 700; }
+.st-checks .no { color: var(--ink-soft); }
+.shop-tier .btn { align-self: flex-start; }

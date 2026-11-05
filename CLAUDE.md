@@ -16,7 +16,7 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
 - ✅ GĐ1–15 xong (xem `README.md`). 0.16.0 (04/11/2026): cân bằng lại theo góp ý "quá dễ" — XP mỗi việc giảm, giá Chợ tăng,
   Vận May hiếm hơn (vàng 3%, bảo hiểm 50), xỏ kim dễ hơn. **Giữ nguyên `LEVEL_XP`** vì SQL `level_from_xp` (migration GĐ8) dùng
   cùng bảng — muốn đổi phải thêm migration mới. Mô phỏng tiến độ: chạy thử với số liệu `data/*` (cấp 10 ≈ 3 giờ chơi chăm).
-  ✅ GĐ16 (0.17.0) chăm sóc có kỹ năng. Còn đề xuất: GĐ17 (mini game hay hơn), GĐ18 (mục tiêu dài hạn) — chờ người dùng chọn.
+  ✅ GĐ16 (0.17.0) chăm sóc có kỹ năng. ✅ GĐ18 (0.18.0) mục tiêu dài hạn. Còn đề xuất GĐ17 (mini game hay hơn) — chờ người dùng.
 - Đưa lên mạng: Netlify (`netlify.toml`, `docs/HUONG_DAN_DUA_LEN_MANG.md`) — trang thật: https://tiem-hoa-giac-mo.netlify.app
   (Netlify đang deploy nhánh `ccr-845954e0-2hh7a1`; `main` chỉ có commit đầu tiên). APK: Capacitor + GitHub Actions
   (`.github/workflows/android.yml`, `android-keystore.yml`, `docs/HUONG_DAN_APK.md`); thư mục `android/` KHÔNG commit,
@@ -117,6 +117,12 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   Sâu chỉ sống trong bộ nhớ (`game.bugs`, `bugTick` khi online, `BugView` ở `src/render/bugs.js`, pick `bug` ưu tiên trong
   `pickRoots`). Đơn hàng `src/systems/orders.js` (`save.orders`; offline thì dời hạn), UI thẻ "📦 Đơn hàng" trong bảng Nhiệm vụ.
   Combo thu hoạch + hạt đột biến: `game.harvestFun`. Biểu tượng ô `golden` / `stale` ở `src/render/icons.js`.
+- **Mục tiêu dài hạn** (GĐ18): số liệu `data/achievements.js` (14 thành tựu × 3 bậc, `stat` đếm trong `goals.statValue`),
+  `data/events.js` (chủ đề xoay theo tuần thật `contest.roundOf`, điểm, 5 mốc, mốc cuối tặng đồ `weekly: true`),
+  `data/shopTiers.js` (4 quy mô tiệm + VIP). Logic thuần `src/systems/goals.js`; save `ach`/`event`/`shopLevel` (SAVE_VERSION 13).
+  Áp quy mô tiệm & VIP trong `shop.spawnCustomer`/`shopTick` (`shopTierOf`). Game: `eventPts(kind)` gọi ở thu hoạch, bán,
+  bắt sâu, giao đơn, nhờ việc; `checkGoals` mỗi 3 giây; `applyShopLevel` gắn `shopUpgrades(level)` (environment.js) vào
+  `world.shop`. UI: thẻ Sự kiện/Thành tựu trong `questsPanel.js`, thẻ quy mô ở `marketPanel.upgrades`. Ảnh chụp bạn bè có `ti`, `md`.
 - **Dò chạm** (0.9.7): `game.pickAt` bỏ qua vật ẩn (three.js không tự bỏ), chạm sát mặt đất / khe thì lấy ô dưới ngón tay
   (`farmView.tileNear`). (0.15.1) Vùng chạm nhà (`house`) to hơn nhà ⇒ trúng nhà thì dò tiếp, có dân làng phía sau thì ưu tiên
   dân làng; nhiều dân làng trùng tia chạm ⇒ `nearestVillagerHit` chọn người gần tia nhất. Bảng nhà: chủ nhà làm việc ngay trước
@@ -145,7 +151,7 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
 - Code chỉ dành cho app Android nằm ở `src/online/native.js` (kiểm tra `isNative()`); trên web các hàm không làm gì.
 - Đồ họa theo mức `GRAPHICS` trong `data/config.js` (`settings.quality`: auto/high/medium/low); bundle build thành
   1 file JS (`inlineDynamicImports`) để ghép được bản xem thử.
-- **Save có phiên bản** (hiện `SAVE_VERSION = 12`). Đổi cấu trúc save ⇒ tăng `SAVE_VERSION` và thêm
+- **Save có phiên bản** (hiện `SAVE_VERSION = 13`). Đổi cấu trúc save ⇒ tăng `SAVE_VERSION` và thêm
   `MIGRATIONS[phiên_bản_cũ]` trong `src/save/schema.js`; **không bao giờ làm mất tiến độ**. `fillDefaults` tự bổ sung
   trường thiếu (vì vậy số lượng hạt về 0 thì giữ khóa với giá trị 0, không xóa khóa).
 - **Mã vật phẩm**: hạt `"loài:màu"` (vd `rose:red`), hoa trong kho `"loài:màu|sao"` (vd `rose:red|3`).

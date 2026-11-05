@@ -94,7 +94,7 @@ export class ShopPanel {
       return `<div class="cust ${reg ? 'regular' : ''}">
         <div class="cust-av">${avatarSVG(npc.look, 52)}</div>
         <div class="cust-body">
-          <div class="cust-top"><b>${esc(npc.name)}</b>${reg ? `<span class="tag reg">Khách quen ${hearts}</span>` : `<span class="tag">${typeLabel}</span>`}<span class="reward">~${shop.estimateReward(c.request)} 💰</span></div>
+          <div class="cust-top"><b>${esc(npc.name)}</b>${c.vip ? '<span class="tag vip">👑 VIP</span>' : ''}${reg ? `<span class="tag reg">Khách quen ${hearts}</span>` : `<span class="tag">${typeLabel}</span>`}<span class="reward">~${shop.estimateReward(c.request)} 💰</span></div>
           ${reg ? `<p class="story-snip">${esc(regularChapter(c.regular, s).intro)}</p>` : ''}
           <p>“${esc(shop.requestText(c.request, c.npc))}”</p>
           ${c.request.meaning ? `<div class="chips">${meaningChip(c.request.meaning)}</div>` : ''}
@@ -180,7 +180,7 @@ export class ShopPanel {
       <div class="comp-head">
         <button class="round sm" data-sp="back" aria-label="Quay lại">←</button>
         <div class="cust-av">${avatarSVG(npc.look, 44)}</div>
-        <div><b>${esc(npc.name)}${reg ? ' <span class="tag reg">Khách quen</span>' : ''}</b>
+        <div><b>${esc(npc.name)}${c.vip ? ' <span class="tag vip">👑 VIP</span>' : ''}${reg ? ' <span class="tag reg">Khách quen</span>' : ''}</b>
           ${reg ? `<p class="story-snip">${esc(regularChapter(c.regular, s).intro)}</p>` : ''}
           <p>“${esc(shop.requestText(req, c.npc))}”</p>
           ${req.meaning ? `<div class="chips">${meaningChip(req.meaning)}<span class="muted small">${Object.keys(known).some((k) => known[k] && variants.meaningsOf(...k.split(':')).includes(req.meaning)) ? '' : 'Chưa biết hoa nào mang ý nghĩa này — thử đoán xem!'}</span></div>` : ''}

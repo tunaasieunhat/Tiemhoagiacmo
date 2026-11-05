@@ -104,7 +104,7 @@ const GEN = {
     return { type: 'seed', key: vkey(s), n, icon: FLOWERS[s].icon, text: `${n} hạt ${variantName(s, null)}`, early: FLOWERS[s].unlockLevel };
   },
   decor(save, r, rng) {
-    let list = Object.keys(DECOR).filter((id) => !DECOR[id].luck && DECOR[id].price >= (r.minPrice || 0) && DECOR[id].price <= (r.maxPrice ?? 1e9));
+    let list = Object.keys(DECOR).filter((id) => !DECOR[id].luck && !DECOR[id].weekly && DECOR[id].price >= (r.minPrice || 0) && DECOR[id].price <= (r.maxPrice ?? 1e9));
     if (!list.length) return null;
     const fresh = list.filter((id) => !decorCount(save, id));
     if (fresh.length) list = fresh;

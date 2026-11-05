@@ -2,6 +2,7 @@
 import { FLOWERS, FLOWER_IDS } from '../../data/flowers.js';
 import { SOIL as SOIL_RULES } from '../../data/care.js';
 import { canDeliver as orderCanDeliver } from '../systems/orders.js';
+import * as goalsSys from '../systems/goals.js';
 import { CARE, DEV_TOOLS, GRAPHICS } from '../../data/config.js';
 import * as auth from '../online/auth.js';
 import * as farming from '../systems/farming.js';
@@ -106,7 +107,7 @@ export class Hud {
     em.on('house', ({ id }) => this.openHouse(id));
     em.on('parcel', ({ id }) => this.openParcel(id));
     em.on('inventory', () => { if (this.game.decorMode) this.renderDecorBar(); });
-    em.on('xp', () => this.updateWallet());
+    em.on('xp', () => this.updateProfile());
     em.on('levelup', (ups) => this.showLevelUp(ups));
     em.on('weather', () => { this.updateAlert(); this.updateClock(this.game.clock); if (this.modal === 'forecast') this.openForecast(); });
     em.on('saved', (s) => this.flashSaved(s));
@@ -333,7 +334,8 @@ export class Hud {
     const p = this.game.save.player;
     $('.avatar', this.root).innerHTML = avatarSVG(p.avatar, 40);
     $('.pname', this.root).textContent = p.name;
-    $('.plevel', this.root).textContent = `Lv ${p.level}`;
+    const tt = goalsSys.titleOf(this.game.save);
+    $('.plevel', this.root).textContent = `Lv ${p.level}${tt ? ` · ${tt.icon} ${tt.text}` : ''}`;
     this.updateWallet();
   }
 
@@ -431,7 +433,7 @@ export class Hud {
   // ---------- nhiệm vụ & trang trí ----------
   updateQuestBadge() {
     const s = this.game.save;
-    const n = claimableCount(s) + (s.orders?.list || []).filter((o) => orderCanDeliver(s, o)).length;
+    const n = claimableCount(s) + (s.orders?.list || []).filter((o) => orderCanDeliver(s, o)).length + goalsSys.claimableAch(s) + goalsSys.claimableEvent(s);
     const b = $('.q-badge', this.root);
     b.classList.toggle('hidden', !n);
     b.textContent = n;
@@ -777,7 +779,7 @@ export class Hud {
     const sn = v.snapshot || {};
     bar.innerHTML = `<div class="vb-av">${avatarSVG(v.profile.avatar || {}, 44)}</div>
       <div class="vb-info"><b>Nông trại của ${esc(v.profile.name)}</b>
-      <small>⭐ Cấp ${num(sn.level) || 1}${sn.tier ? ` · ${esc(sn.tierIcon || '')} ${esc(sn.tier)}` : ''}</small>
+      <small>⭐ Cấp ${num(sn.level) || 1}${sn.tier ? ` · ${esc(sn.tierIcon || '')} ${esc(sn.tier)}` : ''}${typeof sn.ti === 'string' && sn.ti ? ` · 🎖️ ${esc(sn.ti.slice(0, 40))}` : ''}${sn.md ? ` · 🏅 ${num(sn.md)}` : ''}</small>
       <small>🌸 ${num(sn.served)} khách · 💐 ${num(sn.bouquets)} bó hoa · 📖 Sổ tay ${num(sn.book)}%${sn.hearts ? ` · ❤️ ${num(sn.hearts)}` : ''}${sn.beauty ? ` · 🎨 ${num(sn.beauty)}` : ''}</small></div>`;
     act.innerHTML = `
       <button class="tool ${v.helped_today ? 'disabled' : ''}" data-act="visit-water"><span class="ti">💧</span><span class="tl">${v.helped_today ? 'Đã tưới' : 'Tưới giúp'}</span></button>

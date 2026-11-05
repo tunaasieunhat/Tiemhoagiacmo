@@ -54,6 +54,10 @@ import { createPlot } from './save/schema.js';
 import * as luck from './systems/luck.js';
 import * as orders from './systems/orders.js';
 import { BugView } from './render/bugs.js';
+import * as goals from './systems/goals.js';
+import { shopUpgrades } from './models/environment.js';
+import { VIP } from '../data/shopTiers.js';
+import { EVENT_MILESTONES } from '../data/events.js';
 import { BUGS, HARVEST_FUN, FRESH } from '../data/care.js';
 import { VARIANTS } from '../data/variants.js';
 import { TICKET_SOURCES } from '../data/luck.js';
@@ -145,6 +149,10 @@ export class Game {
     if (portrait) this.controls.zoom = 1.75;
     this.controls.apply();
     this.updateLockedSlots();
+    this.applyShopLevel();
+    // GĐ18: thành tựu chờ nhận & sự kiện tuần (để báo khi có cái mới)
+    this.achSeen = goals.claimableAch(this.save);
+    this.goalCheckT = 0;
     this.applyUpgradeEffects();
     // biểu tượng "đã lai xong" trên Nhà lai tạo
     this.labIcon = new THREE.Sprite(iconMaterial('ready'));
@@ -318,6 +326,11 @@ export class Game {
     this.save.time.lastRealTs = Date.now();
 
     this.clockT += dt;
+    // 🏅📅 kiểm tra thành tựu mới / sang tuần sự kiện mới (mỗi 3 giây)
+    this.goalCheckT += dt;
+    if (this.goalCheckT > 3 && !this.visit) { this.goalCheckT = 0; this.checkGoals(); }
+    if (this.shopUpg?.userData.spin) this.shopUpg.userData.spin.rotation.y += dt * 1.2;
+    if (this.shopUpg?.userData.flag) this.shopUpg.userData.flag.rotation.y = Math.sin(performance.now() / 400) * 0.35;
     const c = this.clock;
     if (c.minute !== this.lastMinute) {
       this.lastMinute = c.minute;
@@ -514,6 +527,7 @@ export class Game {
       this.emitter.emit('float', { pos: pos.clone().setY(1.2), text: `+1 ${FLOWERS[res.flower].icon} ${'★'.repeat(res.quality)}${res.bonus ? ' 🌈' : ''}${res.golden ? ' ✨' : ''}${res.stale ? ' 🥀' : ''}` });
       if (res.bonus || res.golden) this.particles.spawn('sparkle', pos);
       this.harvestFun(res, pos);
+      this.eventPts('harvest', { species: res.flower });
       this.particles.spawn('leaf', pos);
       if (notebook.recordHarvest(this.save, res.flower, res.variant, res.quality, dayOf(this.now))) {
         const r = variants.rarityOf(res.flower, res.variant);
@@ -579,7 +593,9 @@ export class Game {
     const tip = shop.tipAmount(Math.random, tier, ev);
     s.player.coins += ev.price + tip;
     const oldTier = tier;
-    s.player.reputation = Math.max(0, s.player.reputation + ev.repDelta);
+    const vipHappy = c.vip && (ev.mood === 'perfect' || ev.mood === 'good');
+    s.player.reputation = Math.max(0, s.player.reputation + ev.repDelta + (vipHappy ? VIP.repBonus : 0));
+    if (vipHappy) setTimeout(() => this.toast(`👑 Khách VIP rất hài lòng! +${VIP.repBonus} 💗 uy tín`, 'good'), 1200);
     s.shop.customers.splice(s.shop.customers.indexOf(c), 1);
     Object.assign(s.stats, {
       served: s.stats.served + 1, sold: s.stats.sold + count, coinsEarned: s.stats.coinsEarned + ev.price + tip,
@@ -613,6 +629,7 @@ export class Game {
     if (newTier > oldTier) setTimeout(() => this.toast(`🎉 Tiệm lên bậc "${shop.tierInfo(s.player.reputation).name}"! Khách sẽ đến đông hơn.`, 'good'), 1800);
     this.gainXp(Math.floor(((ev.price + tip) / 10) * XP.sellPer10Coins) + (bouquet ? XP.bouquet : 0) + (ev.mood === 'perfect' ? XP.perfect : 0));
     this.questEvent('serve');
+    this.eventPts('sell', { items: ev.items, bouquet, perfect: ev.mood === 'perfect' });
     this.questEvent('earn', ev.price + tip);
     if (bouquet) this.questEvent('bouquet');
     if (ev.mood === 'perfect') this.questEvent('perfect');
@@ -1091,6 +1108,7 @@ export class Game {
   finishFavorGame(id, favor, stars) {
     const res = favors.finishFavor(this.save, id, favor, stars, this.today);
     if (res.stars >= 3) { res.tickets = luck.grantTickets(this.save, TICKET_SOURCES.favor3); this.emitter.emit('luck'); }
+    if (res.stars >= 1) this.eventPts('favor');
     if (res.xp) this.gainXp(res.xp);
     this.afterBond(id, res);
     this.emitter.emit('inventory');
@@ -1125,7 +1143,7 @@ export class Game {
   buyDecor(id, n = 1) {
     const d = DECOR[id];
     const s = this.save;
-    if (!d || d.luck) return false;
+    if (!d || d.luck || d.weekly) return false;
     if (d.event && !decorSys.eventOpen(d.event, this.seasonId())) { const ev = DECOR_EVENTS[d.event]; this.toast(`${ev.icon} Đồ ${ev.name} chỉ bán trong Mùa Thu`, 'warn'); return false; }
     if (s.player.level < d.level) { this.toast(`Cần đạt cấp ${d.level}`, 'warn'); return false; }
     if (s.player.coins < d.price * n) { this.toast(`Không đủ tiền (cần ${d.price * n} 💰)`, 'warn'); return false; }
@@ -1403,6 +1421,7 @@ export class Game {
     this.emitter.emit('float', { pos: pos.setY(1.1), text: `${b.golden ? '🐞' : '🐛'} +${coins} 💰${extra}${this.bugCombo.n > 1 ? ` · Combo ×${this.bugCombo.n}!` : ''}` });
     this.audio?.sfx?.chime?.(Math.min(6, 1 + this.bugCombo.n));
     this.questEvent('bug');
+    this.eventPts('bug');
     this.saveMgr.markDirty();
     this.emitter.emit('xp');
   }
@@ -1447,6 +1466,7 @@ export class Game {
     const o = res.order, k = orders.kindOf(o);
     if (o.ticket) luck.grantTickets(this.save, { luck: 1 });
     this.questEvent('order');
+    this.eventPts('order');
     this.gainXp(o.xp);
     this.toast(`📦 Đã giao đơn ${k.icon} ${k.name}: +${o.coins} 💰 +${o.xp} XP${o.ticket ? ' +1 🎟️' : ''}`, 'good');
     this.particles.spawn('sparkle', this.player.root.position.clone().setY(1.2));
@@ -1458,6 +1478,88 @@ export class Game {
     this.emitter.emit('luck');
     this.emitter.emit('xp');
     return res;
+  }
+
+  // ---------------- GĐ18: thành tựu, sự kiện tuần, quy mô tiệm ----------------
+  eventPts(kind, ctx = {}) {
+    if (this.visit) return;
+    const r = goals.addEventPoints(this.save, kind, ctx);
+    if (!r) return;
+    if (r.reachedNew) this.toast(`📅 Sự kiện tuần: đạt mốc quà mới (${this.save.event.pts} điểm)! Vào 📋 › Sự kiện để nhận`, 'good');
+    this.saveMgr.markDirty();
+    this.emitter.emit('quests');
+  }
+
+  checkGoals() {
+    const s = this.save;
+    const { changed, theme } = goals.ensureEvent(s);
+    if (changed) {
+      this.saveMgr.markDirty();
+      if (s.player.level >= 2) this.toast(`📅 Sự kiện tuần mới: ${theme.icon} ${theme.name}! Xem ở 📋 › Sự kiện`, 'info');
+      this.emitter.emit('quests');
+    }
+    const n = goals.claimableAch(s);
+    if (n > this.achSeen) {
+      this.toast(`🏅 Đạt thành tựu mới! Vào 📋 › Thành tựu để nhận thưởng`, 'good');
+      this.audio?.sfx?.chime?.(4);
+      this.emitter.emit('quests');
+    }
+    this.achSeen = n;
+  }
+
+  claimAchievement(id) {
+    const res = goals.claimAch(this.save, id);
+    if (!res.ok) { this.toast(res.msg, 'warn'); return res; }
+    this.toast(`🏅 ${res.a.name} — huy chương ${['Đồng', 'Bạc', 'Vàng'][res.tier]}! +${goals.rewardText(res.rw)}${res.unlockTitle ? ` · Mở danh hiệu "${res.a.title}"` : ''}`, 'good');
+    this.audio?.sfx?.chime?.(4 + res.tier);
+    this.particles.spawn('sparkle', this.player.root.position.clone().setY(1.2));
+    this.achSeen = goals.claimableAch(this.save);
+    this.afterGoalReward();
+    return res;
+  }
+
+  claimEventMilestone(i) {
+    const res = goals.claimEvent(this.save, i);
+    if (!res.ok) { this.toast(res.msg, 'warn'); return res; }
+    const decor = res.decor ? DECOR[res.decor] : null;
+    this.toast(`📅 Quà sự kiện: ${goals.rewardText(res.rw) || ''}${decor ? ` + ${decor.icon} ${decor.name} (vào 🎨 để đặt)` : ''}${i === EVENT_MILESTONES.length - 1 ? ' — Về đích tuần này! 🎉' : ''}`, 'good');
+    this.audio?.sfx?.chime?.(5);
+    this.afterGoalReward();
+    return res;
+  }
+
+  setTitle(id) {
+    if (goals.setTitle(this.save, id)) { this.saveMgr.markDirty(); this.emitter.emit('xp'); this.emitter.emit('quests'); }
+  }
+
+  upgradeShop() {
+    const res = goals.upgradeShop(this.save);
+    if (!res.ok) { this.toast(res.msg, 'warn'); return res; }
+    this.applyShopLevel();
+    this.controls.focusOn(ZONES.shop.center.clone(), 1.4);
+    this.particles.spawn('sparkle', ZONES.shop.center.clone().setY(3));
+    this.particles.spawn('leaf', ZONES.shop.center.clone().setY(2));
+    this.toast(`🏪 Tiệm đã nâng lên "${res.tier.icon} ${res.tier.name}"! ${res.tier.desc}`, 'good');
+    this.audio?.sfx?.chime?.(6);
+    this.afterGoalReward();
+    return res;
+  }
+
+  /** Gắn phần xây thêm của tiệm theo quy mô */
+  applyShopLevel() {
+    if (this.shopUpg) this.world.shop.remove(this.shopUpg);
+    this.shopUpg = shopUpgrades(this.save.shopLevel || 0);
+    this.shopUpg.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    this.world.shop.add(this.shopUpg);
+  }
+
+  afterGoalReward() {
+    this.saveMgr.markDirty();
+    this.saveMgr.saveNow('manual');
+    this.emitter.emit('inventory');
+    this.emitter.emit('luck');
+    this.emitter.emit('quests');
+    this.emitter.emit('xp');
   }
 
   // ---------------- 🍀 Vận May (GĐ15) ----------------

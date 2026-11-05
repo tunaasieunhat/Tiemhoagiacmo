@@ -16,6 +16,10 @@ const VARIANTS_MEANINGS = Object.fromEntries(Object.entries(VARIANTS).flatMap(([
 import { PAPERS, RIBBONS } from '../../data/wrapping.js';
 import { CUSTOMERS, REACTIONS } from '../../data/customers.js';
 import { upgradeValue } from './progression.js';
+import { SHOP_TIERS, VIP } from '../../data/shopTiers.js';
+
+/** Quy mô tiệm hiện tại (GĐ18) */
+export const shopTierOf = (save) => SHOP_TIERS[Math.min(save.shopLevel || 0, SHOP_TIERS.length - 1)];
 
 export const SHOP_REP = SHOP.rep;
 
@@ -111,6 +115,15 @@ export function spawnCustomer(save, rng, flowerIds, ctx = {}) {
     arrivedAt: save.time.gameMinutes,
     patience: Math.round(randRange(rng, SHOP.patience) * (1 + tier * SHOP.patienceBonusPerTier) * (save.upgrades ? upgradeValue(save, 'sign') : 1)),
   };
+  // GĐ18: quy mô tiệm làm khách trả cao hơn; khách 👑 VIP trả rất đắt nhưng đòi hoa đẹp
+  const st = shopTierOf(save);
+  c.request.priceMult = (c.request.priceMult || 1) * st.priceMult;
+  if (st.vipChance && rng() < st.vipChance) {
+    c.vip = true;
+    c.request.priceMult *= VIP.priceMult;
+    c.request.minQuality = Math.max(c.request.minQuality || 1, VIP.minQuality);
+    c.patience = Math.round(c.patience * VIP.patienceMult);
+  }
   sh.customers.push(c);
   return c;
 }
@@ -151,14 +164,14 @@ export function shopTick(save, { offline = false, rng = Math.random, hourFloat, 
     if (now >= sh.nextSpawnAt) sh.nextSpawnAt = now + 5;
     return events;
   }
-  const maxQueue = save.upgrades ? upgradeValue(save, 'counter') : SHOP.maxQueue;
+  const maxQueue = (save.upgrades ? upgradeValue(save, 'counter') : SHOP.maxQueue) + shopTierOf(save).queue;
   if (now >= sh.nextSpawnAt && sh.customers.length < maxQueue) {
     const regs = save.regulars ? eligibleRegulars(save, day) : [];
     const customer = regs.length && rng() < REGULAR_RULES.chanceInsteadOfNormal
       ? spawnRegular(save, pick(rng, regs))
       : spawnCustomer(save, rng, flowerIds, { festival, seasonal, found: Object.keys(save.book?.found || {}) });
     events.push({ type: 'arrive', customer });
-    sh.nextSpawnAt = now + randRange(rng, SHOP.spawnEvery) * (1 - SHOP.spawnFasterPerTier) ** tier * (festival ? festival.spawnMult : 1) * spawnMult;
+    sh.nextSpawnAt = now + randRange(rng, SHOP.spawnEvery) * (1 - SHOP.spawnFasterPerTier) ** tier * (festival ? festival.spawnMult : 1) * spawnMult * shopTierOf(save).spawnMult;
   } else if (now >= sh.nextSpawnAt) {
     sh.nextSpawnAt = now + 10; // hàng đã đầy, thử lại sau
   }

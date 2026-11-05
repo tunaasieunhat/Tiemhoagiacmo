@@ -4,6 +4,7 @@
 //  size   : bán kính chỗ chiếm trên mặt đất (đơn vị 3D) — 2 món không được đè lên nhau
 //  event  : 'pumpkin' = đồ Lễ hội Bí Ngô (Halloween), chỉ BÁN trong Mùa Thu (mua rồi thì giữ mãi)
 //  luck   : đồ chỉ có ở 🍀 Vận May (không bán ở Chợ, mỗi món chỉ có 1 cái)
+//  weekly : quà sự kiện tuần (không bán ở Chợ)
 // =============================================================
 export const DECOR = {
   bench: { name: 'Ghế gỗ', icon: '🪑', price: 240, level: 1, beauty: 2, size: 0.8 },
@@ -33,6 +34,11 @@ export const DECOR = {
   clover: { name: 'Tượng cỏ bốn lá', icon: '🍀', price: 0, level: 1, beauty: 8, size: 0.6, luck: true },
   luckycat: { name: 'Mèo vẫy tay', icon: '🐱', price: 0, level: 1, beauty: 8, size: 0.55, luck: true },
   starlamp: { name: 'Đèn ngôi sao', icon: '⭐', price: 0, level: 1, beauty: 10, size: 0.6, luck: true },
+
+  // ---- 📅 Sự kiện tuần (GĐ18): quà mốc cuối, không bán ở Chợ ----
+  flowercart: { name: 'Xe hoa sự kiện', icon: '🛒', price: 0, level: 1, beauty: 12, size: 0.9, weekly: true },
+  trophy: { name: 'Cúp vàng sự kiện', icon: '🏆', price: 0, level: 1, beauty: 12, size: 0.55, weekly: true },
+  carousel: { name: 'Đu quay hoa mini', icon: '🎠', price: 0, level: 1, beauty: 14, size: 1.0, weekly: true },
 };
 
 // Sự kiện bán đồ theo mùa

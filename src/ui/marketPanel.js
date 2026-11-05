@@ -4,6 +4,8 @@ import { PAPERS, RIBBONS } from '../../data/wrapping.js';
 import { SUPPLIES, UPGRADES, PLOT_UNLOCKS } from '../../data/market.js';
 import { nextUpgrade, nextPlot, ownedSlots } from '../systems/market.js';
 import { wholesalePrice } from '../systems/shop.js';
+import * as goals from '../systems/goals.js';
+import { SHOP_TIERS } from '../../data/shopTiers.js';
 import { formatDuration } from '../systems/time.js';
 import { PROTECTION } from '../../data/seasons.js';
 import * as variants from '../systems/variants.js';
@@ -96,9 +98,26 @@ export class MarketPanel {
       <p class="muted small">Giấy kraft và dây đay luôn miễn phí.</p>`;
   }
 
+  /** 🏪 Quy mô tiệm (GĐ18) — thẻ to chiếm cả hàng */
+  shopTierCard() {
+    const s = this.save;
+    const cur = goals.shopTier(s);
+    const info = goals.shopUpgradeInfo(s);
+    const steps = SHOP_TIERS.map((t, i) => `<span class="st-step ${i <= (s.shopLevel || 0) ? 'on' : ''}">${t.icon}</span>`).join('<i>›</i>');
+    const body = info.next
+      ? `<small>Lên <b>${info.next.icon} ${esc(info.next.name)}</b>: ${esc(info.next.desc)}</small>
+         <div class="st-checks">${info.checks.map((c) => `<span class="${c.ok ? 'ok' : 'no'}">${c.ok ? '✅' : '⬜'} ${esc(c.text)}</span>`).join('')}</div>`
+      : '<small>✨ Tiệm đã đạt quy mô lớn nhất!</small>';
+    return `<div class="shop-tier">
+      <div class="st-top"><span class="st-icon">${cur.icon}</span><div><b>Quy mô tiệm: ${esc(cur.name)}</b><small>${esc(cur.desc)}</small></div><div class="st-steps">${steps}</div></div>
+      ${body}
+      ${info.next ? `<button class="btn ${info.ok ? 'primary' : 'disabled'}" data-mk="shoptier">🏗️ Xây mở rộng (${info.next.cost.toLocaleString('vi-VN')} 💰)</button>` : ''}
+    </div>`;
+  }
+
   upgrades() {
     const s = this.save;
-    return Object.entries(UPGRADES).map(([key, u]) => {
+    return this.shopTierCard() + Object.entries(UPGRADES).map(([key, u]) => {
       const cur = u.tiers[s.upgrades[key] || 0];
       const next = nextUpgrade(s, key);
       const dots = u.tiers.map((_, i) => `<i class="${i <= (s.upgrades[key] || 0) ? 'on' : ''}"></i>`).join('');
@@ -162,7 +181,7 @@ export class MarketPanel {
           : '<span class="maxed">🍁 Mùa Thu</span>',
       });
     };
-    const normal = Object.entries(DECOR).filter(([, d]) => !d.event && !d.luck);
+    const normal = Object.entries(DECOR).filter(([, d]) => !d.event && !d.luck && !d.weekly);
     const events = Object.entries(DECOR_EVENTS).map(([eid, ev]) => {
       const items = Object.entries(DECOR).filter(([, d]) => d.event === eid);
       const open = eventOpen(eid, season);
@@ -217,6 +236,10 @@ export class MarketPanel {
   onAction(act, el) {
     const g = this.game;
     if (act === 'tab') { this.tab = el.dataset.id; this.render(); return; }
+    if (act === 'shoptier') {
+      if (el.classList.contains('disabled')) { const i = goals.shopUpgradeInfo(this.save); g.toast(i.next ? `Chưa đủ điều kiện: ${i.checks.filter((c) => !c.ok).map((c) => c.text).join(', ')}` : 'Đã tối đa', 'warn'); return; }
+      g.upgradeShop(); this.render(true); return;
+    }
     if (act === 'buy') {
       if (el.classList.contains('disabled')) { g.toast('Không đủ tiền 💰', 'warn'); return; }
       g.buy(el.dataset.what, el.dataset.id, +(el.dataset.n || 1));

@@ -293,3 +293,63 @@ export function labHouse() {
   g.add(at(windowBox(0.6, 0.5), -0.85, 1.1, 1.12));
   return g;
 }
+
+/** 🏪 Phần xây thêm của tiệm hoa theo quy mô (GĐ18): level 1..3, gắn vào nhóm tiệm (tọa độ của tiệm, mặt tiền hướng +z) */
+export function shopUpgrades(level) {
+  const g = new THREE.Group();
+  if (level < 1) return g;
+  const LIGHT = new THREE.MeshBasicMaterial({ color: '#fff2a8' });
+  const flowerCols = ['#f47a93', '#ffd34e', '#c79cf2', '#ff9f7a', '#ffffff'];
+  // --- quy mô 1: bồn hoa dưới cửa sổ + đèn dây trên mái hiên ---
+  for (const x of [-1.5, 1.5]) {
+    g.add(at(rbox(1.0, 0.18, 0.28, '#c98f6b', 0.05), x, 1.12, 1.78));
+    for (let i = 0; i < 5; i++) g.add(at(sphere(0.08, flowerCols[i], 6), x - 0.4 + i * 0.2, 1.27, 1.8));
+  }
+  for (let i = 0; i < 11; i++) {
+    const x = -2.1 + i * 0.42;
+    const b = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 4), LIGHT);
+    b.position.set(x, 2.92 - Math.sin((i / 10) * Math.PI) * 0.12, 2.5);
+    g.add(b);
+  }
+  if (level < 2) return g;
+  // --- quy mô 2: phòng kính trưng hoa bên phải + ngôi sao trên mái ---
+  const glass = mat('#cfeefe', { transparent: true, opacity: 0.45 });
+  const annex = new THREE.Group();
+  annex.position.set(3.35, 0, 0.1);
+  annex.add(at(rbox(2.0, 0.2, 2.8, '#f2e2d2', 0.06), 0, 0.1, 0));
+  annex.add(mesh(new THREE.BoxGeometry(1.8, 1.9, 2.5), glass, { cast: false }));
+  annex.children[1].position.y = 1.15;
+  for (const [x, z] of [[-0.9, -1.25], [0.9, -1.25], [-0.9, 1.25], [0.9, 1.25]]) annex.add(at(rbox(0.1, 2.0, 0.1, '#ffffff', 0.03), x, 1.15, z));
+  annex.add(at(rbox(2.0, 0.12, 2.7, '#ffffff', 0.04), 0, 2.15, 0));
+  for (const z of [-0.6, 0.4]) {
+    annex.add(at(rbox(1.4, 0.08, 0.4, WOODY, 0.03), 0, 0.85, z));
+    for (let i = 0; i < 4; i++) annex.add(at(sphere(0.12, flowerCols[(i + (z > 0 ? 2 : 0)) % 5], 8), -0.5 + i * 0.33, 1.0, z));
+  }
+  g.add(annex);
+  const star = new THREE.Group();
+  star.position.set(0, 4.75, -0.1);
+  star.scale.setScalar(1.5);
+  const core = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), new THREE.MeshBasicMaterial({ color: '#ffd34e' }));
+  core.scale.set(1, 1, 0.45);
+  star.add(core);
+  for (let i = 0; i < 5; i++) { const sp = cone(0.12, 0.32, '#ffd34e', 6); const a = (i / 5) * Math.PI * 2 + Math.PI / 2; sp.position.set(Math.cos(a) * 0.26, Math.sin(a) * 0.26, 0); sp.rotation.z = a - Math.PI / 2; star.add(sp); }
+  g.add(star);
+  g.userData.spin = star;
+  if (level < 3) return g;
+  // --- quy mô 3: tháp nhỏ bên trái có cờ + vườn trên mái phòng kính + biển vàng ---
+  const tower = new THREE.Group();
+  tower.position.set(-2.75, 0, 1.15); // góc trước bên trái (camera nhìn thấy rõ)
+  tower.add(at(cyl(0.75, 0.8, 4.4, '#fff3e6', 12), 0, 2.2, 0));
+  tower.add(at(cyl(0.82, 0.82, 0.16, '#f7c531', 12), 0, 4.45, 0));
+  const tr = cone(1.0, 1.4, '#e98aa1', 12); tr.position.y = 5.2; tower.add(tr);
+  tower.add(at(windowBox(0.55, 0.55), 0, 3.0, 0.76));
+  tower.add(at(windowBox(0.55, 0.55), 0, 1.7, 0.76));
+  tower.add(at(cyl(0.03, 0.03, 1.0, '#c9926a', 6), 0, 6.3, 0));
+  const flag = rbox(0.6, 0.35, 0.04, '#f47a93', 0.04); flag.position.set(0.3, 6.6, 0); tower.add(flag);
+  g.add(tower);
+  g.userData.flag = flag;
+  for (let i = 0; i < 6; i++) g.add(at(sphere(0.18, i % 2 ? '#8fd18b' : flowerCols[i % 5], 8), 3.35 - 0.7 + (i % 3) * 0.7, 2.35, 0.1 - 0.6 + Math.floor(i / 3) * 1.2));
+  g.add(at(rbox(2.6, 0.5, 0.1, '#f7c531', 0.1), 0, 3.95, 1.35));
+  return g;
+}
+const WOODY = '#c9926a';

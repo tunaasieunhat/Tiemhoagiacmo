@@ -22,10 +22,11 @@ import { createQuestState } from '../systems/quests.js';
 import { createAutomationState } from '../systems/automation.js';
 import { createLuckState } from '../systems/luck.js';
 import { createOrdersState } from '../systems/orders.js';
+import { createAchState, createEventState } from '../systems/goals.js';
 
 const toVkeys = (obj) => Object.fromEntries(Object.entries(obj).map(([k, n]) => [k.includes(':') ? k : vkey(k), n]));
 
-export const SAVE_VERSION = 12;
+export const SAVE_VERSION = 13;
 
 export function newId() {
   if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
@@ -91,6 +92,9 @@ export function createNewSave() {
     land: { deals: {} },             // mua đất của dân làng: trạng thái trả giá trong ngày (GĐ13)
     luck: createLuckState(),         // 🍀 Vận May: vé, mảnh, bảo hiểm, lịch sử mở gói (GĐ15)
     orders: createOrdersState(),     // 📦 đơn hàng lớn có hạn chót (GĐ16)
+    ach: createAchState(),           // 🏅 thành tựu đã nhận + danh hiệu đang đeo (GĐ18)
+    event: createEventState(),       // 📅 sự kiện tuần thật (GĐ18)
+    shopLevel: 0,                    // 🏪 quy mô tiệm 0..3 (GĐ18)
     farm: {
       plots: [{ ...createPlot('plot-1'), slot: 0 }], // slot = vị trí trong nông trại; lô mua của dân làng có parcel (GĐ13)
     },
@@ -209,6 +213,14 @@ export const MIGRATIONS = {
       t.rotation = !!t.rotation;
     }
     s.orders = s.orders || createOrdersState();
+    return s;
+  },
+  // v12 -> v13 (Giai đoạn 18): thành tựu, sự kiện tuần, quy mô tiệm
+  12: (s) => {
+    s.ach = s.ach || createAchState();
+    s.event = s.event || createEventState();
+    s.shopLevel = s.shopLevel || 0;
+    s.stats.bugs = s.stats.bugs || 0;
     return s;
   },
 };
