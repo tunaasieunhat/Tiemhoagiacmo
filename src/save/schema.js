@@ -95,6 +95,7 @@ export function createNewSave() {
     ach: createAchState(),           // 🏅 thành tựu đã nhận + danh hiệu đang đeo (GĐ18)
     event: createEventState(),       // 📅 sự kiện tuần thật (GĐ18)
     shopLevel: 0,                    // 🏪 quy mô tiệm 0..3 (GĐ18)
+    mg: {},                          // 🎮 kỷ lục mini game { kind: { plays, best, perfect, combo } } (GĐ17, tự bổ sung bằng fillDefaults)
     farm: {
       plots: [{ ...createPlot('plot-1'), slot: 0 }], // slot = vị trí trong nông trại; lô mua của dân làng có parcel (GĐ13)
     },

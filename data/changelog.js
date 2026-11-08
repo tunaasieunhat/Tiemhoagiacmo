@@ -4,6 +4,15 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.19.0',
+    notes: [
+      '🎮 Mini game có 3 mức 🌱 Dễ · 🌿 Vừa · 🌳 Khó — càng thân dân làng, việc nhờ càng khó nhưng thưởng nhiều hơn (×1,3 / ×1,6)',
+      '🔥 Combo khi làm đúng liên tiếp, pháo hoa nhỏ, tiếng chuông cao dần, rung khi sai · 🏆 lưu kỷ lục từng mini game',
+      '💐 Mini game mới "Cắm hoa theo mẫu" (Cô Mai): nhớ bình mẫu rồi cắm lại — mức khó mẫu bị che · 🦋 "Bắt bướm" (Bé Su): bắt bướm, tránh ong',
+      '📖 Sổ tay có thêm thẻ 🎮 Mini game: chơi lại cho vui bất cứ lúc nào, chọn độ khó, xem kỷ lục',
+    ],
+  },
+  {
     version: '0.18.0',
     notes: [
       '🏅 14 thành tựu, mỗi cái 3 huy chương 🥉🥈🥇 có thưởng (tiền, vé, mảnh) · đạt 🥈 mở DANH HIỆU — bạn bè thấy khi ghé thăm',

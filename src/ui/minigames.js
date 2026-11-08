@@ -1,7 +1,8 @@
 // Mini game khi dân làng nhờ việc (GĐ12). Mỗi game chạy trong lớp phủ #minigame, chạm là chơi được.
-// runMiniGame(kind, { title, icon, ask, who, sfx }) → Promise<{ stars: 0..3, quit }>
-// Số liệu độ khó ở data/minigames.js (MINIGAMES, RHYMES).
-import { MINIGAMES, RHYMES } from '../../data/minigames.js';
+// runMiniGame(kind, { title, icon, ask, who, sfx, level, record }) → Promise<{ stars: 0..3, quit, combo }>
+// Số liệu độ khó ở data/minigames.js (MINIGAMES, MG_LEVELS, RHYMES). GĐ17: mức Dễ/Vừa/Khó, combo, hiệu ứng, kỷ lục.
+import { MINIGAMES, RHYMES, DIFFICULTY, MG_FX } from '../../data/minigames.js';
+import { scaledConfig } from '../systems/favors.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -198,6 +199,116 @@ const ENGINES = {
     area.addEventListener('click', click);
     return () => { stop(); area.removeEventListener('click', click); };
   },
+
+  /** 💐 Cắm hoa theo mẫu: chọn hoa ở khay rồi chạm ô trong bình cho giống mẫu (mức khó: mẫu bị che) */
+  arrange(area, cfg, api) {
+    const POOL = ['🌹', '🌷', '🌻', '🌼', '💠', '🪻', '🌸'];
+    const kinds = shuffle([...POOL]).slice(0, cfg.kinds);
+    const target = Array.from({ length: cfg.slots }, () => kinds[ri(0, kinds.length - 1)]);
+    const cur = Array(cfg.slots).fill(null);
+    const cols = cfg.slots > 6 ? 3 : 3;
+    let pick = kinds[0], left = cfg.seconds, peekLeft = cfg.peek, over = false;
+    area.innerHTML = `<div class="arr">
+      <div class="arr-col"><small>Bình mẫu</small><div class="arr-vase target" style="--c:${cols}">${target.map((f) => `<span>${f}</span>`).join('')}</div><div class="arr-peek"></div></div>
+      <div class="arr-col"><small>Bình của bạn</small><div class="arr-vase mine" style="--c:${cols}">${cur.map((_, i) => `<button class="arr-slot" data-i="${i}"></button>`).join('')}</div></div>
+      <div class="arr-tray">${kinds.map((f) => `<button class="arr-pick ${f === pick ? 'on' : ''}" data-f="${f}">${f}</button>`).join('')}<button class="btn primary arr-done">Xong ✔</button></div>
+      <div class="qz-timer arr-timer"><i></i></div><div class="mg-pop"></div></div>`;
+    const tgtEl = area.querySelector('.target'), peekEl = area.querySelector('.arr-peek');
+    const status = () => api.status(`Đã cắm ${cur.filter(Boolean).length}/${cfg.slots} · còn ${Math.ceil(left)} giây`);
+    const finish = () => {
+      if (over) return; over = true;
+      const wrong = target.filter((f, i) => cur[i] !== f).length;
+      tgtEl.classList.remove('hide');
+      [...area.querySelectorAll('.arr-slot')].forEach((b, i) => b.classList.add(cur[i] === target[i] ? 'ok' : 'no'));
+      setTimeout(() => api.end(wrong === 0 ? (left > cfg.seconds * 0.35 ? 3 : 2) : wrong <= 1 ? 2 : wrong <= 3 ? 1 : 0), 900);
+    };
+    const click = (e) => {
+      if (over) return;
+      const p = e.target.closest('.arr-pick');
+      if (p) { pick = p.dataset.f; area.querySelectorAll('.arr-pick').forEach((b) => b.classList.toggle('on', b === p)); return; }
+      const s = e.target.closest('.arr-slot');
+      if (s) {
+        const i = +s.dataset.i;
+        cur[i] = pick; s.textContent = pick; s.classList.add('pop'); setTimeout(() => s.classList.remove('pop'), 200);
+        // chỉ báo đúng/sai lúc đang được xem mẫu (mức Dễ) — mức khó phải tự nhớ
+        if (peekLeft > 0) { if (cur[i] === target[i]) api.good(e); }
+        else api.tap?.();
+        status();
+        return;
+      }
+      if (e.target.closest('.arr-done')) finish();
+    };
+    area.addEventListener('click', click);
+    status();
+    const stop = loop((dt) => {
+      if (over) return;
+      left -= dt;
+      if (peekLeft < 90) {
+        peekLeft -= dt;
+        if (peekLeft <= 0 && !tgtEl.classList.contains('hide')) { tgtEl.classList.add('hide'); peekEl.textContent = '🙈 Mẫu đã bị che — cắm theo trí nhớ!'; }
+        else if (peekLeft > 0) peekEl.textContent = `👀 Nhớ mẫu: còn ${Math.ceil(peekLeft)} giây`;
+      }
+      const bar = area.querySelector('.arr-timer i');
+      if (bar) bar.style.width = `${Math.max(0, left / cfg.seconds) * 100}%`;
+      if (Math.floor(left) !== Math.floor(left + dt)) status();
+      if (left <= 0) finish();
+    });
+    return () => { stop(); area.removeEventListener('click', click); };
+  },
+
+  /** 🦋 Bắt bướm: chạm bướm bay ngang màn hình, tránh ong */
+  butterfly(area, cfg, api) {
+    area.innerHTML = '<div class="bfl"><div class="mg-pop"></div></div>';
+    const box = area.querySelector('.bfl');
+    let left = cfg.seconds, caught = 0, over = false, spawnIn = 0.2, seq = 0;
+    const live = new Map();
+    const W = () => box.clientWidth, H = () => box.clientHeight;
+    const status = () => api.status(`🦋 ${caught} · cần ${cfg.need[0]}/${cfg.need[1]}/${cfg.need[2]} cho ⭐/⭐⭐/⭐⭐⭐ · ${Math.ceil(left)} giây`);
+    const spawn = () => {
+      const bee = Math.random() < cfg.bee;
+      const fromLeft = Math.random() < 0.5;
+      const el = document.createElement('button');
+      el.className = `bf ${bee ? 'bee' : ''}`;
+      el.textContent = bee ? '🐝' : ['🦋', '🦋', '🦋', '🌸🦋'.slice(-2)][ri(0, 3)];
+      el.dataset.id = ++seq;
+      box.appendChild(el);
+      live.set(String(seq), { el, bee, x: fromLeft ? -40 : W() + 40, y0: rnd(30, H() - 60), dir: fromLeft ? 1 : -1, ph: rnd(0, 6), sp: cfg.speed * rnd(0.8, 1.3), amp: rnd(15, 45) });
+    };
+    const finish = () => {
+      if (over) return; over = true;
+      api.end(caught >= cfg.need[2] ? 3 : caught >= cfg.need[1] ? 2 : caught >= cfg.need[0] ? 1 : 0);
+    };
+    const tap = (e) => {
+      if (over) return;
+      const el = e.target.closest('.bf');
+      if (!el) return;
+      const b = live.get(el.dataset.id);
+      if (!b) return;
+      live.delete(el.dataset.id);
+      el.classList.add(b.bee ? 'stung' : 'got');
+      setTimeout(() => el.remove(), 350);
+      if (b.bee) { caught = Math.max(0, caught - 1); api.bad('🐝 Ong đốt! −1'); }
+      else { caught++; api.good(e); }
+      status();
+    };
+    box.addEventListener('pointerdown', tap);
+    status();
+    const stop = loop((dt, t) => {
+      if (over) return;
+      left -= dt;
+      spawnIn -= dt;
+      if (spawnIn <= 0 && live.size < cfg.max) { spawn(); spawnIn = rnd(0.35, 0.9); }
+      for (const [id, b] of live) {
+        b.x += b.dir * b.sp * dt;
+        const y = b.y0 + Math.sin(t / 300 + b.ph) * b.amp;
+        b.el.style.transform = `translate(${b.x}px, ${y}px) scaleX(${-b.dir})`;
+        if (b.x < -60 || b.x > W() + 60) { b.el.remove(); live.delete(id); }
+      }
+      if (Math.floor(left) !== Math.floor(left + dt)) status();
+      if (left <= 0) finish();
+    });
+    return () => { stop(); box.removeEventListener('pointerdown', tap); };
+  },
 };
 
 /** Câu hỏi trắc nghiệm có đếm giờ (dùng cho toán & thơ) */
@@ -250,8 +361,8 @@ function mathQuestion() {
 }
 
 // =============================================================== KHUNG CHẠY GAME
-export function runMiniGame(kind, { title = '', icon = '🎮', ask = '', who = '', sfx = null } = {}) {
-  const cfg = MINIGAMES[kind];
+export function runMiniGame(kind, { title = '', icon = '🎮', ask = '', who = '', sfx = null, level = 0, record = null, practice = false } = {}) {
+  const cfg = scaledConfig(kind, level) || MINIGAMES[kind];
   const engine = ENGINES[kind];
   if (!cfg || !engine) return Promise.resolve({ stars: 0, quit: true });
   return new Promise((resolve) => {
@@ -262,29 +373,71 @@ export function runMiniGame(kind, { title = '', icon = '🎮', ask = '', who = '
       <div class="mg-area"><div class="mg-intro">
         ${ask ? `<p class="vg-say">“${esc(ask)}”${who ? ` <small>— ${esc(who)}</small>` : ''}</p>` : ''}
         <p class="mg-help">💡 ${esc(cfg.help)}</p>
+        <p class="mg-meta"><span class="mg-diff d${level}">${DIFFICULTY.icons[level]} Độ khó: ${DIFFICULTY.names[level]}</span>${record?.plays ? `<span>🏆 Kỷ lục: ${'⭐'.repeat(record.best) || '—'}${record.combo > 1 ? ` · combo ×${record.combo}` : ''}</span>` : ''}${practice ? '<span>🎮 Chơi cho vui (không tính thưởng)</span>' : ''}</p>
         <button class="btn primary mg-start" type="button">Bắt đầu!</button></div></div>
+      <div class="mg-combo"></div>
     </div>`;
     document.body.appendChild(el);
     const area = el.querySelector('.mg-area');
     const statusEl = el.querySelector('.mg-status');
+    const comboEl = el.querySelector('.mg-combo');
     let cleanup = null, finished = false;
+    let combo = 0, maxCombo = 0, lastGood = 0;
+    /** pháo hoa nhỏ ở chỗ chạm (hoặc giữa khung) */
+    const burst = (ev, good = true) => {
+      const r = area.getBoundingClientRect();
+      const x = ev?.clientX != null ? ev.clientX - r.left : r.width / 2, y = ev?.clientY != null ? ev.clientY - r.top : r.height / 2;
+      const cols = good ? ['#ff8fb1', '#ffd36e', '#8fd8ff', '#b9a2ff', '#9be29b'] : ['#d0675a', '#a8875f'];
+      for (let i = 0; i < (good ? 10 : 5); i++) {
+        const p = document.createElement('i');
+        p.className = 'mg-spark';
+        const a = (i / 10) * Math.PI * 2 + Math.random(), d = 30 + Math.random() * 40;
+        p.style.cssText = `left:${x}px;top:${y}px;background:${cols[i % cols.length]};--dx:${Math.cos(a) * d}px;--dy:${Math.sin(a) * d}px`;
+        area.appendChild(p);
+        setTimeout(() => p.remove(), 600);
+      }
+    };
+    const showCombo = () => {
+      if (combo < 2) { comboEl.classList.remove('show'); return; }
+      comboEl.textContent = `🔥 Combo ×${combo}`;
+      comboEl.classList.remove('show'); void comboEl.offsetWidth; comboEl.classList.add('show');
+    };
     const close = (stars, quit = false) => {
       if (finished) return;
       finished = true;
       cleanup?.();
       el.classList.add('out');
       setTimeout(() => el.remove(), 250);
-      resolve({ stars, quit });
+      resolve({ stars, quit, combo: maxCombo });
     };
     const api = {
       status: (t) => { statusEl.textContent = t; },
-      good: () => { try { sfx?.tap(1.2); } catch { /* bỏ qua */ } area.classList.remove('flash-bad'); area.classList.add('flash-good'); setTimeout(() => area.classList.remove('flash-good'), 250); },
-      bad: () => { area.classList.remove('flash-good'); area.classList.add('flash-bad'); setTimeout(() => area.classList.remove('flash-bad'), 300); },
+      tap: () => { try { sfx?.tap(0.8); } catch { /* bỏ qua */ } },
+      good: (ev) => {
+        const now = performance.now() / 1000;
+        combo = now - lastGood <= MG_FX.comboWindow ? combo + 1 : 1;
+        lastGood = now;
+        maxCombo = Math.max(maxCombo, combo);
+        try { if (sfx?.chime) sfx.chime(Math.min(6, 1 + combo)); else sfx?.tap(1.2); } catch { /* bỏ qua */ }
+        area.classList.remove('flash-bad'); area.classList.add('flash-good'); setTimeout(() => area.classList.remove('flash-good'), 250);
+        burst(ev?.clientX != null ? ev : null, true);
+        showCombo();
+      },
+      bad: (msg) => {
+        combo = 0; showCombo();
+        area.classList.remove('flash-good'); area.classList.add('flash-bad', 'shake'); setTimeout(() => area.classList.remove('flash-bad', 'shake'), 320);
+        if (typeof msg === 'string') { const pop = area.querySelector('.mg-pop'); if (pop) { pop.textContent = msg; pop.classList.add('show'); setTimeout(() => pop.classList.remove('show'), 600); } }
+      },
       end: (stars) => {
         if (finished) return;
         cleanup?.(); cleanup = null;
-        area.innerHTML = `<div class="mg-end"><div class="mg-stars">${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</div><b>${stars >= 3 ? 'Xuất sắc!' : stars === 2 ? 'Tốt lắm!' : stars === 1 ? 'Tạm được!' : 'Chưa được rồi...'}</b></div>`;
-        setTimeout(() => close(stars), 1300);
+        comboEl.classList.remove('show');
+        const newBest = record && (stars > (record.best || 0) || (!record.plays && stars > 0));
+        area.innerHTML = `<div class="mg-end ${stars >= 3 ? 'perfect' : ''}"><div class="mg-stars">${[0, 1, 2].map((i) => `<span class="${i < stars ? 'on' : ''}" style="animation-delay:${i * 0.18}s">${i < stars ? '⭐' : '☆'}</span>`).join('')}</div>
+          <b>${stars >= 3 ? 'Xuất sắc!' : stars === 2 ? 'Tốt lắm!' : stars === 1 ? 'Tạm được!' : 'Chưa được rồi...'}</b>
+          ${maxCombo > 1 ? `<small>🔥 Combo cao nhất ×${maxCombo}</small>` : ''}${newBest ? '<small class="mg-best">🏆 Kỷ lục mới!</small>' : ''}</div>`;
+        if (stars >= 3) { for (let k = 0; k < 3; k++) setTimeout(() => burst(null, true), k * 180); try { sfx?.chime?.(6); } catch { /* bỏ qua */ } }
+        setTimeout(() => close(stars), stars >= 3 ? 1700 : 1300);
       },
     };
     el.querySelector('.mg-quit').addEventListener('click', () => close(0, true));

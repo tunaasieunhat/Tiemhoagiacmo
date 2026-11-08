@@ -8,10 +8,19 @@ import { avatarSVG } from './avatar.js';
 import * as rel from '../systems/relations.js';
 import { villagerInfo } from '../systems/village.js';
 import { BONDS, REACTION, FRIEND } from '../../data/stories.js';
+import { FAVORS, MINIGAMES, DIFFICULTY } from '../../data/minigames.js';
+import { runMiniGame } from './minigames.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const SEASON_NAMES = { xuan: 'Xuân', ha: 'Hạ', thu: 'Thu', dong: 'Đông' };
-const TABS = [['flowers', '🌸 Bộ sưu tập'], ['meanings', '💬 Ngôn ngữ hoa'], ['regulars', '💌 Khách quen'], ['village', '🏘️ Dân làng']];
+const TABS = [['flowers', '🌸 Bộ sưu tập'], ['meanings', '💬 Ngôn ngữ hoa'], ['regulars', '💌 Khách quen'], ['village', '🏘️ Dân làng'], ['games', '🎮 Mini game']];
+
+/** Mini game nào do ai nhờ (lấy tên & biểu tượng từ việc nhờ) */
+const GAME_INFO = (() => {
+  const out = {};
+  for (const [who, list] of Object.entries(FAVORS)) for (const f of list) if (!out[f.game]) out[f.game] = { title: f.title, icon: f.icon, who };
+  return out;
+})();
 
 export class NotebookPanel {
   constructor(hud) {
@@ -26,7 +35,7 @@ export class NotebookPanel {
 
   render() {
     const p = bookProgress(this.save);
-    const body = { flowers: this.flowers, meanings: this.meanings, regulars: this.regulars, village: this.village }[this.tab].call(this);
+    const body = { flowers: this.flowers, meanings: this.meanings, regulars: this.regulars, village: this.village, games: this.games }[this.tab].call(this);
     this.hud.openModal('notebook', `
       <h2>📖 Sổ tay thực vật</h2>
       <div class="book-prog"><div class="track"><i style="width:${p.pct}%;background:#f6a6b9"></i></div>
@@ -94,6 +103,35 @@ export class NotebookPanel {
     return `<div class="miles">${ms}</div><div class="sp-chips">${chips}</div>${sections}`;
   }
 
+  /** 🎮 Góc mini game (GĐ17): chơi lại cho vui, chọn độ khó, xem kỷ lục */
+  games() {
+    const s = this.save;
+    const cards = Object.keys(MINIGAMES).filter((k) => GAME_INFO[k]).map((k) => {
+      const g = GAME_INFO[k];
+      const r = s.mg?.[k];
+      const who = villagerInfo(g.who)?.name || '';
+      return `<div class="mk-item mg-rec">
+        <div class="mk-icon">${g.icon}</div>
+        <div class="mk-info"><b>${esc(g.title)}</b><small>Việc nhờ của ${esc(who)}</small>
+          <small>🏆 ${r?.plays ? `${'⭐'.repeat(r.best) || '—'} · chơi ${r.plays} lần · ${r.perfect} lần 3⭐${r.combo > 1 ? ` · combo ×${r.combo}` : ''}` : 'chưa chơi'}</small></div>
+        <div class="mk-buy mg-lv">${DIFFICULTY.names.map((n, i) => `<button class="btn ${i === 0 ? 'primary' : ''}" data-nb="play" data-k="${k}" data-lv="${i}">${DIFFICULTY.icons[i]} ${n}</button>`).join('')}</div>
+      </div>`;
+    }).join('');
+    return `<p class="muted small">Chơi lại các mini game cho vui bất cứ lúc nào (không tính thưởng). Khi dân làng nhờ, độ khó tăng theo số ❤️ — khó hơn thì thưởng nhiều hơn.</p><div class="mk-body">${cards}</div>`;
+  }
+
+  async play(kind, lv) {
+    const g = GAME_INFO[kind];
+    this.hud.closeModal();
+    const res = await runMiniGame(kind, { title: g.title, icon: g.icon, sfx: this.game.audio?.sfx, level: lv, record: this.save.mg?.[kind], practice: true });
+    if (!res.quit) {
+      const r = this.game.recordPractice(kind, res.stars, res.combo);
+      if (r.newBest) this.game.toast(`🏆 Kỷ lục mới ở ${g.icon} ${g.title}: ${'⭐'.repeat(r.rec.best)}!`, 'good');
+    }
+    this.tab = 'games';
+    this.render();
+  }
+
   meanings() {
     const s = this.save;
     return `<p class="muted small">Ý nghĩa được khám phá khi bạn bán hoa cho khách (họ sẽ kể cho bạn nghe) hoặc qua câu chuyện của khách quen.</p>` +
@@ -124,5 +162,6 @@ export class NotebookPanel {
   onAction(act, el) {
     if (act === 'tab') { this.tab = el.dataset.id; this.render(); }
     if (act === 'sp') { this.sp = el.dataset.id; this.render(); }
+    if (act === 'play') this.play(el.dataset.k, +el.dataset.lv);
   }
 }

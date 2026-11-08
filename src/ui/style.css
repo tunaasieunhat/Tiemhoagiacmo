@@ -1032,3 +1032,51 @@ h1, h2, h3, b, .tl { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
 .st-checks { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; font-weight: 700; }
 .st-checks .no { color: var(--ink-soft); }
 .shop-tier .btn { align-self: flex-start; }
+
+/* ---------- 🎮 Mini game GĐ17: độ khó, combo, hiệu ứng, 2 game mới ---------- */
+#minigame .mg-card { position: relative; }
+#minigame .mg-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 0; font-size: 12px; font-weight: 800; }
+#minigame .mg-meta span { background: #fff; border: 2px solid var(--line); border-radius: 999px; padding: 2px 10px; }
+#minigame .mg-diff.d0 { border-color: #9be29b; } #minigame .mg-diff.d1 { border-color: #f6c84a; } #minigame .mg-diff.d2 { border-color: #f29a8a; color: #c0503c; }
+#minigame .mg-combo { position: absolute; right: 14px; top: 52px; z-index: 5; font-weight: 800; font-size: 18px; color: #e8590c; text-shadow: 0 2px 0 #fff, 0 0 8px #ffd36e; opacity: 0; pointer-events: none; }
+#minigame .mg-combo.show { animation: mgCombo .9s ease-out forwards; }
+@keyframes mgCombo { 0% { opacity: 0; transform: scale(.6); } 20% { opacity: 1; transform: scale(1.25); } 40% { transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10px); } }
+#minigame .mg-area.shake { animation: mgShake .3s; }
+@keyframes mgShake { 25% { transform: translateX(-6px); } 50% { transform: translateX(6px); } 75% { transform: translateX(-3px); } }
+#minigame .mg-spark { position: absolute; width: 9px; height: 9px; border-radius: 50%; pointer-events: none; z-index: 6; animation: mgSpark .6s ease-out forwards; }
+@keyframes mgSpark { from { transform: translate(-50%, -50%) scale(1); opacity: 1; } to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.3); opacity: 0; } }
+#minigame .mg-stars span { display: inline-block; opacity: .35; }
+#minigame .mg-stars span.on { opacity: 1; animation: mgStar .45s cubic-bezier(.2, 1.7, .4, 1) both; }
+@keyframes mgStar { from { transform: scale(0) rotate(-60deg); } to { transform: scale(1) rotate(0); } }
+#minigame .mg-end small { font-weight: 800; color: var(--ink-soft); }
+#minigame .mg-end .mg-best { color: #e0a21a; font-size: 15px; animation: mgStar .5s .5s both; }
+
+/* 💐 Cắm hoa theo mẫu */
+.arr { height: 100%; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr auto auto; gap: 6px 14px; padding: 10px 14px; position: relative; }
+.arr-col { display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 0; }
+.arr-col small { font-weight: 800; color: var(--ink-soft); }
+.arr-vase { display: grid; grid-template-columns: repeat(var(--c), 1fr); gap: 5px; padding: 8px; background: linear-gradient(#e3f4ff, #cfeaf8); border: 3px solid #9fd6f0; border-radius: 16px 16px 30px 30px; transition: filter .3s; }
+.arr-vase span, .arr-slot { width: 44px; height: 44px; display: grid; place-items: center; font-size: 28px; border-radius: 12px; background: rgba(255, 255, 255, .6); }
+.arr-slot { border: 2px dashed #9fd6f0; }
+.arr-slot.pop { animation: mgStar .25s; }
+.arr-slot.ok { background: #dff5d8; border-color: #7cc27f; }
+.arr-slot.no { background: #ffe1dc; border-color: #f29a8a; }
+.arr-vase.target.hide span { filter: blur(10px) grayscale(1); opacity: .35; }
+.arr-peek { font-size: 12px; font-weight: 800; color: #b07a12; min-height: 16px; }
+.arr-tray { grid-column: 1 / -1; display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+.arr-pick { width: 46px; height: 46px; font-size: 26px; border-radius: 14px; background: #fff; border: 2px solid var(--line); }
+.arr-pick.on { border-color: var(--pink-deep); background: #fff0f4; transform: translateY(-3px); }
+.arr-done { padding: 6px 16px; }
+.arr-timer { grid-column: 1 / -1; }
+@media (max-height: 480px) { .arr-vase span, .arr-slot { width: 36px; height: 36px; font-size: 22px; } .arr-pick { width: 40px; height: 40px; font-size: 22px; } }
+
+/* 🦋 Bắt bướm */
+.bfl { position: absolute; inset: 0; background: linear-gradient(#eaf8ff 0%, #f5fbe9 70%, #d9efc4 100%); overflow: hidden; }
+.bfl::after { content: '🌼 🌷 🌸 🌼 🌻 🌷 🌸 🌼 🌷 🌸'; position: absolute; left: 0; right: 0; bottom: 6px; text-align: center; font-size: 22px; letter-spacing: 8px; opacity: .8; pointer-events: none; }
+.bf { position: absolute; left: 0; top: 0; width: 56px; height: 56px; font-size: 34px; display: grid; place-items: center; background: none; border: 0; padding: 0; cursor: pointer; touch-action: none; }
+.bf.got { animation: bfGot .35s forwards; }
+.bf.stung { animation: mgShake .3s; filter: drop-shadow(0 0 6px #ff8fa3); }
+@keyframes bfGot { to { opacity: 0; scale: 1.8; } }
+.mg-lv { flex-direction: row !important; flex-wrap: wrap; gap: 4px; }
+.mg-lv .btn { padding: 4px 8px; font-size: 12px; }
+.favor-btn small { font-weight: 700; opacity: .85; }

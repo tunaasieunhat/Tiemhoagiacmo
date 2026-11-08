@@ -14,7 +14,8 @@ import * as rel from '../systems/relations.js';
 import { runMiniGame } from './minigames.js';
 import { PARCELS, LAND_RULES } from '../../data/land.js';
 import * as landSys from '../systems/land.js';
-import { FAVOR_RULES } from '../../data/minigames.js';
+import { FAVOR_RULES, DIFFICULTY } from '../../data/minigames.js';
+import * as favorsSys from '../systems/favors.js';
 import { FRIEND, REACTION, BONDS } from '../../data/stories.js';
 import { DECOR as DECOR_ALL } from '../../data/decor.js';
 import { ACTIVITIES, HOUSES, LEAVES_AFTER_STORY, SPOTS } from '../../data/village.js';
@@ -519,7 +520,7 @@ export class Hud {
         <button class="btn ${!meet.ok || !canGift || !hasFlowers ? 'disabled' : ''}" data-vg="gift" data-id="${id}">🎁 Tặng hoa${canGift ? '' : ' ✓'}</button>
       </div>
       ${landBtn}
-      ${favor && meet.ok ? `<button class="btn primary glow wide favor-btn" data-vg="favor" data-id="${id}">🙏 ${esc(info.name)} nhờ bạn: ${esc(favor.icon)} ${esc(favor.title)}</button>` : ''}
+      ${favor && meet.ok ? `<button class="btn primary glow wide favor-btn" data-vg="favor" data-id="${id}">🙏 ${esc(info.name)} nhờ bạn: ${esc(favor.icon)} ${esc(favor.title)} <small>· ${DIFFICULTY.icons[favorsSys.difficultyOf(g.save, id)]} ${DIFFICULTY.names[favorsSys.difficultyOf(g.save, id)]}</small></button>` : ''}
       ${!meet.ok ? `<p class="muted small">${esc(meet.reason)}</p>` : !canTalk && !canGift && !favor ? '<p class="muted small">Hôm nay đã trò chuyện và tặng quà rồi — mai ghé tiếp nhé!</p>' : ''}
       <div class="kv"><span>📍 Bây giờ</span><b>${act ? `${act.icon} ${esc(act.name)}` : '—'}${st?.walking ? ' (đang đi tới)' : ''}</b></div>
       ${chapters != null ? `<div class="kv"><span>🌷 Chuyện ở tiệm hoa</span><b>${chapters}/5 chương</b></div>` : ''}
@@ -647,13 +648,15 @@ export class Hud {
     if (!favor || !g.canMeet(id).ok) return;
     const info = villagerInfo(id);
     this.closeModal();
-    const { stars, quit } = await runMiniGame(favor.game, { title: favor.title, icon: favor.icon, ask: favor.ask, who: info.name, sfx: g.audio?.sfx });
-    const res = g.finishFavorGame(id, favor, stars);
+    const level = favorsSys.difficultyOf(g.save, id);
+    const { stars, quit, combo } = await runMiniGame(favor.game, { title: favor.title, icon: favor.icon, ask: favor.ask, who: info.name, sfx: g.audio?.sfx, level, record: g.save.mg?.[favor.game] });
+    const res = g.finishFavorGame(id, favor, stars, level, combo);
     this.openModal('favor', `
       <div class="vg-head">${avatarSVG(info.look, 56)}<div><b>${esc(info.name)}</b>${this.heartBar(id)}</div></div>
       <p class="fav-stars">${'⭐'.repeat(res.stars)}${'☆'.repeat(3 - res.stars)}</p>
       <p class="vg-say">“${esc(quit ? 'Ơ, bạn bận à? Không sao, mai mình nhờ lại nhé!' : res.stars > 0 ? favor.thanks : favor.fail)}”</p>
-      <p class="fp-chip up">+${res.fp} điểm tình thân 💗${res.coins ? ` · +${res.coins} 💰 tiền công` : ''}${res.after > res.before ? ` · lên ${res.after} ❤️!` : ''}</p>
+      <p class="fp-chip up">+${res.fp} điểm tình thân 💗${res.coins ? ` · +${res.coins} 💰 tiền công` : ''}${res.after > res.before ? ` · lên ${res.after} ❤️!` : ''}${res.level ? ` · ${DIFFICULTY.icons[res.level]} mức ${DIFFICULTY.names[res.level]} ×${FAVOR_RULES.diffMult[res.level]}` : ''}</p>
+      ${res.newBest ? '<p class="fp-chip up">🏆 Kỷ lục mới!</p>' : ''}
       <p class="muted small">Kỷ lục việc này: ${'⭐'.repeat(res.best) || 'chưa có sao'} · 3⭐ = +${FAVOR_RULES.fp[3]} tình thân, +${FAVOR_RULES.coins[3]} 💰</p>
       <button class="btn primary wide" data-vg="done" data-id="${id}">Xong</button>`);
   }

@@ -16,7 +16,8 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
 - ✅ GĐ1–15 xong (xem `README.md`). 0.16.0 (04/11/2026): cân bằng lại theo góp ý "quá dễ" — XP mỗi việc giảm, giá Chợ tăng,
   Vận May hiếm hơn (vàng 3%, bảo hiểm 50), xỏ kim dễ hơn. **Giữ nguyên `LEVEL_XP`** vì SQL `level_from_xp` (migration GĐ8) dùng
   cùng bảng — muốn đổi phải thêm migration mới. Mô phỏng tiến độ: chạy thử với số liệu `data/*` (cấp 10 ≈ 3 giờ chơi chăm).
-  ✅ GĐ16 (0.17.0) chăm sóc có kỹ năng. ✅ GĐ18 (0.18.0) mục tiêu dài hạn. Còn đề xuất GĐ17 (mini game hay hơn) — chờ người dùng.
+  ✅ GĐ16 (0.17.0) chăm sóc có kỹ năng. ✅ GĐ18 (0.18.0) mục tiêu dài hạn. ✅ GĐ17 (0.19.0) mini game hay hơn.
+  Hết đề xuất — việc tiếp theo: hỏi người dùng.
 - Đưa lên mạng: Netlify (`netlify.toml`, `docs/HUONG_DAN_DUA_LEN_MANG.md`) — trang thật: https://tiem-hoa-giac-mo.netlify.app
   (Netlify đang deploy nhánh `ccr-845954e0-2hh7a1`; `main` chỉ có commit đầu tiên). APK: Capacitor + GitHub Actions
   (`.github/workflows/android.yml`, `android-keystore.yml`, `docs/HUONG_DAN_APK.md`); thư mục `android/` KHÔNG commit,
@@ -90,6 +91,10 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   finishFavor ghi `rel.favorDay`, `rel.favors[id].best`). UI `src/ui/minigames.js`: `runMiniGame(kind, opts)` → {stars, quit},
   7 game DOM/CSS (needle, hammer, fishing, pour, math, rhyme, memory), bỏ cuộc = 0⭐. Dân làng có việc nhờ hiện 🙏 trên đầu.
   Thử mini game: trang thử import `runMiniGame` + "người chơi tự động" đọc DOM (vd vị trí kim `translateX`).
+  (GĐ17) Mức khó 0/1/2 = `favors.difficultyOf` theo tim (`DIFFICULTY.heartsFor`), số liệu từng mức ở `MG_LEVELS` (gán thẳng giá
+  trị, `favors.scaledConfig`), thưởng × `FAVOR_RULES.diffMult`. `runMiniGame(kind, { level, record, practice })` trả thêm `combo`;
+  `api.good(ev)` tính combo + pháo hoa, `api.bad(msg)` rung; kỷ lục `save.mg[kind]` qua `favors.recordMiniGame` (fillDefaults tự
+  bổ sung, không tăng SAVE_VERSION). Game mới: `arrange` (cắm hoa theo mẫu), `butterfly` (bắt bướm). Sổ tay thẻ `games` chơi lại.
 - **Mua đất của dân làng** (GĐ13): `data/land.js` (LAND_RULES, MOODS, PARCELS: owner, x/z tâm lô, price, minHearts, level,
   lời thoại). Lô có vị trí riêng: lô Chợ `plot.slot` (0–3 → PLOT_SLOTS), lô dân làng `plot.parcel` → dùng
   `plotPosition(plot, idx)` (world.js) / `game.plotPos(pi)`, KHÔNG dùng `PLOT_SLOTS[pi]`. `market.ownedSlots/nextPlot` tính theo slot.

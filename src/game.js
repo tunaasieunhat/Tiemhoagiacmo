@@ -1105,8 +1105,9 @@ export class Game {
   favorToday(id) { return favors.todaysFavor(this.save, id, this.today); }
 
   /** Xong mini game nhờ việc: stars 0–3 */
-  finishFavorGame(id, favor, stars) {
-    const res = favors.finishFavor(this.save, id, favor, stars, this.today);
+  finishFavorGame(id, favor, stars, lv = 0, combo = 0) {
+    const res = favors.finishFavor(this.save, id, favor, stars, this.today, lv);
+    Object.assign(res, favors.recordMiniGame(this.save, favor.game, res.stars, combo));
     if (res.stars >= 3) { res.tickets = luck.grantTickets(this.save, TICKET_SOURCES.favor3); this.emitter.emit('luck'); }
     if (res.stars >= 1) this.eventPts('favor');
     if (res.xp) this.gainXp(res.xp);
@@ -1598,6 +1599,13 @@ export class Game {
     this.emitter.emit('luck');
     this.emitter.emit('tool', this.tool);
     return res;
+  }
+
+  /** 🎮 Chơi mini game cho vui (Sổ tay › Mini game): chỉ ghi kỷ lục, không thưởng */
+  recordPractice(kind, stars, combo) {
+    const r = favors.recordMiniGame(this.save, kind, stars, combo);
+    this.saveMgr.markDirty();
+    return r;
   }
 
   claimFreeSeeds() {

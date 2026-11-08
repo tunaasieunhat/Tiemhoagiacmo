@@ -10,6 +10,19 @@ export const FAVOR_RULES = {
   fp: [6, 25, 40, 60],        // điểm tình thân
   coins: [0, 20, 40, 70],     // tiền công
   xp: [1, 3, 5, 8],
+  // (GĐ17) độ khó theo số tim với người nhờ: Dễ / Vừa / Khó — khó hơn thì thưởng nhiều hơn
+  diffMult: [1, 1.3, 1.6],    // nhân điểm tình thân & tiền công
+};
+
+export const DIFFICULTY = {
+  names: ['Dễ', 'Vừa', 'Khó'],
+  icons: ['🌱', '🌿', '🌳'],
+  heartsFor: [0, 4, 7],       // đạt từ bao nhiêu ❤️ với người nhờ thì lên mức này
+};
+
+// Combo & hiệu ứng (GĐ17)
+export const MG_FX = {
+  comboWindow: 2.5,           // làm đúng liên tiếp trong 2,5 giây thì tính combo
 };
 
 // Việc nhờ của từng người. game: needle | hammer | fishing | pour | math | rhyme | memory
@@ -41,11 +54,17 @@ export const FAVORS = {
     { id: 'rhyme', game: 'rhyme', title: 'Ghép vần thơ', icon: '📝',
       ask: 'Mình đang soạn bài thơ lục bát cho học trò mà bí chữ quá. Bạn chọn giúp mình chữ đúng vần nhé?',
       thanks: 'Hay quá! Bạn có tâm hồn thi sĩ ghê.', fail: 'Hơi lệch vần một chút... mai mình nhờ bạn tiếp nhé!' },
+    { id: 'arrange', game: 'arrange', title: 'Cắm hoa cho lớp học', icon: '💐',
+      ask: 'Mai lớp mình có giờ thăm lớp! Bạn cắm giúp mình bình hoa giống hệt mẫu này nhé — nhớ kỹ vị trí từng bông đó!',
+      thanks: 'Y hệt mẫu luôn! Cả lớp sẽ trầm trồ cho xem.', fail: 'Hơi khác mẫu một chút... không sao, mình sửa lại được!' },
   ],
   be_su: [
     { id: 'memory', game: 'memory', title: 'Chơi lật thẻ hoa', icon: '🃏',
       ask: 'Chị ơi, chơi lật thẻ hoa với Su đi! Tìm cho đủ các cặp hoa giống nhau nha!',
       thanks: 'Chị giỏi quá! Su phục chị luôn!', fail: 'Hết giờ rồi chị ơi! Mai mình chơi lại nha!' },
+    { id: 'butterfly', game: 'butterfly', title: 'Bắt bướm cùng Su', icon: '🦋',
+      ask: 'Chị ơi, bướm bay đầy vườn kìa! Bắt giúp Su thật nhiều bướm nha — nhưng đừng chạm vào ong, ong đốt đau lắm!',
+      thanks: 'Oa, nhiều bướm quá! Chị là nhà bắt bướm số một!', fail: 'Bướm bay mất hết rồi... mai mình bắt lại nha chị!' },
   ],
 };
 
@@ -59,6 +78,22 @@ export const MINIGAMES = {
   math: { count: 5, seconds: 9, help: 'Chọn đáp án đúng trước khi hết giờ.' },
   rhyme: { count: 4, seconds: 11, help: 'Chọn chữ đúng vần lục bát (chữ thứ 6 câu 8 vần với chữ cuối câu 6).' },
   memory: { pairs: 6, seconds: 60, star3: 10, star2: 14, help: 'Lật 2 thẻ một lần, tìm đủ 6 cặp hoa giống nhau trước khi hết giờ.' },
+  // --- GĐ17 ---
+  arrange: { slots: 6, kinds: 3, peek: 99, seconds: 35, help: 'Nhìn bình hoa mẫu, chọn loài hoa ở dưới rồi chạm vào ô trong bình để cắm cho giống hệt. Mức khó hơn: mẫu sẽ bị che sau vài giây!' },
+  butterfly: { seconds: 22, need: [5, 9, 13], max: 4, speed: 70, bee: 0.18, help: 'Chạm vào 🦋 bướm để bắt. Đừng chạm 🐝 ong (bị trừ điểm)! Bắt liên tiếp nhanh để được combo.' },
+};
+
+// (GĐ17) Độ khó theo mức Dễ/Vừa/Khó: trường số liệu → [Dễ, Vừa, Khó] (giá trị gán thẳng, không phải hệ số)
+export const MG_LEVELS = {
+  needle: { speed: [1.45, 1.7, 2.0], eye: [32, 28, 24] },
+  hammer: { speed: [2.6, 3.0, 3.5], zone: [0.16, 0.14, 0.11] },
+  fishing: { window: [[0.85, 0.7, 0.58], [0.75, 0.6, 0.5], [0.65, 0.52, 0.42]] },
+  pour: { rate: [30, 36, 44] },
+  math: { seconds: [9, 8, 6.5] },
+  rhyme: { seconds: [11, 9.5, 8] },
+  memory: { seconds: [60, 52, 45] },
+  arrange: { slots: [6, 9, 9], kinds: [3, 4, 5], peek: [99, 6, 4] },
+  butterfly: { speed: [70, 90, 115], bee: [0.18, 0.25, 0.32] },
 };
 
 // Câu thơ lục bát cho mini game "Ghép vần thơ": [câu 6, câu 8 có chỗ trống ___, đáp án đúng, 2 đáp án sai]
