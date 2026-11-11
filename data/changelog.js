@@ -4,6 +4,17 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.20.0',
+    notes: [
+      '📜 CỐT TRUYỆN CHÍNH "Giấc mơ của tiệm hoa" — Chương 1 "Tiệm không có tên chủ" và Chương 2 "Trang giấy phai" (mở ở cấp 5): ai là người chủ cũ mà cả đảo đã quên?',
+      '🎭 Hội thoại kiểu phim: dải đen điện ảnh, chân dung có nét mặt, chữ hiện dần kèm giọng riêng từng người, lựa chọn có sức nặng ("… sẽ nhớ điều này"), cảnh hồi ức màu nâu cũ, tranh minh họa',
+      '✨ Gặp bé Mơ trước hiên tiệm vào ban đêm (sau 19:00) · người có chuyện để kể hiện 📜 trên đầu · xem tiến độ và xem lại cảnh ở 📖 Sổ tay › Cốt truyện',
+      '🪴 TREO HOA ở tiệm: chọn những loài tiệm đang bán — khách vào tiệm chỉ hỏi mua loài đang treo, không còn cảnh khách đòi hoa tiệm không có',
+      '🔔 Thông báo nổi (khung xanh, vàng) và khung hướng dẫn gọn hẳn lại, không còn che màn hình — chạm 💡 để thu nhỏ hướng dẫn',
+      '📝 Khách muốn loài khác sẽ để lại ĐƠN ĐẶT TRƯỚC (📋 Nhiệm vụ › Đơn hàng): trả cao hơn 35%, có hạn giao · giỏ hoa đang treo hiện ngay dưới mái hiên tiệm',
+    ],
+  },
+  {
     version: '0.19.0',
     notes: [
       '🎮 Mini game có 3 mức 🌱 Dễ · 🌿 Vừa · 🌳 Khó — càng thân dân làng, việc nhờ càng khó nhưng thưởng nhiều hơn (×1,3 / ×1,6)',

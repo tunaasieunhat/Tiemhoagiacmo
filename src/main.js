@@ -181,6 +181,7 @@ async function boot() {
   initNative({
     onBack: () => {
       if (document.getElementById('force-update')) return false; // đang bắt cập nhật: nút Back chỉ thu nhỏ app
+      if (game.cine) return true; // đang xem cảnh truyện: bỏ qua nút Back
       if (hud.modal) { hud.closeModal(); return true; }
       if (game.visit) { game.exitVisit(); return true; }
       if (game.decorMode) { game.setDecorMode(false); return true; }

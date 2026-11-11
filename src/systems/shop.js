@@ -3,7 +3,7 @@
 //  -> có thể chạy lại trên máy chủ để kiểm tra gian lận sau này
 // =============================================================
 import { FLOWERS } from '../../data/flowers.js';
-import { SHOP, REP_TIERS, REQUEST_MIX, REQUEST_SIZE, QUALITY_DEMAND, TONES, OCCASIONS, MEANING_DEMAND, COLOR_DEMAND } from '../../data/shop.js';
+import { SHOP, DISPLAY, REP_TIERS, REQUEST_MIX, REQUEST_SIZE, QUALITY_DEMAND, TONES, OCCASIONS, MEANING_DEMAND, COLOR_DEMAND } from '../../data/shop.js';
 import { MEANINGS } from '../../data/variants.js';
 import { REGULARS } from '../../data/regulars.js';
 import { parseFlowerKey, variantName, rarityOf, tonesOf, DEFAULT_VARIANT } from './variants.js';
@@ -28,7 +28,28 @@ const randInt = (rng, [a, b]) => a + Math.floor(rng() * (b - a + 1));
 const randRange = (rng, [a, b]) => a + rng() * (b - a);
 
 export function createShopState() {
-  return { open: true, customers: [], nextSpawnAt: null, nextId: 1 };
+  return { open: true, customers: [], nextSpawnAt: null, nextId: 1, display: [] };
+}
+
+// ------------------- 🪴 treo hoa (0.20) -------------------
+/** Số móc treo hoa của tiệm (tăng theo quy mô tiệm) */
+export const displaySlots = (save) => DISPLAY.baseSlots + DISPLAY.perShopLevel * (save.shopLevel || 0);
+
+/** Các loài đang treo (chỉ tính loài còn hợp lệ trong danh sách cho phép) */
+export function displayedFlowers(save, flowerIds) {
+  const d = save.shop?.display || [];
+  return d.filter((id) => flowerIds.includes(id)).slice(0, displaySlots(save));
+}
+
+/** Treo / gỡ 1 loài. Trả về { ok, on, msg } */
+export function toggleDisplay(save, id, flowerIds) {
+  const sh = save.shop;
+  sh.display = (sh.display || []).filter((x) => flowerIds.includes(x));
+  if (sh.display.includes(id)) { sh.display = sh.display.filter((x) => x !== id); return { ok: true, on: false }; }
+  if (!flowerIds.includes(id)) return { ok: false, msg: 'Loài này chưa mở' };
+  if (sh.display.length >= displaySlots(save)) return { ok: false, msg: `Tiệm chỉ có ${displaySlots(save)} móc treo — gỡ bớt 1 loài hoặc nâng quy mô tiệm` };
+  sh.display.push(id);
+  return { ok: true, on: true };
 }
 
 export function tierOf(rep) {
@@ -143,8 +164,9 @@ export function spawnRegular(save, id) {
   return c;
 }
 
-/** Cho thời gian trôi ở cửa hàng. Trả về danh sách sự kiện [{type:'arrive'|'timeout', customer}] */
-export function shopTick(save, { offline = false, rng = Math.random, hourFloat, flowerIds, festival = null, seasonal = [], day = 1, spawnMult = 1 }) {
+/** Cho thời gian trôi ở cửa hàng. Trả về danh sách sự kiện [{type:'arrive'|'timeout', customer} | {type:'preorder', order}]
+ *  preorder(npcId, flowerId): hàm tạo đơn đặt trước (do game truyền vào, dùng orders.makePreorder) — không có thì bỏ qua */
+export function shopTick(save, { offline = false, rng = Math.random, hourFloat, flowerIds, festival = null, seasonal = [], day = 1, spawnMult = 1, preorder = null }) {
   const sh = save.shop;
   const now = save.time.gameMinutes;
   const events = [];
@@ -167,9 +189,24 @@ export function shopTick(save, { offline = false, rng = Math.random, hourFloat, 
   const maxQueue = (save.upgrades ? upgradeValue(save, 'counter') : SHOP.maxQueue) + shopTierOf(save).queue;
   if (now >= sh.nextSpawnAt && sh.customers.length < maxQueue) {
     const regs = save.regulars ? eligibleRegulars(save, day) : [];
-    const customer = regs.length && rng() < REGULAR_RULES.chanceInsteadOfNormal
+    // 🪴 treo hoa: khách chỉ hỏi loài đang treo; ai muốn loài khác thì để lại đơn đặt trước
+    const shown = displayedFlowers(save, flowerIds);
+    const others = shown.length ? flowerIds.filter((id) => !shown.includes(id)) : [];
+    const isReg = regs.length && rng() < REGULAR_RULES.chanceInsteadOfNormal;
+    if (!isReg && others.length && preorder && rng() < DISPLAY.preorderChance) {
+      const busy = new Set(sh.customers.map((c) => c.npc));
+      const pool = CUSTOMERS.filter((c) => !busy.has(c.id));
+      const order = preorder(pick(rng, pool.length ? pool : CUSTOMERS).id, pick(rng, others));
+      // đã đủ số đơn đặt trước thì order = null ⇒ đi tiếp xuống dưới, khách vào tiệm như thường
+      if (order) {
+        events.push({ type: 'preorder', order });
+        sh.nextSpawnAt = now + randRange(rng, SHOP.spawnEvery) * 0.5;
+        return events;
+      }
+    }
+    const customer = isReg
       ? spawnRegular(save, pick(rng, regs))
-      : spawnCustomer(save, rng, flowerIds, { festival, seasonal, found: Object.keys(save.book?.found || {}) });
+      : spawnCustomer(save, rng, shown.length ? shown : flowerIds, { festival, seasonal, found: Object.keys(save.book?.found || {}) });
     events.push({ type: 'arrive', customer });
     sh.nextSpawnAt = now + randRange(rng, SHOP.spawnEvery) * (1 - SHOP.spawnFasterPerTier) ** tier * (festival ? festival.spawnMult : 1) * spawnMult * shopTierOf(save).spawnMult;
   } else if (now >= sh.nextSpawnAt) {

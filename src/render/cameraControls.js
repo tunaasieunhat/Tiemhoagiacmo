@@ -174,7 +174,7 @@ export class CameraControls {
 
   update(dt) {
     // phím mũi tên / WASD trên máy tính
-    const k = this.keys;
+    const k = this.locked ? new Set() : this.keys; // đang xem cảnh truyện: không cho phím di chuyển camera
     let dx = 0, dz = 0;
     if (k.has('arrowup') || k.has('w')) { dx -= 1; dz -= 1; }
     if (k.has('arrowdown') || k.has('s')) { dx += 1; dz += 1; }

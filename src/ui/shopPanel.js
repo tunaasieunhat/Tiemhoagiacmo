@@ -1,6 +1,6 @@
 // Quầy bán hoa: danh sách khách, chọn hoa / gói bó, giao hoa.
 import { FLOWERS } from '../../data/flowers.js';
-import { SHOP } from '../../data/shop.js';
+import { SHOP, DISPLAY } from '../../data/shop.js';
 import { PAPERS, RIBBONS } from '../../data/wrapping.js';
 import * as shop from '../systems/shop.js';
 import { avatarSVG } from './avatar.js';
@@ -45,7 +45,7 @@ export class ShopPanel {
   }
 
   render() {
-    const html = this.view === 'compose' && this.customer() ? this.composeHtml() : this.listHtml();
+    const html = this.view === 'display' ? this.displayHtml() : this.view === 'compose' && this.customer() ? this.composeHtml() : this.listHtml();
     if (this.view === 'compose' && !this.customer()) this.view = 'list';
     this.hud.openModal('shop', html, 'wide');
     this.listKey = this.save.shop.customers.map((c) => c.id).join(',');
@@ -119,12 +119,50 @@ export class ShopPanel {
         <div class="coins">💰 ${s.player.coins}</div>
       </div>
       <p class="shop-status">${status}</p>
+      ${this.displayRow()}
       <div class="cust-list">${cards}</div>
       <h3>Hoa trong kho</h3><div class="chips">${stock}</div>
       <div class="row-btns" style="margin-top:12px">
         <button class="btn" data-sp="toggle-open">${s.shop.open ? '🔒 Tạm đóng cửa' : '🔓 Mở cửa đón khách'}</button>
       </div>
       <p class="muted small">Uy tín cao: khách đến đông hơn, kiên nhẫn hơn, hay cho tiền bo và đặt bó lớn hơn. Để khách chờ quá lâu hoặc từ chối sẽ mất uy tín.</p>`;
+  }
+
+  // ---------------- 🪴 treo hoa (0.20) ----------------
+  /** Dòng tóm tắt "đang treo" ở đầu danh sách khách */
+  displayRow() {
+    const g = this.game, s = this.save;
+    const shown = shop.displayedFlowers(s, g.unlockedFlowers());
+    const slots = shop.displaySlots(s);
+    const chips = shown.map((id) => `<span class="chip-s">${FLOWERS[id].icon} ${esc(FLOWERS[id].name)}</span>`).join('');
+    return `<div class="disp-row"><div class="disp-info"><b>🪴 Hoa đang treo bán <small>${shown.length}/${slots}</small></b>
+        <div class="chips">${chips || '<span class="muted small">Chưa treo loài nào — khách hỏi mua bất kỳ loài nào</span>'}</div></div>
+      <button class="btn ${shown.length ? '' : 'primary'}" data-sp="display">🪴 Treo hoa</button></div>`;
+  }
+
+  displayHtml() {
+    const g = this.game, s = this.save;
+    const ids = g.unlockedFlowers();
+    const shown = shop.displayedFlowers(s, ids);
+    const slots = shop.displaySlots(s);
+    const stockOf = (id) => Object.entries(s.inventory.flowers).reduce((a, [k, n]) => a + (variants.parseFlowerKey(k).species === id ? n : 0), 0);
+    const growing = {};
+    s.farm.plots.forEach((p) => p.tiles.forEach((t) => { if (t.flower && (t.state === 'growing' || t.state === 'ready')) growing[t.flower] = (growing[t.flower] || 0) + 1; }));
+    const cards = ids.map((id) => {
+      const on = shown.includes(id), st = stockOf(id);
+      return `<button class="disp-card ${on ? 'on' : ''}" data-sp="disp-toggle" data-id="${id}">
+        <span class="dc-icon">${FLOWERS[id].icon}</span><b>${esc(FLOWERS[id].name)}</b>
+        <small>Kho ${st}${growing[id] ? ` · đang trồng ${growing[id]}` : ''}</small>
+        <i class="dc-mark">${on ? '🪴 Đang treo' : 'Treo'}</i></button>`;
+    }).join('');
+    const pre = (s.orders?.list || []).filter((o) => o.pre).length;
+    return `
+      <div class="comp-head"><button class="round sm" data-sp="back" aria-label="Quay lại">←</button>
+        <div><b>🪴 Treo hoa để bán</b><p class="muted small">Đã treo ${shown.length}/${slots} móc${s.shopLevel < 3 ? ' · nâng quy mô tiệm để thêm móc' : ''}</p></div></div>
+      <div class="disp-grid">${cards}</div>
+      <p class="muted small">Khách vào tiệm <b>chỉ hỏi mua những loài đang treo</b> (bó hoa cũng chỉ đòi loài đang treo), nên bạn chủ động trồng đúng thứ sẽ bán.
+        Khách muốn loài khác sẽ để lại <b>📝 đơn đặt trước</b> ở 📋 Nhiệm vụ › Đơn hàng (tối đa ${DISPLAY.preorderMax} đơn, trả cao hơn ${Math.round((DISPLAY.preorderPayMult - 1) * 100)}%, hạn ${DISPLAY.preorderDueHours[0]}–${DISPLAY.preorderDueHours[1]} giờ game)${pre ? ` — đang có ${pre} đơn` : ''}.
+        Gỡ hết thì khách lại hỏi mua mọi loài như trước. Khách quen có câu chuyện riêng vẫn hỏi theo ý họ.</p>`;
   }
 
   // ---------------- chọn hoa / gói bó ----------------
@@ -212,6 +250,8 @@ export class ShopPanel {
     switch (act) {
       case 'compose': this.compose(+el.dataset.id); break;
       case 'back': this.view = 'list'; this.render(); break;
+      case 'display': this.view = 'display'; this.render(); break;
+      case 'disp-toggle': g.toggleDisplay(el.dataset.id); this.renderKeepScroll(); break;
       case 'decline':
         if (!el.dataset.armed) {
           el.dataset.armed = '1';

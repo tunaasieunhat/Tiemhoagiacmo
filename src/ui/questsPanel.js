@@ -4,6 +4,7 @@ import { calendarOf, dayOf } from '../systems/calendar.js';
 import { formatDuration } from '../systems/time.js';
 import * as orders from '../systems/orders.js';
 import { ORDER_RULES } from '../../data/orders.js';
+import { DISPLAY } from '../../data/shop.js';
 import { FLOWERS } from '../../data/flowers.js';
 import * as goals from '../systems/goals.js';
 import { ACH_TIERS } from '../../data/achievements.js';
@@ -103,7 +104,7 @@ export class QuestsPanel {
   /** 📦 Đơn hàng lớn có hạn chót (GĐ16) */
   ordersHtml() {
     const s = this.game.save;
-    if (s.player.level < ORDER_RULES.unlockLevel) return `<div class="empty-shop">📦<p>Đơn hàng lớn mở ở cấp ${ORDER_RULES.unlockLevel}. Khách sẽ đặt trước nhiều hoa cho tiệc cưới, khai trương... thưởng rất lớn!</p></div>`;
+    if (s.player.level < ORDER_RULES.unlockLevel && !(s.orders?.list || []).length) return `<div class="empty-shop">📦<p>Đơn hàng lớn mở ở cấp ${ORDER_RULES.unlockLevel}. Khách sẽ đặt trước nhiều hoa cho tiệc cưới, khai trương... thưởng rất lớn!</p></div>`;
     const now = this.game.now;
     const list = (s.orders?.list || []).map((o) => {
       const k = orders.kindOf(o);
@@ -117,13 +118,13 @@ export class QuestsPanel {
         <div class="mk-icon">${k.icon}</div>
         <div class="mk-info"><b>${esc(k.name)}</b><small>Người đặt: ${esc(k.who)} · <span class="${left < 600 ? 'bad' : ''}">⏳ còn ${formatDuration(left)}</span></small>
           ${lines}
-          <small>Thưởng: <b>${o.coins} 💰</b> + ${o.xp} XP${o.ticket ? ' + 1 🎟️' : ''} · trễ hạn: ${ORDER_RULES.failRep} 💗</small></div>
+          <small>Thưởng: <b>${o.coins} 💰</b> + ${o.xp} XP${o.ticket ? ' + 1 🎟️' : ''}${o.pre ? ` + ${DISPLAY.preorderRep} 💗` : ''} · trễ hạn: ${o.pre ? DISPLAY.preorderFailRep : ORDER_RULES.failRep} 💗</small></div>
         <div class="mk-buy"><button class="btn ${ok ? 'primary' : 'disabled'}" data-q="deliver" data-id="${o.id}">📦 Giao</button></div>
       </div>`;
     }).join('');
     const next = Math.max(0, (s.orders?.nextAt || 0) - now);
     return `<div class="mk-body">${list || '<p class="muted">Chưa có đơn nào. Đơn mới sẽ đến sớm thôi!</p>'}</div>
-      <p class="muted small">Đơn hàng cần nhiều hoa đạt số sao tối thiểu (dùng hoa trong kho, game tự lấy cành ít sao nhất trước). ${(s.orders?.list || []).length < ORDER_RULES.max ? `Đơn tiếp theo sau ~${formatDuration(next)}.` : ''} Đã giao ${s.orders?.done || 0} đơn.</p>`;
+      <p class="muted small">Đơn hàng cần nhiều hoa đạt số sao tối thiểu (dùng hoa trong kho, game tự lấy cành ít sao nhất trước). ${s.player.level >= ORDER_RULES.unlockLevel && (s.orders?.list || []).filter((o) => !o.pre).length < ORDER_RULES.max ? `Đơn lớn tiếp theo sau ~${formatDuration(next)}.` : ''} Đã giao ${s.orders?.done || 0} đơn lớn${s.orders?.preDone ? `, ${s.orders.preDone} đơn đặt trước` : ''}. 📝 Đơn đặt trước đến từ khách muốn loài tiệm không treo (🏪 Tiệm › Treo hoa).</p>`;
   }
 
   onAction(act, el) {

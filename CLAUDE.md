@@ -17,7 +17,9 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
   Vận May hiếm hơn (vàng 3%, bảo hiểm 50), xỏ kim dễ hơn. **Giữ nguyên `LEVEL_XP`** vì SQL `level_from_xp` (migration GĐ8) dùng
   cùng bảng — muốn đổi phải thêm migration mới. Mô phỏng tiến độ: chạy thử với số liệu `data/*` (cấp 10 ≈ 3 giờ chơi chăm).
   ✅ GĐ16 (0.17.0) chăm sóc có kỹ năng. ✅ GĐ18 (0.18.0) mục tiêu dài hạn. ✅ GĐ17 (0.19.0) mini game hay hơn.
-  Hết đề xuất — việc tiếp theo: hỏi người dùng.
+  ✅ GĐ20A (0.20.0) cốt truyện chính chương 1–2 + hội thoại kiểu phim + treo hoa. **Việc tiếp theo: GĐ20B** (chương 3–7,
+  Nụ Mộng nở theo thời tiết, Hoa Mộng "giữ hay trao", 3 kết thúc) — chỉ làm khi người dùng đồng ý. Đề xuất khác đã nêu:
+  GĐ19 xưởng chế biến + nuôi ong, GĐ21 vùng đất mới, GĐ22 điểm danh + sổ thưởng mùa, GĐ23 tùy biến nhân vật, GĐ24 hội làng.
 - Đưa lên mạng: Netlify (`netlify.toml`, `docs/HUONG_DAN_DUA_LEN_MANG.md`) — trang thật: https://tiem-hoa-giac-mo.netlify.app
   (Netlify đang deploy nhánh `ccr-845954e0-2hh7a1`; `main` chỉ có commit đầu tiên). APK: Capacitor + GitHub Actions
   (`.github/workflows/android.yml`, `android-keystore.yml`, `docs/HUONG_DAN_APK.md`); thư mục `android/` KHÔNG commit,
@@ -128,6 +130,23 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   Áp quy mô tiệm & VIP trong `shop.spawnCustomer`/`shopTick` (`shopTierOf`). Game: `eventPts(kind)` gọi ở thu hoạch, bán,
   bắt sâu, giao đơn, nhờ việc; `checkGoals` mỗi 3 giây; `applyShopLevel` gắn `shopUpgrades(level)` (environment.js) vào
   `world.shop`. UI: thẻ Sự kiện/Thành tựu trong `questsPanel.js`, thẻ quy mô ở `marketPanel.upgrades`. Ảnh chụp bạn bè có `ti`, `md`.
+- **Cốt truyện chính** (GĐ20A): kịch bản ở `data/story.js` viết dạng mảng dòng (`['nar', …]`, `['ong_ba', 'sad', …]`,
+  `['choice', [{ t, go, set, fp, remember }]]`, `label/go/if`, `title`, `cam`, `meet`, `place/walk/hide`, `emote`, `fx` sepia|dark,
+  `cg` letter|sign|page|fade) + `CAST` (tên, giọng bíp, hình), `CHAPTERS` (need, steps → triggers `via` auto|villager|spot|mo),
+  `STORY_LINES` (câu chào đổi theo tiến độ), `MO_LINES`. Logic thuần `src/systems/story.js` (`current`, `triggers`, `finishScene`,
+  `applyChoice`, `overview`; điều kiện xét cả dấu lẫn mã cảnh đã xem). Save `save.story = { seen, flags, done, cur }`
+  (SAVE_VERSION 14; `cur = { id, i, picks }` để kể tiếp chỗ dở — tua nhanh lại các lệnh dựng cảnh, không cộng điểm lần 2).
+  UI `src/ui/cinema.js` (`#cine` z-index 35, `portraitSVG(look, mood)`, Bỏ qua bấm 2 lần / Tự chạy / Nhật ký); 3D:
+  `src/render/director.js` (begin/end lưu & trả camera + vị trí người chơi, `meet`, `flashback` ẩn khách/dân làng) và
+  `src/render/storyView.js` (điểm sáng pick `story`, bé Mơ pick `mo`, diễn viên tạm, bong bóng cảm xúc). Dân làng đang diễn có
+  `v.stage` (VillagerView bỏ qua lịch), xong cảnh đặt `v.snap`. `game.cine` = đang chiếu ⇒ **thời gian game tạm dừng**, HUD ẩn
+  (`#hud.cine`), camera khóa phím. `game.playScene(id, { replay })`, `refreshStory()` mỗi 0,25 giây, cảnh `auto` do
+  `hud.maybeAutoStory` gọi (đợi `STORY_RULES.autoDelay`, không có bảng mở). Mơ chỉ hiện ban đêm (`time.isNight`).
+  Bài thử cũ muốn bỏ qua cảnh mở đầu: đặt `save.story.seen.c1_letter = 1` trước, hoặc bấm ⏭ 2 lần.
+- **Treo hoa** (0.20): `save.shop.display = [loài]` (rỗng = bán tất cả), số móc `shop.displaySlots` = `DISPLAY.baseSlots` + quy mô tiệm.
+  `shopTick` chỉ sinh khách hỏi loài đang treo; tỉ lệ `DISPLAY.preorderChance` sinh đơn đặt trước qua hàm `preorder` do game truyền
+  (`orders.makePreorder`, đơn có `pre: true, npc`; không tính vào thành tựu/nhiệm vụ đơn hàng lớn, `orders.preDone`). Khách quen
+  không bị ảnh hưởng. Giỏ treo 3D: `src/models/shopDisplay.js` (`game.applyShopDisplay`). UI: `shopPanel` view `display`.
 - **Dò chạm** (0.9.7): `game.pickAt` bỏ qua vật ẩn (three.js không tự bỏ), chạm sát mặt đất / khe thì lấy ô dưới ngón tay
   (`farmView.tileNear`). (0.15.1) Vùng chạm nhà (`house`) to hơn nhà ⇒ trúng nhà thì dò tiếp, có dân làng phía sau thì ưu tiên
   dân làng; nhiều dân làng trùng tia chạm ⇒ `nearestVillagerHit` chọn người gần tia nhất. Bảng nhà: chủ nhà làm việc ngay trước
@@ -156,7 +175,7 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
 - Code chỉ dành cho app Android nằm ở `src/online/native.js` (kiểm tra `isNative()`); trên web các hàm không làm gì.
 - Đồ họa theo mức `GRAPHICS` trong `data/config.js` (`settings.quality`: auto/high/medium/low); bundle build thành
   1 file JS (`inlineDynamicImports`) để ghép được bản xem thử.
-- **Save có phiên bản** (hiện `SAVE_VERSION = 13`). Đổi cấu trúc save ⇒ tăng `SAVE_VERSION` và thêm
+- **Save có phiên bản** (hiện `SAVE_VERSION = 14`). Đổi cấu trúc save ⇒ tăng `SAVE_VERSION` và thêm
   `MIGRATIONS[phiên_bản_cũ]` trong `src/save/schema.js`; **không bao giờ làm mất tiến độ**. `fillDefaults` tự bổ sung
   trường thiếu (vì vậy số lượng hạt về 0 thì giữ khóa với giá trị 0, không xóa khóa).
 - **Mã vật phẩm**: hạt `"loài:màu"` (vd `rose:red`), hoa trong kho `"loài:màu|sao"` (vd `rose:red|3`).

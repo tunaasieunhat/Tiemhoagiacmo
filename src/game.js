@@ -56,6 +56,11 @@ import * as orders from './systems/orders.js';
 import { BugView } from './render/bugs.js';
 import * as goals from './systems/goals.js';
 import { shopUpgrades } from './models/environment.js';
+import { shopDisplayBaskets, swayBaskets } from './models/shopDisplay.js';
+import { DISPLAY } from '../data/shop.js';
+import * as story from './systems/story.js';
+import { StoryView } from './render/storyView.js';
+import { Director } from './render/director.js';
 import { VIP } from '../data/shopTiers.js';
 import { EVENT_MILESTONES } from '../data/events.js';
 import { BUGS, HARVEST_FUN, FRESH } from '../data/care.js';
@@ -121,6 +126,13 @@ export class Game {
     this.decorEdit = null; // món đang chọn / đang dời trong chế độ trang trí (GĐ10)
     // GĐ11: dân làng
     this.villagers = new VillagerView(stage.scene, world.village?.houses || {});
+    // GĐ20: cốt truyện chính — điểm sáng, bé Mơ, đạo diễn cảnh
+    this.storyView = new StoryView(stage.scene);
+    this.director = new Director(this);
+    this.cine = false;
+    this.storyTrig = [];
+    this.storyWho = new Set();
+    this.storyKey = null;
     this.decorView.sync(this.save.decor.placed);
     this.staffModels = {};
     for (const [id, st] of Object.entries(STAFF)) {
@@ -150,6 +162,7 @@ export class Game {
     this.controls.apply();
     this.updateLockedSlots();
     this.applyShopLevel();
+    this.applyShopDisplay();
     // GĐ18: thành tựu chờ nhận & sự kiện tuần (để báo khi có cái mới)
     this.achSeen = goals.claimableAch(this.save);
     this.goalCheckT = 0;
@@ -222,8 +235,17 @@ export class Game {
         offline, hourFloat: this.clock.hourFloat, flowerIds: this.unlockedFlowers(),
         festival: calendar.festivalOn(day), seasonal: calendar.seasonFlowers(day), day,
         spawnMult: WEATHER[s.weather?.today?.type]?.spawnMult ?? 1,
+        preorder: (npcId, flower) => orders.makePreorder(s, to, Math.random, npcId, flower),
       });
       for (const e of shopEv) {
+        if (e.type === 'preorder') {
+          // 🪴 khách muốn loài tiệm không treo ⇒ để lại đơn đặt trước
+          const it = e.order.items[0];
+          this.toast(`📝 ${shop.npcOf(e.order.npc).name} muốn ${it.n} cành ${FLOWERS[it.sp].name.toLowerCase()} (tiệm không treo) nên đã đặt trước. Xem ở 📋 › Đơn hàng`, 'info');
+          this.emitter.emit('quests');
+          this.saveMgr.markDirty();
+          continue;
+        }
         const npc = shop.npcOf(e.customer.npc);
         if (e.type === 'arrive') {
           this.toast(e.customer.regular ? `💌 Khách quen ${npc.name} ghé tiệm, có chuyện muốn kể!` : `🔔 ${npc.name} vừa đến tiệm hoa!`, e.customer.regular ? 'good' : 'info');
@@ -311,6 +333,7 @@ export class Game {
 
   update(dt) {
     // dt lớn (tab bị ẩn lâu) => coi như vắng mặt
+    if (dt > 3 && this.cine) dt = 0.016;
     if (dt > 3) {
       const ev = this.advance(dt / TIME.realSecondsPerGameMinute, { offline: true });
       if (ev.ready) this.toast(`Trong lúc bạn đi vắng, ${ev.ready} cây đã nở 🌸`, 'good');
@@ -321,7 +344,7 @@ export class Game {
       dt = 0.016;
     }
     const dMin = dt / TIME.realSecondsPerGameMinute;
-    this.advance(dMin);
+    if (!this.cine) this.advance(dMin); // đang xem cảnh truyện: thời gian trong game tạm dừng
     this.save.stats.playMinutes += dt / 60;
     this.save.time.lastRealTs = Date.now();
 
@@ -330,6 +353,7 @@ export class Game {
     this.goalCheckT += dt;
     if (this.goalCheckT > 3 && !this.visit) { this.goalCheckT = 0; this.checkGoals(); }
     if (this.shopUpg?.userData.spin) this.shopUpg.userData.spin.rotation.y += dt * 1.2;
+    swayBaskets(this.shopDisp, performance.now() / 1000);
     if (this.shopUpg?.userData.flag) this.shopUpg.userData.flag.rotation.y = Math.sin(performance.now() / 400) * 0.35;
     const c = this.clock;
     if (c.minute !== this.lastMinute) {
@@ -346,6 +370,7 @@ export class Game {
         }));
       }
       this.customers.sync(this.save);
+      this.refreshStory();
       const ready = breeding.labReady(this.save) && !this.visit;
       this.labIcon.visible = ready;
       if (ready && !this.labNotified) { this.labNotified = true; this.toast('🧬 Nhà lai tạo đã xong! Bấm 🧬 để nhận hạt giống', 'good'); }
@@ -364,7 +389,9 @@ export class Game {
     this.dayNight.update(c.hourFloat, this.controls.target, dt);
     this.seasonVisuals.update(dt);
     this.weatherFx.update(dt, this.controls.target, this.clock.hourFloat);
-    this.bugView.root.visible = !this.visit && !this.decorMode;
+    this.bugView.root.visible = !this.visit && !this.decorMode && !this.flash;
+    this.storyView.root.visible = !this.visit && !this.decorMode;
+    this.storyView.update(dt, this.dayNight.night || 0);
     this.bugView.update(dt);
     this.decorView.update(dt);
     this.villagers.update(dt, this.villageCtx());
@@ -439,6 +466,8 @@ export class Game {
     if (this.decorMode) { this.onDecorTap(pick, x, y); return; }
     if (!pick) { this.select(null); return; }
     if (pick.kind === 'bug') { this.catchBug(pick.id); return; }
+    if (pick.kind === 'story') { this.select(null); this.playScene(pick.scene); return; }
+    if (pick.kind === 'mo') { this.select(null); this.tapMo(); return; }
     if (pick.kind === 'tile') {
       if (this.tool === 'hand') this.select(pick);
       else {
@@ -742,7 +771,7 @@ export class Game {
       g.visible = !plots.some((p) => p.parcel === id);
       return g.visible && !this.visit;
     }).map(([, g]) => g);
-    this.pickRoots = this.decorMode ? [this.decorView.root] : [this.bugView.root, this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, ...locked, ...parcels, this.villagers.root, ...this.villagers.housePick()];
+    this.pickRoots = this.decorMode ? [this.decorView.root] : [this.bugView.root, this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, ...locked, ...parcels, this.villagers.root, ...this.villagers.housePick(), this.storyView.root];
   }
 
   /** Vị trí lô thứ pi (lô của dân làng nằm ở mảnh đất riêng) */
@@ -1011,7 +1040,7 @@ export class Game {
   // ---------------- làng (GĐ11) ----------------
   villageCtx() {
     const m = this.save.time.gameMinutes;
-    return { hour: (m % 1440) / 60, day: dayOf(m), weather: this.save.weather?.today?.type || null, festivalId: calendar.festivalOn(dayOf(m))?.id || null, save: this.save };
+    return { hour: (m % 1440) / 60, day: dayOf(m), weather: this.save.weather?.today?.type || null, festivalId: calendar.festivalOn(dayOf(m))?.id || null, save: this.save, storyWho: this.storyWho };
   }
 
   focusVillager(id) {
@@ -1458,7 +1487,7 @@ export class Game {
     if (offline) return;
     const k = orders.kindOf(e.order);
     if (e.type === 'new') this.toast(`📦 Đơn hàng mới: ${k.icon} ${k.name}! Xem ở 📋 Nhiệm vụ › Đơn hàng`, 'info');
-    else if (e.type === 'expired') this.toast(`⌛ Trễ hạn đơn "${k.name}" — tiệm mất uy tín`, 'bad');
+    else if (e.type === 'expired') this.toast(k.pre ? `⌛ Lỡ hẹn đơn "${k.name}" — khách hơi buồn` : `⌛ Trễ hạn đơn "${k.name}" — tiệm mất uy tín`, 'bad');
   }
 
   deliverOrder(id) {
@@ -1466,10 +1495,20 @@ export class Game {
     if (!res.ok) { this.toast(res.msg, 'warn'); return res; }
     const o = res.order, k = orders.kindOf(o);
     if (o.ticket) luck.grantTickets(this.save, { luck: 1 });
-    this.questEvent('order');
-    this.eventPts('order');
+    if (o.pre) {
+      // 📝 đơn đặt trước của khách vãng lai: tính như phục vụ 1 khách (không tính vào thành tựu / nhiệm vụ "đơn hàng lớn")
+      const s = this.save, n = o.items.reduce((a, it) => a + it.n, 0);
+      s.player.reputation = Math.max(0, s.player.reputation + DISPLAY.preorderRep);
+      Object.assign(s.stats, { served: s.stats.served + 1, sold: s.stats.sold + n, coinsEarned: s.stats.coinsEarned + o.coins });
+      this.questEvent('serve');
+      this.questEvent('earn', o.coins);
+      this.eventPts('sell', { items: o.items.map((it) => ({ species: it.sp, n: it.n })) });
+    } else {
+      this.questEvent('order');
+      this.eventPts('order');
+    }
     this.gainXp(o.xp);
-    this.toast(`📦 Đã giao đơn ${k.icon} ${k.name}: +${o.coins} 💰 +${o.xp} XP${o.ticket ? ' +1 🎟️' : ''}`, 'good');
+    this.toast(o.pre ? `📝 Đã giao đơn đặt trước của ${k.who}: +${o.coins} 💰 +${DISPLAY.preorderRep} 💗` : `📦 Đã giao đơn ${k.icon} ${k.name}: +${o.coins} 💰 +${o.xp} XP${o.ticket ? ' +1 🎟️' : ''}`, 'good');
     this.particles.spawn('sparkle', this.player.root.position.clone().setY(1.2));
     this.audio?.sfx?.chime?.(5);
     this.saveMgr.markDirty();
@@ -1478,7 +1517,102 @@ export class Game {
     this.emitter.emit('quests');
     this.emitter.emit('luck');
     this.emitter.emit('xp');
+    this.emitter.emit('shop');
     return res;
+  }
+
+  // ---------------- 📜 cốt truyện chính (GĐ20) ----------------
+  /** Bật/tắt chế độ xem cảnh: thời gian tạm dừng, ẩn nút bấm, khóa camera */
+  setCine(on) {
+    this.cine = on;
+    this.controls.locked = on;
+    this.emitter.emit('cine', on);
+  }
+
+  /** Cập nhật các điểm kích hoạt đang mở (điểm sáng, dân làng có 📜, bé Mơ ban đêm) */
+  refreshStory() {
+    if (this.cine) return;
+    const hour = this.clock.hourFloat;
+    const cur = story.current(this.save);
+    this.storyTrig = this.visit ? [] : story.triggers(this.save, { hour });
+    this.storyWho = new Set(this.storyTrig.filter((t) => t.via === 'villager').map((t) => t.who));
+    this.storyView.sync(this.storyTrig, story.moVisible(this.save, hour));
+    const key = `${cur.finished ? 'end' : cur.ch.id}|${cur.locked ? 'L' : cur.stepIdx}|${this.storyTrig.map((t) => t.scene).join(',')}`;
+    if (key === this.storyKey) return;
+    // chương kế vừa đủ điều kiện mở (vd vừa lên cấp) ⇒ báo cho người chơi
+    if (this.storyKey && this.storyChapLocked && !cur.finished && !cur.locked) this.toast(`📜 Cốt truyện: mở Chương ${cur.ch.n} — “${cur.ch.title}”! ${cur.step.goal}`, 'good');
+    this.storyChapLocked = !cur.finished && !!cur.locked;
+    this.storyKey = key;
+    this.emitter.emit('story');
+  }
+
+  storyTrigger(via, key) { return this.storyTrig.find((t) => t.via === via && (via === 'villager' ? t.who === key : via === 'spot' ? t.scene === key : true)) || null; }
+
+  /** Chiếu 1 cảnh. replay: xem lại từ Sổ tay (không ghi gì). Trả về kết quả finishScene. */
+  async playScene(id, { replay = false } = {}) {
+    if (this.cine || this.visit || !this.cinema || this.cinema.active || !story.sceneOf(id)) return null;
+    if (this.decorMode) this.setDecorMode(false);
+    this.emitter.emit('close-modal');
+    const played = await this.cinema.play(id, { replay });
+    if (!played.done) return null; // chưa chiếu được (đang bận cảnh khác) thì không tính là đã xem
+    if (replay) return {};
+    const res = story.finishScene(this.save, id);
+    if (res.chapterDone) {
+      const rw = res.reward || {};
+      if (rw.coins) this.save.player.coins += rw.coins;
+      if (rw.luck) luck.grantTickets(this.save, { luck: rw.luck });
+      if (rw.xp) this.gainXp(rw.xp);
+      this.particles.spawn('sparkle', this.player.root.position.clone().setY(1.2));
+      this.audio?.sfx?.chime?.(6);
+      this.emitter.emit('story-chapter', { ch: res.chapterDone, reward: rw, next: res.next });
+      this.emitter.emit('luck');
+      this.emitter.emit('inventory');
+    } else if (res.stepDone && res.nextGoal) {
+      this.toast(`📜 Mục tiêu mới: ${res.nextGoal}`, 'good');
+    } else if (!res.already && res.next?.step && res.next.need > 1) {
+      this.toast(`📜 ${res.next.step.goal} (${res.next.seen}/${res.next.need})`, 'info');
+    }
+    this.storyKey = this.storyKey && 'x'; // buộc cập nhật lại điểm sáng (không báo "mở chương" nhầm)
+    this.refreshStory();
+    this.saveMgr.markDirty();
+    this.saveMgr.saveNow('manual');
+    return res;
+  }
+
+  /** Người chơi chọn 1 câu trong cảnh: ghi dấu, cộng điểm tình thân */
+  storyChoice(opt) {
+    const r = story.applyChoice(this.save, opt);
+    for (const b of r.bonds) this.afterBond(b.id, b.res);
+    this.saveMgr.markDirty();
+    return r;
+  }
+
+  /** Chạm vào bé Mơ ban đêm: có cảnh truyện thì chiếu, không thì Mơ nói vu vơ / nhắc việc */
+  tapMo() {
+    const t = this.storyTrigger('mo');
+    if (t) { this.playScene(t.scene); return; }
+    const p = this.storyView.actorPos('mo');
+    if (p) { this.storyView.emote(p.clone().setY(1.75), '🎵'); this.particles.spawn('sparkle', p.clone().setY(0.9)); }
+    this.toast(`✨ Mơ: “${story.moLine(this.save)}”`, 'info');
+    this.audio?.sfx?.chime?.(2);
+  }
+
+  // ---------------- 🪴 treo hoa (0.20) ----------------
+  /** Treo / gỡ 1 loài ở tiệm */
+  toggleDisplay(id) {
+    const res = shop.toggleDisplay(this.save, id, this.unlockedFlowers());
+    if (!res.ok) { this.toast(res.msg, 'warn'); return res; }
+    this.applyShopDisplay();
+    this.saveMgr.markDirty();
+    this.emitter.emit('shop');
+    return res;
+  }
+
+  /** Vẽ các giỏ hoa đang treo dưới mái hiên tiệm */
+  applyShopDisplay() {
+    if (this.shopDisp) this.world.shop.remove(this.shopDisp);
+    this.shopDisp = shopDisplayBaskets(shop.displayedFlowers(this.save, this.unlockedFlowers()));
+    this.world.shop.add(this.shopDisp);
   }
 
   // ---------------- GĐ18: thành tựu, sự kiện tuần, quy mô tiệm ----------------

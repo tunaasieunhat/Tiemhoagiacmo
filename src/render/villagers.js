@@ -83,6 +83,22 @@ export class VillagerView {
   }
 
   step(v, dt, ctx, jump) {
+    // 🎬 đang đóng cảnh truyện (GĐ20): đứng yên ở chỗ đạo diễn xếp, quay mặt theo hướng được giao
+    if (v.stage) {
+      const st = v.stage;
+      v.x = st.x; v.z = st.z;
+      if (st.heading != null) v.heading = st.heading;
+      v.g.visible = !st.hidden;
+      v.g.position.set(v.x, 0, v.z);
+      let dh = v.heading - v.g.rotation.y;
+      dh = Math.atan2(Math.sin(dh), Math.cos(dh));
+      v.g.rotation.y += dh * Math.min(1, dt * 8);
+      v.icon.visible = false;
+      if (v.mode === 'at') this.animateActivity(v);
+      else { const m = v.ch; m.legL.position.z = m.legR.position.z = 0; m.armL.rotation.x = m.armR.rotation.x = 0; m.body.position.y = Math.sin(this.t * 1.6 + v.phase) * 0.015; }
+      return;
+    }
+    if (v.snap) { jump = true; v.snap = false; }
     const d = desiredState(v.id, ctx);
     const key = d.absent ? `absent:${d.reason}` : `${d.spot}|${d.act}`;
     if (key !== v.key) {
@@ -152,8 +168,10 @@ export class VillagerView {
       const a = ACTIVITIES[v.act];
       // có việc muốn nhờ hôm nay => hiện 🙏 thay cho biểu tượng việc đang làm
       const favor = ctx.save && ctx.day && todaysFavor(ctx.save, v.id, ctx.day);
-      if (v.mode === 'walk' && !favor) v.icon.visible = false;
-      const mat = iconMaterial(favor ? '🙏' : a?.icon || '💬');
+      // 📜 có chuyện của cốt truyện chính muốn nói => ưu tiên hiện 📜
+      const story = ctx.storyWho?.has(v.id);
+      if (v.mode === 'walk' && !favor && !story) v.icon.visible = false;
+      const mat = iconMaterial(story ? '📜' : favor ? '🙏' : a?.icon || '💬');
       if (v.icon.material !== mat) v.icon.material = mat;
       v.icon.position.y = (v.kid ? 1.75 : 2.05) + Math.sin(this.t * 2 + v.phase) * 0.06 + (a?.anim === 'sit' ? -0.2 : 0);
     }

@@ -138,6 +138,26 @@ export class Sfx {
     }
   }
 
+  /** Tiếng "bíp" ngắn khi chữ hội thoại hiện ra — pitch (Hz) khác nhau cho từng nhân vật */
+  blip(pitch = 600) {
+    const vol = this.prefs.sfx;
+    if (vol <= 0) return;
+    const ctx = this.ensure();
+    if (!ctx || ctx.state !== 'running') return;
+    const t = ctx.currentTime;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.07 * vol, t + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+    g.connect(ctx.destination);
+    const o = ctx.createOscillator();
+    o.type = pitch > 900 ? 'sine' : 'triangle';
+    o.frequency.value = pitch * (1 + (Math.random() - 0.5) * 0.08);
+    o.connect(g);
+    o.start(t);
+    o.stop(t + 0.08);
+  }
+
   tap(strength = 1) {
     const vol = this.prefs.sfx * strength;
     if (vol <= 0) return;

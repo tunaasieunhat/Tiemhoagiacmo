@@ -46,6 +46,9 @@ import { PAPERS, RIBBONS } from '../../data/wrapping.js';
 import { wholesalePrice, tierInfo } from '../systems/shop.js';
 import { ZONES, PLOT_SLOTS } from '../render/world.js';
 import { GAME_VERSION, GAME_STAGE } from '../version.js';
+import { Cinema } from './cinema.js';
+import * as storySys from '../systems/story.js';
+import { STORY_RULES, CHAPTERS } from '../../data/story.js';
 
 const TOOLS = [
   { id: 'hand', icon: '✋', label: 'Xem' },
@@ -112,6 +115,16 @@ export class Hud {
     em.on('levelup', (ups) => this.showLevelUp(ups));
     em.on('weather', () => { this.updateAlert(); this.updateClock(this.game.clock); if (this.modal === 'forecast') this.openForecast(); });
     em.on('saved', (s) => this.flashSaved(s));
+    // GĐ20: cốt truyện chính
+    this.cinema = new Cinema({ game, hud: this });
+    game.cinema = this.cinema;
+    this.bootAt = performance.now();
+    em.on('cine', (on) => { this.root.classList.toggle('cine', on); if (on) game.select(null); });
+    em.on('close-modal', () => this.closeModal());
+    em.on('story', () => this.updateStoryBadge());
+    // đang hiện bảng khác (vd vừa lên cấp nhờ XP của chương) thì đợi đóng bảng đó rồi mới hiện "Hết chương"
+    em.on('story-chapter', (e) => { if (this.modal) this.afterClose = () => this.showChapterDone(e); else this.showChapterDone(e); });
+    em.on('refresh', () => this.maybeAutoStory());
     em.on('sync', (s) => this.updateSync(s));
     this.updateClock(game.clock);
     this.updateToolbar();
@@ -144,7 +157,7 @@ export class Hud {
           <span class="cinfo"><b class="ctime">06:00</b><small class="cday">Ngày 1</small></span>
         </button>
         <div class="top-actions">
-          <button class="round" data-act="notebook" aria-label="Sổ tay thực vật">📖</button>
+          <button class="round" data-act="notebook" aria-label="Sổ tay thực vật">📖<span class="badge hidden nb-badge">📜</span></button>
           <button class="round" data-act="inventory" aria-label="Kho đồ">🎒</button>
           <button class="round" data-act="settings" aria-label="Cài đặt">⚙️</button>
         </div>
@@ -254,6 +267,12 @@ export class Hud {
         else { b.dataset.armed = '1'; b.textContent = '⚠️ Bấm lần nữa để xóa hết'; setTimeout(() => { delete b.dataset.armed; b.textContent = '🗑️ Chơi lại từ đầu'; }, 3000); }
         break;
       case 'tut-skip': g.save.tutorial.done = true; this.updateTutorial(); break;
+      case 'tut-toggle': {
+        const mini = !$('.tutorial', this.root).classList.contains('mini');
+        try { localStorage.setItem('thgm:tut', mini ? 'mini' : 'open'); } catch { /* bỏ qua */ }
+        this.updateTutorial();
+        break;
+      }
       case 'login': this.login(); break;
       case 'nav-toggle': {
         const nav = $('.nav-btns', this.root);
@@ -274,7 +293,7 @@ export class Hud {
       }
       case 'do-update': this.doUpdate(b); break;
       case 'later-update': $('.update-banner', this.root).classList.add('hidden'); break;
-      case 'notebook': this.notebook.open(b.dataset.tab); break;
+      case 'notebook': this.notebook.open(b.dataset.tab || (this.game.storyTrig.length ? 'story' : undefined)); break;
       case 'go-lab': this.openLab(); break;
       case 'go-village': this.closeModal(); g.goVillage(); break;
       case 'see-villager': this.closeModal(); g.focusVillager(b.dataset.id); break;
@@ -484,6 +503,48 @@ export class Hud {
     }
   }
 
+  // ---------- 📜 cốt truyện chính (GĐ20) ----------
+  /** Chiếu cảnh rồi hiện quà mốc tim (nếu lựa chọn trong cảnh làm tăng tim) */
+  async playStory(scene, opts = {}) {
+    this.closeModal();
+    const res = await this.game.playScene(scene, opts);
+    if (res && !res.chapterDone && !opts.replay) this.showBondRewards();
+    if (opts.replay) this.notebook.open('story');
+    return res;
+  }
+
+  /** Cảnh "tự chạy" (vd lá thư mở đầu): đợi vào game vài giây, không có bảng nào đang mở */
+  maybeAutoStory() {
+    const g = this.game;
+    if (g.cine || this.modal || g.visit || g.decorMode || this.autoBusy) return;
+    if (performance.now() - this.bootAt < STORY_RULES.autoDelay * 1000) return;
+    if (document.getElementById('minigame') || document.getElementById('force-update')) return;
+    const t = g.storyTrig.find((x) => x.via === 'auto');
+    if (!t) return;
+    this.autoBusy = true;
+    this.playStory(t.scene).finally(() => { this.autoBusy = false; });
+  }
+
+  updateStoryBadge() {
+    const b = $('.nb-badge', this.root);
+    if (b) b.classList.toggle('hidden', !this.game.storyTrig.length);
+  }
+
+  showChapterDone({ ch, reward, next }) {
+    const items = [reward.coins && `+${reward.coins} 💰`, reward.xp && `+${reward.xp} XP`, reward.luck && `+${reward.luck} 🎟️ vé may mắn`].filter(Boolean);
+    let nextHtml;
+    if (!next || next.finished) nextHtml = '<p class="muted small">Các chương tiếp theo sẽ đến trong bản cập nhật sau. Cảm ơn bạn đã đồng hành cùng Mơ! 💛</p>';
+    else if (next.locked) nextHtml = `<p class="small">Chương ${next.ch.n} — <b>${esc(next.ch.title)}</b> mở khi: ${next.checks.map((c) => `${c.ok ? '✅' : '⬜'} ${esc(c.text)}`).join(' · ')}</p>`;
+    else nextHtml = `<p class="small">Tiếp theo — Chương ${next.ch.n}: <b>${esc(next.ch.title)}</b><br>🎯 ${esc(next.step.goal)}</p>`;
+    this.openModal('story', `<div class="story chapter-done">
+      <div class="cd-icon">📜</div><small class="muted">Hết chương ${ch.n}</small><h2>${esc(ch.title)}</h2>
+      <p class="story-text">${esc(ch.outro || '')}</p>
+      <h3>🎁 Quà tặng</h3><ul class="unlocks">${items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>
+      ${nextHtml}
+      <p class="muted small">Xem lại các cảnh đã qua ở 📖 Sổ tay › Cốt truyện.</p>
+      <button class="btn primary wide" data-act="close-modal">Tiếp tục</button></div>`);
+  }
+
   // ---------- làng (GĐ11) ----------
   heartBar(id) {
     const s = this.game.save;
@@ -511,9 +572,14 @@ export class Hud {
     const favor = g.favorToday(id);
     const parcelId = Object.keys(PARCELS).find((k) => PARCELS[k].owner === id && !landSys.ownsParcel(g.save, k));
     const landBtn = parcelId ? `<button class="btn wide" data-ld="open" data-id="${parcelId}">🗺️ Hỏi mua ${esc(PARCELS[parcelId].name.toLowerCase())}</button>` : '';
+    // 📜 cốt truyện chính: người này có chuyện để hỏi ⇒ nút nổi bật ở trên cùng; câu chào đổi theo tiến độ truyện
+    const stTrig = meet.ok ? g.storyTrigger('villager', id) : null;
+    const storyBtn = stTrig ? `<button class="btn primary glow wide story-btn" data-vg="story" data-id="${id}" data-scene="${stTrig.scene}">📜 ${esc(stTrig.label || 'Cốt truyện')}</button>` : '';
+    const hello = storySys.storyLine(g.save, id) || greeting(id, ctx);
     this.openModal('villager', `
       <div class="vg-head">${avatarSVG(info.look, 64)}<div><h2>${esc(info.name)}${bday ? ' 🎂' : ''}</h2><small class="muted">${esc(info.role)}${info.home ? ` · ${esc(HOUSES[info.home].name)}` : ''}</small>${this.heartBar(id)}</div></div>
-      <p class="vg-say">“${esc(greeting(id, ctx))}”</p>
+      <p class="vg-say">“${esc(hello)}”</p>
+      ${storyBtn}
       ${bday ? `<p class="bday">🎂 Hôm nay là <b>sinh nhật</b> của ${esc(info.name)}! Tặng quà được gấp đôi tình thân.</p>` : ''}
       <div class="vg-acts">
         <button class="btn ${ev ? 'primary glow' : 'primary'} ${!meet.ok || !canTalk ? 'disabled' : ''}" data-vg="talk" data-id="${id}">${ev ? `✨ ${esc(ev.title)}` : '💬 Trò chuyện'}${canTalk ? '' : ' ✓'}</button>
@@ -567,6 +633,7 @@ export class Hud {
       }
       case 'done': this.talk = null; this.giftFor = null; if (!this.showBondRewards()) this.openVillager(id); break;
       case 'favor': this.startFavor(id); break;
+      case 'story': this.playStory(el.dataset.scene); break;
       case 'gift':
         if (el.classList.contains('disabled')) { const m = g.canMeet(id); g.toast(!m.ok ? m.reason : !rel.canGift(g.save, id, g.today) ? 'Hôm nay đã tặng quà rồi' : 'Kho chưa có hoa — thu hoạch hoa rồi quay lại nhé', 'info'); return; }
         this.giftFor = id; this.openGift(id); break;
@@ -1027,7 +1094,11 @@ export class Hud {
     const el = $('.tutorial', this.root);
     if (tu.done || !TUTORIAL[tu.step]) { el.classList.add('hidden'); return; }
     el.classList.remove('hidden');
-    el.innerHTML = `<span class="tstep">${tu.step + 1}/${TUTORIAL.length}</span><span>${TUTORIAL[tu.step].text}</span><button data-act="tut-skip" aria-label="Bỏ qua">✕</button>`;
+    // (0.20) khung hướng dẫn gọn: chạm vào số bước để thu nhỏ thành 1 nút 💡, chạm lần nữa để mở lại
+    let mini = false;
+    try { mini = localStorage.getItem('thgm:tut') === 'mini'; } catch { /* bỏ qua */ }
+    el.classList.toggle('mini', mini);
+    el.innerHTML = `<button class="tstep" data-act="tut-toggle" aria-label="Thu gọn hoặc mở hướng dẫn">💡 ${tu.step + 1}/${TUTORIAL.length}</button><span class="ttext">${TUTORIAL[tu.step].text}</span><button class="tclose" data-act="tut-skip" aria-label="Bỏ qua">✕</button>`;
   }
 
   // ---------- bảng thông tin ô đất ----------
@@ -1326,6 +1397,9 @@ export class Hud {
   closeModal() {
     this.modal = null;
     $('.modal-wrap', this.root).classList.add('hidden');
+    const next = this.afterClose;
+    this.afterClose = null;
+    next?.();
   }
 
   // ---------- thông báo ----------
@@ -1333,11 +1407,16 @@ export class Hud {
     const box = $('.toasts', this.root);
     const t = document.createElement('div');
     t.className = `toast ${type}`;
-    t.textContent = text;
+    const sp = document.createElement('span'); // chữ nằm trong span để cắt gọn 2–3 dòng mà không lòi dòng thừa
+    sp.textContent = text;
+    t.appendChild(sp);
     box.appendChild(t);
-    while (box.children.length > 3) box.firstChild.remove();
-    setTimeout(() => t.classList.add('out'), 2600);
-    setTimeout(() => t.remove(), 3100);
+    // (0.20) thông báo gọn: điện thoại ngang chỉ hiện 2 cái cùng lúc; câu dài thì nán lại lâu hơn một chút
+    const max = innerHeight <= 480 ? 2 : 3;
+    while (box.children.length > max) box.firstChild.remove();
+    const stay = 2600 + Math.min(1800, Math.max(0, text.length - 40) * 25);
+    setTimeout(() => t.classList.add('out'), stay);
+    setTimeout(() => t.remove(), stay + 500);
   }
 
   floatText({ pos, text, small }) {

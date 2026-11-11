@@ -1,10 +1,12 @@
 // =============================================================
 //  📦 ĐƠN HÀNG LỚN CÓ HẠN CHÓT (GĐ16) — LOGIC THUẦN
-//  save.orders = { list: [{ id, kind, items: [{ sp, n, minQ }], due, coins, xp, ticket }], nextAt, nextId, done, failed }
+//  save.orders = { list: [{ id, kind, items: [{ sp, n, minQ }], due, coins, xp, ticket }], nextAt, nextId, done, failed, preDone }
+//  📝 Đơn đặt trước (0.20, treo hoa): đơn nhỏ của khách vãng lai muốn loài tiệm không treo — có thêm { pre: true, npc }
 // =============================================================
 import { ORDER_RULES, ORDER_KINDS } from '../../data/orders.js';
 import { FLOWERS, NORMAL_FLOWER_IDS } from '../../data/flowers.js';
-import { SHOP } from '../../data/shop.js';
+import { SHOP, DISPLAY } from '../../data/shop.js';
+import { CUSTOMERS } from '../../data/customers.js';
 import { parseFlowerKey } from './variants.js';
 
 export function createOrdersState() {
@@ -46,23 +48,40 @@ export function makeOrder(save, now, rng = Math.random) {
   return order;
 }
 
+/** 📝 Đơn đặt trước của 1 khách vãng lai muốn loài tiệm không treo. Trả về null nếu đã đủ số đơn đặt trước. */
+export function makePreorder(save, now, rng, npc, flower) {
+  const o = O(save);
+  if (o.list.filter((x) => x.pre).length >= DISPLAY.preorderMax || !FLOWERS[flower]) return null;
+  const n = randInt(rng, DISPLAY.preorderSize[0], DISPLAY.preorderSize[1]);
+  const order = {
+    id: o.nextId++, pre: true, npc, kind: 0,
+    items: [{ sp: flower, n, minQ: 1 }],
+    due: now + randInt(rng, DISPLAY.preorderDueHours[0], DISPLAY.preorderDueHours[1]) * 60,
+    coins: Math.max(5, Math.round(FLOWERS[flower].basePrice * n * DISPLAY.preorderPayMult / 5) * 5),
+    xp: n * DISPLAY.preorderXpPerFlower,
+    ticket: false,
+  };
+  o.list.push(order);
+  return order;
+}
+
 /** Cho thời gian trôi: hết hạn ⇒ hủy đơn (mất uy tín); đủ thời gian ⇒ thêm đơn mới. Trả về sự kiện.
  *  offline: lúc tắt game thì hạn giao TẠM DỪNG (dời hạn thêm dMin phút), không tạo đơn mới. */
 export function ordersTick(save, now, rng = Math.random, { offline = false, dMin = 0 } = {}) {
   const o = O(save);
   const events = [];
-  if (save.player.level < ORDER_RULES.unlockLevel) return events;
   if (offline) { for (const ord of o.list) ord.due += dMin; if (o.nextAt) o.nextAt += dMin; return events; }
   for (const ord of [...o.list]) {
     if (now >= ord.due) {
       o.list = o.list.filter((x) => x !== ord);
-      o.failed = (o.failed || 0) + 1;
-      save.player.reputation = Math.max(0, (save.player.reputation || 0) + ORDER_RULES.failRep);
+      if (!ord.pre) o.failed = (o.failed || 0) + 1;
+      save.player.reputation = Math.max(0, (save.player.reputation || 0) + (ord.pre ? DISPLAY.preorderFailRep : ORDER_RULES.failRep));
       events.push({ type: 'expired', order: ord });
     }
   }
+  if (save.player.level < ORDER_RULES.unlockLevel) return events;
   if (!o.nextAt) o.nextAt = now;
-  if (now >= o.nextAt && o.list.length < ORDER_RULES.max) {
+  if (now >= o.nextAt && o.list.filter((x) => !x.pre).length < ORDER_RULES.max) {
     events.push({ type: 'new', order: makeOrder(save, now, rng) });
     o.nextAt = now + ORDER_RULES.everyHours * 60;
   } else if (now >= o.nextAt) o.nextAt = now + 60;
@@ -100,9 +119,15 @@ export function deliverOrder(save, id) {
     }
   }
   o.list = o.list.filter((x) => x !== ord);
-  o.done = (o.done || 0) + 1;
+  if (ord.pre) o.preDone = (o.preDone || 0) + 1; else o.done = (o.done || 0) + 1;
   save.player.coins += ord.coins;
   return { ok: true, order: ord };
 }
 
-export const kindOf = (ord) => ORDER_KINDS[ord.kind] || ORDER_KINDS[0];
+export function kindOf(ord) {
+  if (ord.pre) {
+    const c = CUSTOMERS.find((x) => x.id === ord.npc) || CUSTOMERS[0];
+    return { icon: '📝', name: `${c.name} đặt trước`, who: c.name, pre: true };
+  }
+  return ORDER_KINDS[ord.kind] || ORDER_KINDS[0];
+}

@@ -13,6 +13,7 @@ Tiemhoagiacmo/
 │  ├─ seasons.js           Mùa, thời tiết, thiên tai, dịch bệnh, lễ hội, đồ phòng hộ
 │  ├─ variants.js          Màu hoa, ý nghĩa, công thức lai, thưởng sổ tay
 │  ├─ regulars.js          Khách quen & câu chuyện
+│  ├─ story.js             📜 Cốt truyện chính (GĐ20): KỊCH BẢN các cảnh, diễn viên, chương, câu thoại — sửa chữ ở đây
 │  ├─ quests.js, automation.js, decor.js, contest.js   Nhiệm vụ, tự động hóa, trang trí, cuộc thi
 │  ├─ online.js            Địa chỉ + khóa công khai Supabase
 │  └─ badwords.js          Từ cấm (bản phụ, bản chính ở máy chủ)
@@ -33,6 +34,7 @@ Tiemhoagiacmo/
 │  │  ├─ breeding.js       Lai tạo
 │  │  ├─ notebook.js       Sổ tay thực vật
 │  │  ├─ regulars.js       Khách quen
+│  │  ├─ story.js          Cốt truyện chính: chương/bước đang ở đâu, điểm kích hoạt, lựa chọn, quà chương
 │  │  ├─ quests.js         Nhiệm vụ ngày/tuần
 │  │  ├─ automation.js     Vòi tưới, máy bón phân, nhân viên
 │  │  ├─ contest.js        Mùa thi (tuần thật, giờ VN), chấm bài dự thi — dùng chung với máy chủ

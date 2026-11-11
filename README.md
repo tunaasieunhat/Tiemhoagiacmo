@@ -22,6 +22,7 @@ Công nghệ: Three.js + Vite, sau này dùng Supabase cho tài khoản online.
 - ✅ Giai đoạn 11 — Làng Hoa: 6 nhà + trường làng, dân làng đi lại & làm việc theo giờ, mở rộng bản đồ.
 - ✅ Giai đoạn 12 — kết thân với dân làng: tình thân 10 ❤️, trò chuyện có lựa chọn, tặng hoa theo sở thích, sinh nhật, 24 sự kiện rẽ nhánh, quà mốc tim. Dân làng nhờ việc với 7 mini game (xỏ kim, câu cá, đóng đinh, pha cà phê, chấm toán, ghép vần thơ, lật thẻ).
 - ✅ Giai đoạn 13 — mua đất của dân làng: 4 mảnh đất, giá theo tình thân & tâm trạng mỗi ngày, trả giá, có thể bị từ chối.
+- ✅ Giai đoạn 20A — cốt truyện chính "Giấc mơ của tiệm hoa" (chương 1–2) + hệ thống hội thoại kiểu phim (chân dung có nét mặt, lựa chọn, hồi ức, tranh minh họa, bỏ qua / tự chạy / nhật ký thoại), bé Mơ ban đêm; 🪴 treo hoa ở tiệm + 📝 đơn đặt trước.
 - ✅ Giai đoạn 17 — mini game hay hơn: 3 mức khó theo tình thân, combo + hiệu ứng + kỷ lục, 2 game mới (cắm hoa theo mẫu, bắt bướm), góc chơi lại trong Sổ tay.
 - ✅ Giai đoạn 18 — mục tiêu dài hạn: 14 thành tựu 3 bậc + danh hiệu, sự kiện tuần theo ngày thật, nâng quy mô tiệm 4 bậc + khách VIP.
 - ✅ Giai đoạn 16 — chăm sóc có kỹ năng: độ tươi & giờ vàng, bắt sâu (combo, bọ rùa vàng), độ màu đất & luân canh, đơn hàng lớn có hạn chót, combo thu hoạch, hạt đột biến.

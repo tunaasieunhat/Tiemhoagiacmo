@@ -10,10 +10,12 @@ import { villagerInfo } from '../systems/village.js';
 import { BONDS, REACTION, FRIEND } from '../../data/stories.js';
 import { FAVORS, MINIGAMES, DIFFICULTY } from '../../data/minigames.js';
 import { runMiniGame } from './minigames.js';
+import * as storySys from '../systems/story.js';
+import { COMING_CHAPTERS } from '../../data/story.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const SEASON_NAMES = { xuan: 'Xuân', ha: 'Hạ', thu: 'Thu', dong: 'Đông' };
-const TABS = [['flowers', '🌸 Bộ sưu tập'], ['meanings', '💬 Ngôn ngữ hoa'], ['regulars', '💌 Khách quen'], ['village', '🏘️ Dân làng'], ['games', '🎮 Mini game']];
+const TABS = [['story', '📜 Cốt truyện'], ['flowers', '🌸 Bộ sưu tập'], ['meanings', '💬 Ngôn ngữ hoa'], ['regulars', '💌 Khách quen'], ['village', '🏘️ Dân làng'], ['games', '🎮 Mini game']];
 
 /** Mini game nào do ai nhờ (lấy tên & biểu tượng từ việc nhờ) */
 const GAME_INFO = (() => {
@@ -35,13 +37,36 @@ export class NotebookPanel {
 
   render() {
     const p = bookProgress(this.save);
-    const body = { flowers: this.flowers, meanings: this.meanings, regulars: this.regulars, village: this.village, games: this.games }[this.tab].call(this);
+    const body = { story: this.story, flowers: this.flowers, meanings: this.meanings, regulars: this.regulars, village: this.village, games: this.games }[this.tab].call(this);
     this.hud.openModal('notebook', `
       <h2>📖 Sổ tay thực vật</h2>
       <div class="book-prog"><div class="track"><i style="width:${p.pct}%;background:#f6a6b9"></i></div>
         <small>Đã sưu tầm ${p.found}/${p.total} màu hoa (${p.pct}%) · Biết ý nghĩa ${p.known}/${p.total}</small></div>
       <div class="mk-tabs">${TABS.map(([id, label]) => `<button class="${id === this.tab ? 'on' : ''}" data-nb="tab" data-id="${id}">${label}</button>`).join('')}</div>
       <div class="mk-body">${body}</div>`, 'wide');
+  }
+
+  /** 📜 Cốt truyện chính (GĐ20): chương đang ở đâu, việc cần làm, xem lại cảnh đã qua */
+  story() {
+    const s = this.save;
+    const ov = storySys.overview(s);
+    const cards = ov.map((o) => {
+      const { ch } = o;
+      const sceneBtns = o.scenes.filter((x) => x.seen).map((x) => `<button class="chip-btn" data-nb="replay" data-id="${x.id}">▶ ${esc(x.title)}</button>`).join('');
+      let body = '';
+      if (o.state === 'done') body = `<p class="small">${esc(ch.outro || '')}</p><div class="st-scenes">${sceneBtns}</div>`;
+      else if (o.state === 'active') body = `<p class="small">${esc(ch.intro)}</p>
+        <div class="st-goal">🎯 <b>${esc(o.goal)}</b>${o.need > 1 ? ` <small>(${o.seen}/${o.need})</small>` : ''}</div>
+        ${sceneBtns ? `<div class="st-scenes">${sceneBtns}</div>` : ''}`;
+      else if (o.state === 'locked') body = `<p class="small muted">${esc(ch.intro)}</p><div class="st-need">Mở khi: ${o.checks.map((c) => `<span class="${c.ok ? 'ok' : ''}">${c.ok ? '✅' : '⬜'} ${esc(c.text)}${c.ok ? '' : ` (${c.value}/${c.n})`}</span>`).join('')}</div>`;
+      else body = '<p class="small muted">Xong chương trước để mở.</p>';
+      const tag = { done: '✔ Đã xong', active: '▶ Đang diễn ra', locked: '🔒 Chưa mở', later: '🔒' }[o.state];
+      return `<div class="st-card ${o.state}"><div class="st-head"><span class="st-n">Chương ${ch.n}</span><b>${esc(o.state === 'later' ? '???' : ch.title)}</b><i>${tag}</i></div>${body}</div>`;
+    }).join('');
+    const coming = COMING_CHAPTERS.map((c) => `<span class="chip-s unk">Chương ${c.n} · ???</span>`).join('');
+    return `<p class="muted small st-wide">“Giấc mơ của tiệm hoa” — câu chuyện về người chủ cũ mà cả đảo đã quên. Người có chuyện để kể sẽ hiện 📜 trên đầu; ban đêm (sau 19:00) bé Mơ ở trước hiên tiệm.</p>
+      ${cards}
+      <div class="st-card later st-wide"><div class="st-head"><b>Sắp ra mắt</b></div><div class="chips">${coming}</div></div>`;
   }
 
   village() {
@@ -163,5 +188,6 @@ export class NotebookPanel {
     if (act === 'tab') { this.tab = el.dataset.id; this.render(); }
     if (act === 'sp') { this.sp = el.dataset.id; this.render(); }
     if (act === 'play') this.play(el.dataset.k, +el.dataset.lv);
+    if (act === 'replay') this.hud.playStory(el.dataset.id, { replay: true });
   }
 }

@@ -29,6 +29,22 @@ export const SHOP = {
   satisfaction: { perfect: 85, good: 65, ok: 40 }, // điểm (0–100) để đạt từng mức
 };
 
+// 🪴 TREO HOA (0.20): chọn những loài tiệm đang bán. Khách vào tiệm CHỈ hỏi mua các loài đang treo;
+// khách muốn loài khác sẽ để lại "đơn đặt trước" (xem ở 📋 Nhiệm vụ › Đơn hàng) thay vì đứng chờ.
+// Chưa treo loài nào = bán tất cả như cũ.
+export const DISPLAY = {
+  baseSlots: 3,            // số móc treo lúc đầu
+  perShopLevel: 1,         // mỗi bậc quy mô tiệm thêm 1 móc
+  preorderChance: 0.28,    // 28% lượt khách muốn mua loài tiệm KHÔNG treo ⇒ để lại đơn đặt trước
+  preorderMax: 3,          // tối đa bao nhiêu đơn đặt trước cùng lúc
+  preorderSize: [2, 5],    // số cành mỗi đơn đặt trước
+  preorderDueHours: [20, 36], // hạn giao (giờ game)
+  preorderPayMult: 1.35,   // tiền = giá bán lẻ × 1,35 (khách chịu chờ nên trả thêm)
+  preorderXpPerFlower: 1,  // XP mỗi cành
+  preorderFailRep: -2,     // trễ hạn: mất 2 uy tín
+  preorderRep: 2,          // giao đúng hẹn: +2 uy tín
+};
+
 // Bậc uy tín
 export const REP_TIERS = [
   { min: 0, name: 'Tiệm mới mở', icon: '🌱' },

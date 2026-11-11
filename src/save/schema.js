@@ -23,10 +23,11 @@ import { createAutomationState } from '../systems/automation.js';
 import { createLuckState } from '../systems/luck.js';
 import { createOrdersState } from '../systems/orders.js';
 import { createAchState, createEventState } from '../systems/goals.js';
+import { createStoryState } from '../systems/story.js';
 
 const toVkeys = (obj) => Object.fromEntries(Object.entries(obj).map(([k, n]) => [k.includes(':') ? k : vkey(k), n]));
 
-export const SAVE_VERSION = 13;
+export const SAVE_VERSION = 14;
 
 export function newId() {
   if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
@@ -95,6 +96,7 @@ export function createNewSave() {
     ach: createAchState(),           // 🏅 thành tựu đã nhận + danh hiệu đang đeo (GĐ18)
     event: createEventState(),       // 📅 sự kiện tuần thật (GĐ18)
     shopLevel: 0,                    // 🏪 quy mô tiệm 0..3 (GĐ18)
+    story: createStoryState(),       // 📜 cốt truyện chính: cảnh đã xem, dấu lựa chọn, chương đã xong (GĐ20)
     mg: {},                          // 🎮 kỷ lục mini game { kind: { plays, best, perfect, combo } } (GĐ17, tự bổ sung bằng fillDefaults)
     farm: {
       plots: [{ ...createPlot('plot-1'), slot: 0 }], // slot = vị trí trong nông trại; lô mua của dân làng có parcel (GĐ13)
@@ -222,6 +224,13 @@ export const MIGRATIONS = {
     s.event = s.event || createEventState();
     s.shopLevel = s.shopLevel || 0;
     s.stats.bugs = s.stats.bugs || 0;
+    return s;
+  },
+  // v13 -> v14 (GĐ20A): cốt truyện chính + treo hoa ở tiệm
+  13: (s) => {
+    s.story = s.story || createStoryState();
+    s.shop = s.shop || createShopState();
+    s.shop.display = Array.isArray(s.shop.display) ? s.shop.display : [];
     return s;
   },
 };
