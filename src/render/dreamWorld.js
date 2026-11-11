@@ -235,8 +235,12 @@ export class DreamWorld {
     // thuyền của ông Ba
     this.tarp.visible = !st.gaveBa;
     this.hull.visible = !!st.gaveBa;
-    this.mast.visible = st.ending === 'all';
-    if (st.ending === 'all') { this.boat.position.set(2.6, -1.0, 50.2); this.boat.rotation.y = -0.4; } else { this.boat.position.set(9.3, 0, 21.9); this.boat.rotation.y = 0.5; }
+    // thuyền xuống nước: kết "Cả làng cùng mơ" hoặc đã sắm buồm đi Mũi Én (GĐ21) — khi đó chạm thuyền để ra khơi
+    const afloat = st.ending === 'all' || !!st.boat;
+    this.mast.visible = afloat;
+    if (afloat) { this.tarp.visible = false; this.hull.visible = true; }
+    this.boat.userData.pick = st.boat ? { kind: 'sail' } : null;
+    if (afloat) { this.boat.position.set(2.6, -1.0, 50.2); this.boat.rotation.y = -0.4; } else { this.boat.position.set(9.3, 0, 21.9); this.boat.rotation.y = 0.5; }
     this.lamp.visible = st.ending === 'all';
     this.awake = st.ending === 'wake' || st.ending === 'all';
   }

@@ -11,7 +11,8 @@ import { BONDS, REACTION, FRIEND } from '../../data/stories.js';
 import { FAVORS, MINIGAMES, DIFFICULTY } from '../../data/minigames.js';
 import { runMiniGame } from './minigames.js';
 import * as storySys from '../systems/story.js';
-import { COMING_CHAPTERS } from '../../data/story.js';
+import { COMING_CHAPTERS, ARCS } from '../../data/story.js';
+import { EN_PEOPLE, EN_RULES } from '../../data/muien.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const SEASON_NAMES = { xuan: 'Xuân', ha: 'Hạ', thu: 'Thu', dong: 'Đông' };
@@ -49,8 +50,7 @@ export class NotebookPanel {
   /** 📜 Cốt truyện chính (GĐ20): chương đang ở đâu, việc cần làm, xem lại cảnh đã qua */
   story() {
     const s = this.save;
-    const ov = storySys.overview(s);
-    const cards = ov.map((o) => {
+    const arcHtml = (arc) => storySys.overview(s, arc).map((o) => {
       const { ch } = o;
       const sceneBtns = o.scenes.filter((x) => x.seen).map((x) => `<button class="chip-btn" data-nb="replay" data-id="${x.id}">▶ ${esc(x.title)}</button>`).join('');
       let body = '';
@@ -63,17 +63,24 @@ export class NotebookPanel {
       const tag = { done: '✔ Đã xong', active: '▶ Đang diễn ra', locked: '🔒 Chưa mở', later: '🔒' }[o.state];
       return `<div class="st-card ${o.state}"><div class="st-head"><span class="st-n">Chương ${ch.n}</span><b>${esc(o.state === 'later' ? '???' : ch.title)}</b><i>${tag}</i></div>${body}</div>`;
     }).join('');
+
     const coming = COMING_CHAPTERS.map((c) => `<span class="chip-s unk">Chương ${c.n} · ???</span>`).join('');
-    return `<p class="muted small st-wide">“Giấc mơ của tiệm hoa” — câu chuyện về người chủ cũ mà cả đảo đã quên. Người có chuyện để kể sẽ hiện 📜 trên đầu; ban đêm (sau 19:00) bé Mơ ở trước hiên tiệm.</p>
-      ${cards}
+    // mạch Mũi Én chỉ hiện khi mạch chính đã đi đủ xa (xong chương 3) để không lộ truyện
+    const showEn = !!s.story?.done?.c3;
+    const cloud = storySys.S(s).cloud;
+    const enHead = showEn ? `<div class="st-arc st-wide"><b>${ARCS.en.icon} ${esc(ARCS.en.name)}</b><small>${esc(ARCS.en.desc)}${storySys.has(s, 'e1_sao') ? ` · ☁️ Mây về: <b>${cloud}</b>/${EN_RULES.cloudFull}` : ''}</small></div>` : '';
+    return `<div class="st-arc st-wide"><b>${ARCS.main.icon} ${esc(ARCS.main.name)}</b><small>${esc(ARCS.main.desc)} Người có chuyện để kể hiện 📜 trên đầu; ban đêm (sau 19:00) bé Mơ ở trước hiên tiệm.</small></div>
+      ${arcHtml('main')}
       ${storySys.BUD_IDS.some((id) => storySys.budOf(s, id)) ? `<div class="st-card st-wide"><div class="st-head"><b>🌱 Nụ Mộng</b><i>đã nở ${storySys.bloomCount(s)}/5 · đã trao ${storySys.givenCount(s)}/5</i></div><p class="small">Kệ Nụ Mộng nằm cạnh hiên tiệm.</p><button class="btn" data-nb="buds">Xem kệ Nụ Mộng</button></div>` : ''}
+      ${enHead}${showEn ? arcHtml('en') : ''}
       ${coming ? `<div class="st-card later st-wide"><div class="st-head"><b>Sắp ra mắt</b></div><div class="chips">${coming}</div></div>` : ''}`;
   }
 
   village() {
     const s = this.save;
     const day = this.game.today;
-    const rows = rel.BOND_IDS.map((id) => {
+    // người Mũi Én chỉ hiện sau khi bạn đã cập bến (GĐ21)
+    const rows = rel.BOND_IDS.filter((id) => !EN_PEOPLE.includes(id) || storySys.has(s, 'e1_boat')).map((id) => {
       const info = villagerInfo(id);
       const b = BONDS[id];
       const h = rel.heartsOf(s, id);

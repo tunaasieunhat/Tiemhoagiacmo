@@ -2,6 +2,7 @@
 //  LOGIC TRỒNG HOA (thuần dữ liệu, không phụ thuộc đồ họa)
 //  -> Sau này có thể dùng lại trong Edge Function để kiểm tra gian lận.
 // =============================================================
+import { isEnPlot } from '../../data/muien.js';
 import { FLOWERS } from '../../data/flowers.js';
 import { CARE } from '../../data/config.js';
 import { upgradeValue } from './progression.js';
@@ -208,6 +209,12 @@ export function plant(tile, seedKey, save, nowMin, opts = {}) {
   if (!def) return fail('Không rõ loại hạt');
   const name = variantName(species, variant);
   if (def.greenhouseOnly && opts.plot && !opts.plot.greenhouse) return fail(`${def.name} chỉ trồng được trong lô có 🏠 nhà kính`);
+  // (GĐ21) đất mặn Mũi Én chỉ hợp hoa chịu mặn, và hoa chịu mặn chỉ mọc ở đó
+  if (opts.plot) {
+    const salty = isEnPlot(opts.plot);
+    if (def.salt && !salty) return fail(`${def.name} chỉ mọc trên đất mặn ở 🌫️ Mũi Én`);
+    if (!def.salt && salty) return fail('Đất Mũi Én mặn lắm: chỉ trồng được hoa chịu mặn (oải hương biển, cúc muối, muống biển)');
+  }
   if (!(save.inventory.seeds[vkey] > 0)) return fail(`Hết hạt ${name}!`);
   save.inventory.seeds[vkey] -= 1;
   const rotation = !!tile.last && tile.last !== species;

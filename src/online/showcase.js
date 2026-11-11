@@ -1,4 +1,5 @@
 // Ảnh chụp nông trại công khai: gọn nhẹ, chỉ chứa thứ bạn bè cần để xem (không có tiền, kho đồ).
+import { isEnPlot } from '../../data/muien.js';
 import { stageOf, isWilted, isSick, growMinutes } from '../systems/farming.js';
 import { tierInfo } from '../systems/shop.js';
 import { bookProgress } from '../systems/notebook.js';
@@ -29,7 +30,7 @@ export function buildSnapshot(save) {
     // đồ trang trí đặt tự do: [[loại, x, z, góc], ...] (GĐ10)
     deco: placedToSnapshot(save.decor?.placed || []),
     beauty: beautyOf(save.decor?.placed || []),
-    plots: save.farm.plots.map((p, i) => ({
+    plots: save.farm.plots.filter((p) => !isEnPlot(p)).map((p, i) => ({ // lô ở Mũi Én không nằm trong ảnh chụp
       sl: p.parcel ? undefined : p.slot ?? i, // vị trí trong nông trại (GĐ13)
       pc: p.parcel || undefined,              // lô mua của dân làng
       gh: p.greenhouse ? 1 : 0,

@@ -72,11 +72,11 @@ export class MarketPanel {
 
   seeds() {
     const lv = this.save.player.level;
-    return `<p class="muted small">Chợ chỉ bán hạt màu cơ bản. Màu khác có được nhờ 🧬 lai tạo hoặc quà của khách quen.</p>` + NORMAL_FLOWER_IDS.map((id) => {
+    return `<p class="muted small">Chợ chỉ bán hạt màu cơ bản. Màu khác có được nhờ 🧬 lai tạo hoặc quà của khách quen.</p>` + NORMAL_FLOWER_IDS.filter((id) => !FLOWERS[id].salt || this.save.story?.seen?.e1_sao).map((id) => {
       const f = FLOWERS[id];
       return this.card({
         icon: f.icon, name: `Hạt ${variants.variantName(id, null)}`,
-        desc: `Lớn trong ${formatDuration(f.growHours * 60)} · tưới ${f.waterPerDay} lần/ngày · bán ~${f.basePrice} 💰${f.greenhouseOnly ? ' · 🏠 chỉ trồng trong nhà kính' : ''}${f.tall ? ' · 🌬️ thân cao, sợ gió lớn' : ''}`,
+        desc: `Lớn trong ${formatDuration(f.growHours * 60)} · tưới ${f.waterPerDay} lần/ngày · bán ~${f.basePrice} 💰${f.greenhouseOnly ? ' · 🏠 chỉ trồng trong nhà kính' : ''}${f.tall ? ' · 🌬️ thân cao, sợ gió lớn' : ''}${f.salt ? ' · 🌫️ chỉ trồng ở Mũi Én' : ''}`,
         price: f.seedPrice, lock: lv < f.unlockLevel ? f.unlockLevel : 0, owned: this.save.inventory.seeds[variants.vkey(id)] || 0,
         buttons: this.buyBtns('seed', id, f.seedPrice),
       });

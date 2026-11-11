@@ -15,6 +15,7 @@
 //  colors           : màu mô hình 3D (mã màu HEX)
 //  greenhouseOnly   : true = chỉ trồng được trong lô có nhà kính (GĐ14)
 //  tall             : cây cao, dễ bị gió lớn làm gãy (GĐ14)
+//  salt             : hoa chịu mặn — chỉ trồng được ở Mũi Én (GĐ21), hạt bán ở Chợ sau khi cập bến Mũi Én
 //  luck             : Cây Vận May (GĐ15) — chỉ có hạt từ 🍀 Vận May, không bán ở Chợ, không lai tạo được
 //  fx               : hiệu ứng động của cây (sparkle lấp lánh, fireflies đom đóm, hue đổi màu, flame lửa ma, snow tuyết)
 // =============================================================
@@ -160,6 +161,30 @@ export const FLOWERS = {
     seasons: ['xuan', 'ha', 'thu', 'dong'], basePrice: 130, seedPrice: 70, unlockLevel: 8,
     meaning: 'Sang trọng, tình yêu đẹp', tones: ['cool', 'pastel'],
     colors: { petal: '#c98be0', petalDark: '#a865c7', center: '#ffd34e', stem: '#4f8f5a', leaf: '#5fa86a' },
+  },
+
+  // ---------------- 🌫️ HOA CHỊU MẶN CỦA MŨI ÉN (GĐ21) ----------------
+  // salt: true = chỉ mọc trên đất mặn Mũi Én (và đất Mũi Én chỉ trồng được các loài này). Dùng lại mô hình loài có sẵn (model).
+  sealavender: {
+    id: 'sealavender', name: 'Oải hương biển', icon: '🌾', model: 'lavender', salt: true,
+    growHours: 7, waterPerDay: 1, fertilizerNeeded: 1,
+    seasons: ['xuan', 'ha', 'thu', 'dong'], basePrice: 58, seedPrice: 30, unlockLevel: 16,
+    meaning: 'Chờ đợi, lòng thủy chung', tones: ['cool', 'natural'],
+    colors: { petal: '#9b8fe0', petalDark: '#7566c4', stem: '#7fa58e', leaf: '#9fc2ae' },
+  },
+  saltdaisy: {
+    id: 'saltdaisy', name: 'Cúc muối', icon: '⚪', model: 'daisy', salt: true,
+    growHours: 9, waterPerDay: 1, fertilizerNeeded: 1,
+    seasons: ['xuan', 'ha', 'thu', 'dong'], basePrice: 72, seedPrice: 38, unlockLevel: 16,
+    meaning: 'Bền bỉ, hy vọng', tones: ['natural', 'pastel'],
+    colors: { petal: '#fbfbf4', petalDark: '#e6e4d6', center: '#f2c14e', stem: '#7fa58e', leaf: '#a4c4b0' },
+  },
+  beachglory: {
+    id: 'beachglory', name: 'Muống biển', icon: '🐚', model: 'cosmos', salt: true,
+    growHours: 12, waterPerDay: 1, fertilizerNeeded: 2,
+    seasons: ['xuan', 'ha', 'thu', 'dong'], basePrice: 96, seedPrice: 52, unlockLevel: 16,
+    meaning: 'Đường về nhà, nỗi nhớ', tones: ['pastel', 'cool'],
+    colors: { petal: '#f3a6d6', petalDark: '#d77fb8', center: '#fff2b8', stem: '#6f9d86', leaf: '#8fbda2' },
   },
 
   // ---------------- 🍀 CÂY VẬN MAY (GĐ15) ----------------

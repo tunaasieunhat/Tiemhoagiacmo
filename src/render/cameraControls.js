@@ -150,19 +150,27 @@ export class CameraControls {
   /** Vùng camera được phép nhìn tới: các vòng tròn { x, z, r } (đảo chính + làng) */
   get regions() { return this._regions || (this._regions = [{ x: 0, z: 0, r: CAMERA.panLimit }]); }
 
+  /**
+   * Vùng là hình tròn { x, z, r } hoặc "hành lang" thuôn { x, z, r, x2, z2, r2 } nối 2 hình tròn (0.22).
+   * Hành lang cho mép vùng trơn, không có khe hay góc lõm ⇒ kéo bản đồ giữa đảo chính và làng không còn bị khựng.
+   */
   clamp() {
     const t = this.target;
     t.y = 0;
-    if (this.regions.some((c) => Math.hypot(t.x - c.x, t.z - c.z) <= c.r)) return;
-    // ra ngoài: kéo về mép vùng gần nhất
     let best = null, bd = Infinity;
     for (const c of this.regions) {
-      const dx = t.x - c.x, dz = t.z - c.z, len = Math.hypot(dx, dz) || 1;
-      const px = c.x + (dx / len) * c.r, pz = c.z + (dz / len) * c.r;
-      const d = Math.hypot(t.x - px, t.z - pz);
-      if (d < bd) { bd = d; best = [px, pz]; }
+      let cx = c.x, cz = c.z, r = c.r;
+      if (c.x2 != null) {
+        const ax = c.x2 - c.x, az = c.z2 - c.z;
+        const k = Math.max(0, Math.min(1, ((t.x - c.x) * ax + (t.z - c.z) * az) / (ax * ax + az * az || 1)));
+        cx = c.x + ax * k; cz = c.z + az * k; r = c.r + (c.r2 - c.r) * k;
+      }
+      const dx = t.x - cx, dz = t.z - cz, len = Math.hypot(dx, dz);
+      if (len <= r) return; // nằm trong 1 vùng là được
+      if (len - r < bd) { bd = len - r; best = [cx + (dx / len) * r, cz + (dz / len) * r]; }
     }
-    t.x = best[0]; t.z = best[1];
+    // ra ngoài: kéo về mép vùng gần nhất (trượt dọc theo mép)
+    if (best) { t.x = best[0]; t.z = best[1]; }
   }
 
   apply() {

@@ -119,6 +119,24 @@ export const VARIANTS = {
   },
 };
 
+// (GĐ21) hoa chịu mặn của Mũi Én
+Object.assign(VARIANTS, {
+  sealavender: {
+    violet: { name: 'tím biển', petal: '#9b8fe0', petalDark: '#7566c4', tones: ['cool', 'natural'], meanings: ['loyalty', 'longing'], rarity: 'common', default: true },
+    silver: { name: 'bạc', petal: '#dfe3f0', petalDark: '#bfc6da', tones: ['cool', 'pastel'], meanings: ['purity', 'hope'], rarity: 'uncommon', breed: [['violet', 'violet', 0.22]] },
+    dusk: { name: 'hoàng hôn', petal: '#f0a58f', petalDark: '#d9836c', tones: ['warm', 'natural'], meanings: ['longing', 'love'], rarity: 'rare', breed: [['violet', 'silver', 0.08]] },
+  },
+  saltdaisy: {
+    white: { name: 'trắng', petal: '#fbfbf4', petalDark: '#e6e4d6', tones: ['natural', 'pastel'], meanings: ['hope', 'purity'], rarity: 'common', default: true },
+    gold: { name: 'vàng cát', petal: '#f6d98a', petalDark: '#e0bb5e', tones: ['warm', 'natural'], meanings: ['gratitude', 'joy'], rarity: 'uncommon', breed: [['white', 'white', 0.22]] },
+    blue: { name: 'xanh sóng', petal: '#9fd3ee', petalDark: '#72b6da', tones: ['cool', 'pastel'], meanings: ['health', 'friendship'], rarity: 'rare', breed: [['white', 'gold', 0.08]] },
+  },
+  beachglory: {
+    pink: { name: 'hồng', petal: '#f3a6d6', petalDark: '#d77fb8', tones: ['pastel', 'cool'], meanings: ['longing', 'apology'], rarity: 'common', default: true },
+    lilac: { name: 'tím nhạt', petal: '#cdb4f0', petalDark: '#a98ad9', tones: ['cool', 'pastel'], meanings: ['respect', 'loyalty'], rarity: 'uncommon', breed: [['pink', 'pink', 0.2]] },
+  },
+});
+
 export const RARITY = {
   common: { name: 'Thường', color: '#9b7b6c', priceMult: 1 },
   uncommon: { name: 'Ít gặp', color: '#3f9b6b', priceMult: 1.3 },

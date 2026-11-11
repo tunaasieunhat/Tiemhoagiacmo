@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { ZONES } from './world.js';
 import { SHOP_ROT } from './customers.js';
 import { STORY_RULES } from '../../data/story.js';
+import { EN } from '../../data/muien.js';
 import { spotPos, homeOf } from '../systems/village.js';
 
 // hướng "bên phải màn hình" và "về phía máy quay" trên mặt đất (camera nhìn từ góc +x +z)
@@ -52,6 +53,7 @@ export class Director {
     if (t === 'shop') return ZONES.shop.center.clone().add(new THREE.Vector3(Math.sin(SHOP_ROT), 0, Math.cos(SHOP_ROT)).multiplyScalar(2.2));
     if (t === 'village') return new THREE.Vector3(0, 0, 34);
     if (t === 'shelf') return g.dreamWorld.shelfPos();
+    if (t === 'lighthouse') return new THREE.Vector3(EN.lighthouse[0] - 2, 0, EN.lighthouse[1] + 2);
     const v = this.villager(t);
     if (v) return new THREE.Vector3(v.stage?.x ?? v.x, 0, v.stage?.z ?? v.z);
     return g.storyView.actorPos(t);

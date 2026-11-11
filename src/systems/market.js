@@ -25,6 +25,7 @@ export function buySeeds(save, id, n = 1) {
   const f = FLOWERS[id];
   if (!f) return fail('Không rõ loại hạt');
   if (!checkLevel(save, f.unlockLevel)) return fail(`Cần đạt cấp ${f.unlockLevel} để mua hạt ${f.name}`);
+  if (f.salt && !save.story?.seen?.e1_sao) return fail('Hạt này chỉ có sau khi bạn đặt chân tới 🌫️ Mũi Én');
   const cost = f.seedPrice * n;
   if (!pay(save, cost)) return fail(`Không đủ tiền (cần ${cost} 💰)`);
   const k = vkey(id);

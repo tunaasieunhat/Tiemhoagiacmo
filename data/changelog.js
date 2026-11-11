@@ -4,6 +4,17 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.22.0',
+    notes: [
+      '🌫️ VÙNG ĐẤT MỚI: Mũi Én — hòn đảo phía đông ba mươi năm không mưa. Mở sau chương 5 cốt truyện chính + cấp 16; đi bằng thuyền của Ông Ba (chạm thuyền ở cầu tàu hoặc nút ⛵)',
+      '📖 Cốt truyện mới "Cơn mưa đi lạc" (5 chương): ngọn hải đăng không bao giờ tắt, cuốn sổ mưa, và vì sao vợ ông Ba vẽ đường tới đúng nơi này',
+      '🌾 3 loài hoa chịu mặn: Oải hương biển, Cúc muối, Muống biển — chỉ trồng trên 3 lô bậc thang Mũi Én (sương giữ ẩm, đất lâu khô), bán ở tiệm như hoa thường',
+      '☁️ Thanh "Mây về": thu hoạch hoa ở Mũi Én để gọi mây, đảo đổi màu dần từ xám tro sang xanh tím',
+      '👥 3 người bạn mới để kết thân: Ông Hải gác đèn, cậu bé Triều hứng sương, Bà Sáo bán hoa khô (trò chuyện, tặng hoa, nhờ việc, quà mốc tim)',
+      '🛠️ Sửa lỗi kéo bản đồ tới khu làng bị khựng, phải kéo 2–3 lần mới qua',
+    ],
+  },
+  {
     version: '0.21.0',
     notes: [
       '📜 Cốt truyện "Giấc mơ của tiệm hoa" trọn bộ: Chương 3–7 (cấp 8 → 20) — con thuyền đóng dở, bí mật của Bà Tư, cây cầu lên Đồi Mộng, và người ngủ dưới gốc Cây Mộng',

@@ -18,8 +18,8 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
   cùng bảng — muốn đổi phải thêm migration mới. Mô phỏng tiến độ: chạy thử với số liệu `data/*` (cấp 10 ≈ 3 giờ chơi chăm).
   ✅ GĐ16 (0.17.0) chăm sóc có kỹ năng. ✅ GĐ18 (0.18.0) mục tiêu dài hạn. ✅ GĐ17 (0.19.0) mini game hay hơn.
   ✅ GĐ20A (0.20.0) cốt truyện chính chương 1–2 + hội thoại kiểu phim + treo hoa. ✅ GĐ20B (0.21.0) chương 3–7, Nụ Mộng,
-  3 kết thúc — cốt truyện chính đã trọn bộ. Việc tiếp theo: hỏi người dùng. Đề xuất đã nêu: GĐ19 xưởng chế biến + nuôi ong,
-  GĐ21 vùng đất mới (kết ẩn đã gợi ý: thuyền ông Ba xuống nước), GĐ22 điểm danh + sổ thưởng mùa, GĐ23 tùy biến nhân vật, GĐ24 hội làng.
+  3 kết thúc — cốt truyện chính đã trọn bộ. ✅ GĐ21 (0.22.0) đảo Mũi Én + truyện "Cơn mưa đi lạc". Việc tiếp theo: hỏi người dùng.
+  Đề xuất đã nêu: GĐ19 xưởng chế biến + nuôi ong, GĐ22 điểm danh + sổ thưởng mùa, GĐ23 tùy biến nhân vật, GĐ24 hội làng.
 - Đưa lên mạng: Netlify (`netlify.toml`, `docs/HUONG_DAN_DUA_LEN_MANG.md`) — trang thật: https://tiem-hoa-giac-mo.netlify.app
   (Netlify đang deploy nhánh `ccr-845954e0-2hh7a1`; `main` chỉ có commit đầu tiên). APK: Capacitor + GitHub Actions
   (`.github/workflows/android.yml`, `android-keystore.yml`, `docs/HUONG_DAN_APK.md`); thư mục `android/` KHÔNG commit,
@@ -155,6 +155,21 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   `world.shop`, hoa đã trao đặt trước nhà chủ, thuyền ông Ba, đèn Mơ, bà Diệp pick `diep`) — vẽ lại bằng `game.syncStoryWorld()`.
   Điểm sáng có `cost` (góp tiền sửa cầu) đi qua `game.playTrigger`; `night: true` chỉ hiện ban đêm. `['place', id, x, z, face]`.
   Bà Tư không còn rời đảo (`LEAVES_AFTER_STORY.ba_tu.holdByStory`). UI: `hud.openBuds` (`data-bd`), thành tựu `story` (stat `chapters`).
+- **Mũi Én** (GĐ21): số liệu `data/muien.js` (`EN` tọa độ đảo tại x≈62, `EN_RULES`, `EN_PLOTS` 3 lô bậc thang, `isEnPlot`).
+  Lô Mũi Én là plot có `parcel: 'en1'…` (không nằm trong `PARCELS`; `plotPosition` tra cả hai; không vào ảnh chụp bạn bè).
+  Hoa `salt: true` (sealavender, saltdaisy, beachglory — dùng lại mô hình qua `model`, `flowerSVG` cũng theo `model`): chỉ trồng ở
+  lô Mũi Én và ngược lại (`farming.plant` với `opts.plot`), khách chỉ hỏi khi đã có lô (`game.unlockedFlowers`), đơn lớn không hỏi,
+  Chợ bán hạt sau cảnh `e1_sao`. `weather.plotEnv` × `fogWater`. Dân đảo (ong_hai, trieu, ba_sao) là dân làng thường: khai trong
+  `data/village.js` (HOUSES/SPOTS/SCHEDULES/NODES riêng của đảo), `BONDS`, `FAVORS`; Sổ tay ẩn họ tới khi xem `e1_boat`.
+  **Mạch truyện**: chương có `arc` ('main' | 'en', `ARCS` trong `data/story.js`); `story.current(save, arc)`, `currentAll`,
+  `overview(save, arc)`, `checkProgress(save, currentAll trước đó)`. `need` thêm `after: 'c5'` và `cloud`. `save.story.cloud` =
+  điểm Mây về (`game.gainCloud` khi thu hoạch ở lô Mũi Én). Lệnh kịch bản mới: `['plot', 'en1']`, `['seed', vkey, n]`.
+  Dấu: `boat_ready` (mở vùng camera đảo + nút ⛵ + thuyền ở cầu tàu pick `sail`), `en_truth|en_silent`, `en_sapling`, `en_rain`,
+  `en_off|en_on` (đèn hải đăng). 3D `src/render/muien.js` (`game.muien.sync` trong `syncStoryWorld`). `game.sail()` chỉ là lia camera
+  (`game.atEn` = camera x > 40); nhân vật ở xa ô đất > 22 thì "có mặt" ngay cạnh lô (không lội biển).
+  Sửa `flowers.js`/`variants.js` ở GĐ này ⇒ đã chạy `npm run build:functions` (người dùng cần dán lại Edge Function nếu chưa bật tự deploy).
+- **Vùng camera** (0.22): `controls.regions` nhận hình tròn `{x,z,r}` hoặc hành lang thuôn `{x,z,r,x2,z2,r2}`; đảo chính ↔ làng và
+  đảo chính ↔ Đồi Mộng dùng hành lang để mép trơn (trước đây khe hở/góc lõm làm kéo bản đồ bị khựng).
 - **Treo hoa** (0.20): `save.shop.display = [loài]` (rỗng = bán tất cả), số móc `shop.displaySlots` = `DISPLAY.baseSlots` + quy mô tiệm.
   `shopTick` chỉ sinh khách hỏi loài đang treo; tỉ lệ `DISPLAY.preorderChance` sinh đơn đặt trước qua hàm `preorder` do game truyền
   (`orders.makePreorder`, đơn có `pre: true, npc`; không tính vào thành tựu/nhiệm vụ đơn hàng lớn, `orders.preDone`). Khách quen

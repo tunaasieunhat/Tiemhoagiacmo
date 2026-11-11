@@ -200,6 +200,8 @@ export class Cinema {
         else if (op === 'set') { if (!replay && !ff) { storySys.setFlag(save, ln[1]); g.syncStoryWorld(); } }
         else if (op === 'bud') { if (!replay && !ff) g.storyBud(ln[1]); }
         else if (op === 'give') { if (!replay && !ff) g.storyGive(ln[1]); }
+        else if (op === 'plot') { if (!replay && !ff) g.storyPlot(ln[1]); }
+        else if (op === 'seed') { if (!replay && !ff) g.storySeeds(ln[1], ln[2] || 1); }
         else if (op === 'title') { if (!ff) await this.title(ln[1], ln[2]); }
         else if (op === 'nar') { if (!ff) await this.say(null, 'normal', ln[1]); }
         else if (op === 'wait') { if (!ff && !this.skipping) await sleep(ln[1] * 1000); }

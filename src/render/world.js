@@ -2,6 +2,7 @@
 import { buildVillage, inVillageZone } from './village.js';
 import { VILLAGE } from '../../data/village.js';
 import { PARCELS } from '../../data/land.js';
+import { EN_PLOTS } from '../../data/muien.js';
 import { REGULARS } from '../../data/regulars.js';
 import { NEW_VILLAGERS } from '../../data/village.js';
 import * as THREE from 'three';
@@ -21,7 +22,7 @@ export const ZONES = {
 
 /** Vị trí 1 lô: lô mua của dân làng (plot.parcel) nằm ở mảnh đất đó, lô thường theo plot.slot (GĐ13) */
 export function plotPosition(plot, idx) {
-  const P = plot?.parcel && PARCELS[plot.parcel];
+  const P = plot?.parcel && (PARCELS[plot.parcel] || EN_PLOTS[plot.parcel]); // lô dân làng hoặc bậc thang Mũi Én (GĐ21)
   if (P) return new THREE.Vector3(P.x, 0, P.z);
   return (PLOT_SLOTS[plot?.slot ?? idx] || new THREE.Vector3(idx * 5, 0, 0)).clone();
 }

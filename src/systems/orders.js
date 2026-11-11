@@ -27,7 +27,7 @@ const randInt = (rng, a, b) => a + Math.floor(rng() * (b - a + 1));
 export function makeOrder(save, now, rng = Math.random) {
   const o = O(save);
   const lv = save.player.level;
-  const pool = NORMAL_FLOWER_IDS.filter((id) => FLOWERS[id].unlockLevel <= lv && !FLOWERS[id].greenhouseOnly);
+  const pool = NORMAL_FLOWER_IDS.filter((id) => FLOWERS[id].unlockLevel <= lv && !FLOWERS[id].greenhouseOnly && !FLOWERS[id].salt);
   const [, nMin, nMax] = byLevel(ORDER_RULES.size, lv);
   const [, minQ] = byLevel(ORDER_RULES.minQ, lv);
   const total = randInt(rng, nMin, nMax);

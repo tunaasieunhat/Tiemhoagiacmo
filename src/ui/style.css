@@ -1303,3 +1303,9 @@ body.cine-sepia #game canvas { filter: sepia(.85) saturate(.75) contrast(.95) br
   .bd-card { padding: 6px 8px; gap: 6px; }
   .bd-icon { font-size: 22px; width: 28px; }
 }
+
+/* mạch truyện trong Sổ tay (GĐ21) */
+.st-arc { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; padding: 6px 10px; border-left: 4px solid #f6c9a0; background: #fff8ec; border-radius: 10px; }
+.st-arc b { font-family: 'Baloo 2', inherit; font-size: 16px; }
+.st-arc small { color: var(--ink-soft); font-size: 12px; line-height: 1.35; }
+.m-notebook .mk-body > .st-arc { grid-column: 1 / -1; }

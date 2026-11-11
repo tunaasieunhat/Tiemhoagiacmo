@@ -27,6 +27,104 @@ export const REACTION = {
 };
 
 export const BONDS = {
+  // ---------------------------------------------------------------- MŨI ÉN (GĐ21)
+  ong_hai: {
+    birthday: { season: 'thu', day: 3 },
+    gifts: { love: ['beachglory', 'sealavender:dusk'], like: ['sealavender', 'meaning:longing', 'tone:cool'], dislike: ['sunflower'], hate: ['meaning:farewell'] },
+    giftLines: {
+      love: 'Muống biển... Con bé Én hồi nhỏ hay kết thành vòng đội đầu. Cảm ơn cháu, ông để nó cạnh cây đèn.',
+      like: 'Thơm đấy. Lâu rồi ông mới được cầm một bông hoa còn mềm.',
+      neutral: 'Ừ, ông nhận. Cảm ơn cháu.',
+      dislike: 'Vàng chói quá, mắt ông quen ánh đèn mờ rồi.',
+      hate: 'Hoa tiễn biệt à... Ông chưa tiễn ai cả. Cháu cất đi.',
+    },
+    rewards: {
+      3: { msg: 'Ông Hải cho bạn mớ cá khô ông tự phơi, đổi được ít tiền.', coins: 300 },
+      5: { msg: 'Ông Hải tặng bạn hạt muống biển ông giữ trong hộp thiếc ba mươi năm.', seeds: { 'beachglory:pink': 4 } },
+      7: { msg: 'Ông Hải dúi cho bạn một túi tiền lẻ: "Lương gác đèn, ông có tiêu gì đâu."', coins: 1200 },
+      10: { msg: 'Ông Hải coi bạn như cháu trong nhà. Ông tặng bạn hạt muống biển tím nhạt hiếm.', seeds: { 'beachglory:lilac': 3 }, coins: 1500, xp: 80 },
+    },
+    talks: [
+      { say: 'Cháu có biết vì sao hải đăng xây cao thế không?', ch: [
+        { t: 'Để thuyền ở xa cũng thấy ạ.', fp: 18, r: 'Phải. Càng xa càng cần thấy. Người đi lâu nhất là người cần đèn nhất.' },
+        { t: 'Để ông ngắm biển cho đẹp?', fp: 8, r: 'Hà hà. Cũng đẹp thật. Nhưng ông ngắm ba chục năm rồi, thuộc cả từng con sóng.' },
+      ] },
+      { say: 'Hồi đảo còn mưa, đồi kia tím hết cả. Thuyền buôn hoa đậu kín bến.', ch: [
+        { t: 'Rồi đồi sẽ tím lại, ông ạ.', fp: 20, r: 'Cháu nói chắc nịch như con bé Én nhà ông. Nghe mà mát ruột.' },
+        { t: 'Sao mọi người không rời đảo ạ?', fp: 5, r: 'Đi gần hết rồi đấy chứ. Còn ông thì phải ở lại, đèn không tự thắp được.' },
+      ] },
+      { say: 'Tối nay sương dày. Cháu ngủ lại đảo thì đóng kín cửa kẻo ẩm.', ch: [
+        { t: 'Cháu lên trông đèn giúp ông một lúc nhé?', fp: 20, r: 'Được. Cháu ngồi ghế này. Đừng chạm vào bấc, còn lại muốn nhìn gì thì nhìn.' },
+        { t: 'Vâng, cháu cảm ơn ông.', fp: 12, r: 'Ừ. Ngủ ngon.' },
+      ] },
+    ],
+    events: [],
+  },
+  trieu: {
+    birthday: { season: 'xuan', day: 6 },
+    gifts: { love: ['saltdaisy', 'hydrangea:blue'], like: ['tone:cool', 'meaning:hope', 'daisy'], dislike: ['carnation'], hate: ['rose:black'] },
+    giftLines: {
+      love: 'Hoa tươi! Cánh nó mát lạnh chị ơi! Cháu vẽ nó vào sổ mưa được không?',
+      like: 'Đẹp ghê. Cháu cắm vào cái hũ đẹp nhất nha.',
+      neutral: 'Cháu cảm ơn chị.',
+      dislike: 'Ơ... nó giống hoa khô của bà Sáo quá. Cháu thấy hoa khô nhiều rồi.',
+      hate: 'Hoa đen thui! Cháu sợ lắm, chị cất đi.',
+    },
+    rewards: {
+      3: { msg: 'Triều tặng bạn mấy hũ nước sương lọc kỹ — tưới gì cũng tốt.', items: { fertilizer: 8 } },
+      5: { msg: 'Triều chia cho bạn hạt cúc muối cậu nhặt được ngoài bãi.', seeds: { 'saltdaisy:white': 5 } },
+      7: { msg: 'Triều gom tiền bán hũ sương, nằng nặc đưa bạn "tiền công dạy trồng hoa".', coins: 900 },
+      10: { msg: 'Triều tặng bạn hạt cúc muối xanh sóng — thứ quý nhất cậu có.', seeds: { 'saltdaisy:blue': 3 }, coins: 1200, xp: 80 },
+    },
+    talks: [
+      { say: 'Chị ơi, mưa thật thì rơi từ trên xuống hả? Không phải đậu từ từ như sương?', ch: [
+        { t: 'Rơi rào rào luôn. Ướt hết trong nháy mắt.', fp: 18, r: 'Trong nháy mắt?! Vậy ba trăm cái hũ của cháu đầy trong một buổi mất!' },
+        { t: 'Ừ, mà có khi còn rơi cả ngày.', fp: 15, r: 'Cả ngày... Cháu sẽ đứng ngoài trời cả ngày luôn.' },
+      ] },
+      { say: 'Sổ mưa của ông nội cháu dày ba cuốn. Cháu viết sang cuốn thứ tư rồi.', ch: [
+        { t: 'Em chăm quá. Ông chắc tự hào lắm.', fp: 18, r: 'Ông bảo ngày nào còn người ghi sổ, ngày đó mưa còn biết đường về.' },
+        { t: 'Ngày nào cũng ghi "không mưa" thì ghi làm gì?', fp: -8, r: 'Thì... thì phải có người chờ chứ chị.' },
+      ] },
+      { say: 'Cháu đang tính xem nếu có mưa thì ruộng bậc thang cần bao nhiêu nước.', ch: [
+        { t: 'Để chị chỉ em cách xem đất đủ ẩm chưa.', fp: 20, r: 'Thật ạ? Cháu ghi vào sổ ngay! Trang riêng luôn!' },
+        { t: 'Em tính giỏi thật đấy.', fp: 12, r: 'Hì. Thầy giáo cuối cùng rời đảo năm cháu lên tám, cháu tự học đó.' },
+      ] },
+    ],
+    events: [],
+  },
+  ba_sao: {
+    birthday: { season: 'ha', day: 2 },
+    gifts: { love: ['sealavender', 'lavender'], like: ['tone:pastel', 'meaning:gratitude', 'peony'], dislike: ['cosmos'], hate: ['meaning:jealousy'] },
+    giftLines: {
+      love: 'Oải hương... còn tươi. (Bà đưa lên mũi rất lâu.) Hừm. Bụi vào mắt thôi, đừng có nhìn.',
+      like: 'Cũng được đấy. Để tôi treo ngược lên phơi... à mà thôi, bông này để cắm.',
+      neutral: 'Ừ. Để đấy.',
+      dislike: 'Hoa dại ngoài bờ ấy mà, tôi phơi cả bao rồi.',
+      hate: 'Mang đi! Hoa gì mà nhìn đã thấy bực.',
+    },
+    rewards: {
+      3: { msg: 'Bà Sáo dúi cho bạn một bó hoa khô "bán ế", kèm ít giấy gói.', papers: { kraft: 3 }, coins: 200 },
+      5: { msg: 'Bà Sáo cho bạn túi hạt oải hương biển bà cất từ thời còn con gái.', seeds: { 'sealavender:violet': 6 } },
+      7: { msg: 'Bà Sáo chia cho bạn tiền lời bán hoa khô cho khách Đảo Mây.', coins: 1000 },
+      10: { msg: 'Bà Sáo cằn nhằn một hồi rồi tặng bạn hạt oải hương màu hoàng hôn, giống mẹ bà để lại.', seeds: { 'sealavender:dusk': 3 }, coins: 1500, xp: 80 },
+    },
+    talks: [
+      { say: 'Cô nhìn gì? Chưa thấy ai bán hoa khô bao giờ à?', ch: [
+        { t: 'Cháu thấy bà bó khéo quá.', fp: 18, r: 'Hừm. Biết nhìn đấy. Bó hoa khô khó hơn hoa tươi, sai một nhành là gãy.' },
+        { t: 'Sao bà không bán hoa tươi ạ?', fp: 3, r: 'Cô hỏi ông trời ấy. Ba chục năm nay tôi cũng muốn hỏi.' },
+      ] },
+      { say: 'Mẹ tôi bảo oải hương Mũi Én ngày xưa thơm sang tận đất liền.', ch: [
+        { t: 'Cháu sẽ trồng lại cho bà ngửi.', fp: 20, r: 'Nói thì dễ. ...Mà cô trồng đi. Tôi già rồi, chờ được.' },
+        { t: 'Hoa khô cũng còn thơm mà bà.', fp: 12, r: 'Thơm kiểu của thứ đã qua. Khác chứ.' },
+      ] },
+      { say: 'Thằng Triều lại để hũ sương chắn lối sạp tôi. Cô bảo nó giùm.', ch: [
+        { t: 'Để cháu dời giúp bà.', fp: 18, r: 'Ừ. Nhẹ tay thôi, vỡ cái nào nó khóc cái đó.' },
+        { t: 'Bà thương nó lắm mà.', fp: 15, r: 'Ai bảo! ...Thì đảo còn mỗi nó là trẻ con. Không thương nó thì thương ai.' },
+      ] },
+    ],
+    events: [],
+  },
+
   // ---------------------------------------------------------------- BÀ TƯ
   ba_tu: {
     birthday: { season: 'dong', day: 5 },

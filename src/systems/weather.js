@@ -2,6 +2,7 @@
 //  THỜI TIẾT, THIÊN TAI, DỊCH BỆNH (thuần dữ liệu)
 //  Thời tiết được quyết định trước 1 ngày => người chơi luôn có dự báo cho ngày mai.
 // =============================================================
+import { isEnPlot, EN_RULES } from '../../data/muien.js';
 import { WEATHER, DISEASES, DISEASE, SEASON_EFFECT, PROTECTION } from '../../data/seasons.js';
 import { calendarOf, dayOf, endOfDay, festivalOn } from './calendar.js';
 import { FLOWERS } from '../../data/flowers.js';
@@ -48,6 +49,7 @@ export function plotEnv(save, plot) {
   const W = WEATHER[t] || {};
   let waterMult = W.waterMult ?? 1;
   if (waterMult > 1 && prot) waterMult = 1; // được che thì không khô nhanh
+  if (isEnPlot(plot)) waterMult *= EN_RULES.fogWater; // (GĐ21) sương Mũi Én giữ ẩm: đất lâu khô
   return { waterMult, rain: !!W.waters && !plot.greenhouse };
 }
 

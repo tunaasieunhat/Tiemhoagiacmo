@@ -5,35 +5,36 @@ import { variantColors } from '../systems/variants.js';
 
 function flowerSVG(id, variant, x, y, s) {
   const c = FLOWERS[id] ? variantColors(id, variant) : { petal: '#f6a6b9', petalDark: '#ea7f99' };
-  if (id === 'sunflower') {
+  const shape = FLOWERS[id]?.model || id; // loài mới dùng lại hình của loài cùng mô hình (vd oải hương biển)
+  if (shape === 'sunflower') {
     let p = '';
     for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; p += `<ellipse cx="${x + Math.cos(a) * s * 0.75}" cy="${y + Math.sin(a) * s * 0.75}" rx="${s * 0.42}" ry="${s * 0.22}" transform="rotate(${(a * 180) / Math.PI} ${x + Math.cos(a) * s * 0.75} ${y + Math.sin(a) * s * 0.75})" fill="${c.petal}"/>`; }
     return p + `<circle cx="${x}" cy="${y}" r="${s * 0.5}" fill="${c.center}"/>`;
   }
-  if (id === 'tulip') {
+  if (shape === 'tulip') {
     return `<path d="M${x - s * 0.7} ${y - s * 0.5} Q${x - s * 0.8} ${y + s * 0.8} ${x} ${y + s * 0.8} Q${x + s * 0.8} ${y + s * 0.8} ${x + s * 0.7} ${y - s * 0.5} L${x + s * 0.35} ${y - s * 0.1} L${x} ${y - s * 0.7} L${x - s * 0.35} ${y - s * 0.1}Z" fill="${c.petal}" stroke="${c.petalDark}" stroke-width="1.5"/>`;
   }
-  if (id === 'daisy') {
+  if (shape === 'daisy') {
     let p = '';
     for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; p += `<ellipse cx="${x + Math.cos(a) * s * 0.6}" cy="${y + Math.sin(a) * s * 0.6}" rx="${s * 0.38}" ry="${s * 0.16}" transform="rotate(${(a * 180) / Math.PI} ${x + Math.cos(a) * s * 0.6} ${y + Math.sin(a) * s * 0.6})" fill="${c.petal}" stroke="#e6ddd0" stroke-width=".8"/>`; }
     return p + `<circle cx="${x}" cy="${y}" r="${s * 0.3}" fill="${c.center}"/>`;
   }
-  if (id === 'lavender') {
+  if (shape === 'lavender') {
     let p = '';
     for (let i = 0; i < 6; i++) p += `<ellipse cx="${x + (i % 2 ? 2 : -2)}" cy="${y + s * 0.6 - i * s * 0.35}" rx="${s * 0.28}" ry="${s * 0.22}" fill="${i % 2 ? c.petal : c.petalDark}"/>`;
     return p;
   }
-  if (id === 'hydrangea') {
+  if (shape === 'hydrangea') {
     let p = `<circle cx="${x}" cy="${y}" r="${s * 0.95}" fill="${c.petal}"/>`;
     for (let i = 0; i < 9; i++) { const a = i * 2.4; const r = (i / 9) * s * 0.75; p += `<circle cx="${x + Math.cos(a) * r}" cy="${y + Math.sin(a) * r}" r="${s * 0.22}" fill="${i % 2 ? c.petalDark : '#d8e9fb'}"/>`; }
     return p;
   }
-  if (id === 'cosmos') { // sao nhái: 8 cánh to, đầu cánh răng cưa
+  if (shape === 'cosmos') { // sao nhái: 8 cánh to, đầu cánh răng cưa
     let p = '';
     for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; const cx = x + Math.cos(a) * s * 0.55, cy = y + Math.sin(a) * s * 0.55; p += `<ellipse cx="${cx}" cy="${cy}" rx="${s * 0.42}" ry="${s * 0.25}" transform="rotate(${(a * 180) / Math.PI} ${cx} ${cy})" fill="${i % 2 ? c.petal : c.petalDark}"/>`; }
     return p + `<circle cx="${x}" cy="${y}" r="${s * 0.24}" fill="${c.center || '#f2c14e'}"/>`;
   }
-  if (id === 'carnation') { // cẩm chướng: viền cánh lượn sóng xếp lớp
+  if (shape === 'carnation') { // cẩm chướng: viền cánh lượn sóng xếp lớp
     let p = '';
     for (let r = 0; r < 3; r++) {
       const rr = s * (0.85 - r * 0.25);
@@ -43,12 +44,12 @@ function flowerSVG(id, variant, x, y, s) {
     }
     return p;
   }
-  if (id === 'marigold') { // cúc vạn thọ: quả cầu nhiều cánh nhỏ
+  if (shape === 'marigold') { // cúc vạn thọ: quả cầu nhiều cánh nhỏ
     let p = `<circle cx="${x}" cy="${y}" r="${s * 0.85}" fill="${c.petalDark}"/>`;
     for (let i = 0; i < 14; i++) { const a = i * 2.4; const r = Math.sqrt(i / 14) * s * 0.7; p += `<circle cx="${x + Math.cos(a) * r}" cy="${y + Math.sin(a) * r}" r="${s * 0.24}" fill="${i % 3 ? c.petal : c.petalDark}"/>`; }
     return p;
   }
-  if (id === 'lily') { // hoa ly: 6 cánh nhọn hình sao + nhụy
+  if (shape === 'lily') { // hoa ly: 6 cánh nhọn hình sao + nhụy
     let p = '';
     for (let i = 0; i < 6; i++) {
       const a = (i / 6) * Math.PI * 2 - Math.PI / 2, a1 = a - 0.32, a2 = a + 0.32;
@@ -57,38 +58,38 @@ function flowerSVG(id, variant, x, y, s) {
     for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; p += `<circle cx="${x + Math.cos(a) * s * 0.3}" cy="${y + Math.sin(a) * s * 0.3}" r="${s * 0.09}" fill="${c.center || '#f2b33d'}"/>`; }
     return p;
   }
-  if (id === 'peony') { // mẫu đơn: hoa to, nhiều lớp cánh tròn
+  if (shape === 'peony') { // mẫu đơn: hoa to, nhiều lớp cánh tròn
     let p = `<circle cx="${x}" cy="${y}" r="${s * 1.0}" fill="${c.petal}"/>`;
     for (let i = 0; i < 7; i++) { const a = (i / 7) * Math.PI * 2; p += `<circle cx="${x + Math.cos(a) * s * 0.55}" cy="${y + Math.sin(a) * s * 0.55}" r="${s * 0.38}" fill="${c.petal}" stroke="${c.petalDark}" stroke-width=".8"/>`; }
     p += `<circle cx="${x}" cy="${y}" r="${s * 0.5}" fill="${c.petalDark}"/><circle cx="${x}" cy="${y}" r="${s * 0.25}" fill="${c.petal}"/>`;
     return p;
   }
-  if (id === 'orchid') { // lan hồ điệp: 2 cánh tròn to + 3 cánh nhỏ + môi
+  if (shape === 'orchid') { // lan hồ điệp: 2 cánh tròn to + 3 cánh nhỏ + môi
     const e = (dx, dy, rx, ry, rot, fill) => `<ellipse cx="${x + dx * s}" cy="${y + dy * s}" rx="${rx * s}" ry="${ry * s}" transform="rotate(${rot} ${x + dx * s} ${y + dy * s})" fill="${fill}"/>`;
     return e(0, -0.55, 0.25, 0.45, 0, c.petal) + e(-0.45, 0.35, 0.22, 0.42, 40, c.petal) + e(0.45, 0.35, 0.22, 0.42, -40, c.petal)
       + e(-0.5, -0.1, 0.5, 0.4, -15, c.petal) + e(0.5, -0.1, 0.5, 0.4, 15, c.petal)
       + e(0, 0.3, 0.2, 0.28, 0, c.petalDark) + `<circle cx="${x}" cy="${y - s * 0.05}" r="${s * 0.12}" fill="#fff3c2"/>`;
   }
   // ---- 🍀 Cây Vận May ----
-  if (id === 'crystal') {
+  if (shape === 'crystal') {
     let p = '';
     for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; const cx = x + Math.cos(a) * s * 0.55, cy = y + Math.sin(a) * s * 0.55, r = (a * 180) / Math.PI + 90; p += `<path d="M${cx} ${cy - s * 0.45} L${cx + s * 0.2} ${cy} L${cx} ${cy + s * 0.45} L${cx - s * 0.2} ${cy}Z" transform="rotate(${r} ${cx} ${cy})" fill="${c.petal}" stroke="${c.petalDark}" stroke-width=".8" opacity=".9"/>`; }
     return p + `<circle cx="${x}" cy="${y}" r="${s * 0.2}" fill="#fff"/><path d="M${x + s} ${y - s} l2 -5 l2 5 l5 2 l-5 2 l-2 5 l-2 -5 l-5 -2z" fill="#fff" stroke="#bfe9ff" stroke-width=".6"/>`;
   }
-  if (id === 'firefly') {
+  if (shape === 'firefly') {
     return `<circle cx="${x}" cy="${y}" r="${s * 1.05}" fill="#fff7b0" opacity=".45"/><path d="M${x - s * 0.6} ${y - s * 0.3} Q${x} ${y + s * 1.1} ${x + s * 0.6} ${y - s * 0.3}Z" fill="${c.petal}" stroke="${c.petalDark}" stroke-width="1"/><circle cx="${x}" cy="${y}" r="${s * 0.28}" fill="#fffbe0"/>`
       + `<circle cx="${x + s * 1.1}" cy="${y - s * 0.6}" r="1.8" fill="#d9ff7a"/><circle cx="${x - s * 1.05}" cy="${y - s * 0.1}" r="1.5" fill="#d9ff7a"/>`;
   }
-  if (id === 'prism') {
+  if (shape === 'prism') {
     let p = '';
     for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; const cx = x + Math.cos(a) * s * 0.55, cy = y + Math.sin(a) * s * 0.55; p += `<ellipse cx="${cx}" cy="${cy}" rx="${s * 0.4}" ry="${s * 0.22}" transform="rotate(${(a * 180) / Math.PI} ${cx} ${cy})" fill="hsl(${i * 45} 80% 72%)"/>`; }
     return p + `<circle cx="${x}" cy="${y}" r="${s * 0.28}" fill="#ffe066"/>`;
   }
-  if (id === 'wisp') {
+  if (shape === 'wisp') {
     const f = (dx, k) => `<path d="M${x + dx} ${y + s * 0.5} Q${x + dx - s * 0.5 * k} ${y} ${x + dx} ${y - s * 1.0 * k} Q${x + dx + s * 0.5 * k} ${y} ${x + dx} ${y + s * 0.5}Z" fill="${c.petal}" opacity=".85"/>`;
     return f(-s * 0.4, 0.7) + f(s * 0.4, 0.75) + f(0, 1) + `<ellipse cx="${x}" cy="${y + s * 0.3}" rx="${s * 0.18}" ry="${s * 0.3}" fill="#e6f0ff"/><path d="M${x - s * 0.7} ${y + s * 0.45} Q${x} ${y + s * 0.95} ${x + s * 0.7} ${y + s * 0.45}Z" fill="${c.petalDark}"/>`;
   }
-  if (id === 'snowbell') {
+  if (shape === 'snowbell') {
     let p = '';
     for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; p += `<line x1="${x}" y1="${y}" x2="${x + Math.cos(a) * s * 0.95}" y2="${y + Math.sin(a) * s * 0.95}" stroke="${c.petalDark}" stroke-width="${s * 0.32}" stroke-linecap="round"/>`; }
     for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; p += `<line x1="${x}" y1="${y}" x2="${x + Math.cos(a) * s * 0.85}" y2="${y + Math.sin(a) * s * 0.85}" stroke="${c.petal}" stroke-width="${s * 0.2}" stroke-linecap="round"/>`; }

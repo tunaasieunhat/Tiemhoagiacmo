@@ -27,6 +27,22 @@ export const MG_FX = {
 
 // Việc nhờ của từng người. game: needle | hammer | fishing | pour | math | rhyme | memory
 export const FAVORS = {
+  // (GĐ21) Mũi Én
+  ong_hai: [
+    { id: 'hai_fish', game: 'fishing', title: 'Câu bữa tối cho Ông Hải', icon: '🎣',
+      ask: 'Chân ông hôm nay không xuống bến nổi. Cháu câu giúp ông mấy con cá, tối ông còn có sức leo đèn.',
+      thanks: 'Tay sát cá đấy! Tối nay đèn Mũi Én sáng nhờ cháu.', fail: 'Biển hôm nay khó chiều. Thôi, ông ăn cá khô cũng được.' },
+  ],
+  trieu: [
+    { id: 'trieu_pour', game: 'pour', title: 'San sương sang hũ', icon: '🫙',
+      ask: 'Chị ơi, cháu phải san sương từ hũ nhỏ sang hũ lớn mà tay cháu run, đổ ra ngoài hoài. Chị rót giúp cháu nha?',
+      thanks: 'Không rớt giọt nào! Chị rót đẹp như đo vậy đó!', fail: 'Tràn mất rồi... không sao, mai sương lại đậu.' },
+  ],
+  ba_sao: [
+    { id: 'sao_memory', game: 'memory', title: 'Xếp lại hoa khô', icon: '💐',
+      ask: 'Gió thổi tung cả sạp, hoa khô lẫn hết vào nhau. Cô tìm từng cặp giống nhau xếp lại giùm tôi.',
+      thanks: 'Hừm. Xếp cũng gọn đấy. Lần sau tôi lại nhờ.', fail: 'Thôi để tôi tự xếp, cô làm rối thêm.' },
+  ],
   ba_tu: [
     { id: 'needle', game: 'needle', title: 'Xỏ kim giúp bà', icon: '🪡',
       ask: 'Mắt bà dạo này kém quá, xỏ mãi không lọt cái kim. Con xỏ giúp bà mấy cây kim nhé?',

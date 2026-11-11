@@ -7,20 +7,24 @@
 //    cur:   { id, i, picks: [] } | null   cảnh đang xem dở (để kể tiếp đúng chỗ khi mở lại game)
 //    buds:  { mãNụ: { st: 'bud'|'bloom'|'kept'|'given', day, wait, streak, lastWater } }   🌱 Nụ Mộng (GĐ20B)
 //    queue: [mãCảnh]                cảnh chờ tự chiếu (vd nụ vừa nở)
+//    cloud: số                      ☁️ điểm "Mây về" ở Mũi Én (GĐ21)
+//  Các chương chia theo MẠCH (arc): 'main' và 'en' chạy song song, mỗi mạch có chương đang chơi riêng.
 //  }
 // =============================================================
-import { CHAPTERS, SCENES, STORY_LINES, STORY_LINES_B, MO_LINES, DIEP_LINES, STORY_RULES, BUDS } from '../../data/story.js';
+import { CHAPTERS, SCENES, STORY_LINES, STORY_LINES_B, MO_LINES, DIEP_LINES, STORY_RULES, BUDS, ARCS } from '../../data/story.js';
 import { heartsOf, addFp, BOND_IDS } from './relations.js';
 import { VILLAGER_IDS } from './village.js';
 import { isNight } from './time.js';
 
-export const createStoryState = () => ({ seen: {}, flags: {}, done: {}, cur: null, buds: {}, queue: [] });
+export const createStoryState = () => ({ seen: {}, flags: {}, done: {}, cur: null, buds: {}, queue: [], cloud: 0 });
+export const ARC_IDS = Object.keys(ARCS);
+const arcOf = (ch) => ch.arc || 'main';
 
 export function S(save) {
   save.story = save.story || createStoryState();
   const st = save.story;
   st.seen = st.seen || {}; st.flags = st.flags || {}; st.done = st.done || {};
-  st.buds = st.buds || {}; st.queue = st.queue || [];
+  st.buds = st.buds || {}; st.queue = st.queue || []; st.cloud = st.cloud || 0;
   return st;
 }
 
@@ -142,6 +146,8 @@ const NEED_TEXT = {
   orders: (n) => `Giao ${n} đơn hàng lớn`,
   shopLevel: (n) => `Quy mô tiệm bậc ${n}`,
   blooms: (n) => `Làm nở ${n} Nụ Mộng`,
+  after: (id) => { const c = CHAPTERS.find((x) => x.id === id); return c ? `Xong chương ${c.n} “${c.title}”${arcOf(c) === 'main' ? ' của cốt truyện chính' : ''}` : id; },
+  cloud: (n) => `${n} điểm ☁️ Mây về (thu hoạch hoa ở Mũi Én)`,
 };
 const NEED_VALUE = {
   level: (s) => s.player.level,
@@ -149,18 +155,20 @@ const NEED_VALUE = {
   orders: (s) => s.orders?.done || 0,
   shopLevel: (s) => s.shopLevel || 0,
   blooms: (s) => bloomCount(s),
+  cloud: (s) => S(s).cloud,
 };
 
 /** [{ text, ok, value, n }] */
 export function needChecks(save, ch) {
   return Object.entries(ch.need || {}).map(([k, n]) => {
+    if (k === 'after') { const ok = !!S(save).done[n]; return { text: NEED_TEXT.after(n), ok, value: ok ? 1 : 0, n: 1 }; }
     const value = NEED_VALUE[k] ? NEED_VALUE[k](save) : 0;
     return { text: NEED_TEXT[k] ? NEED_TEXT[k](n) : k, ok: value >= n, value, n };
   });
 }
 
 // ---------------- tiến độ ----------------
-const COUNTERS = { decided: decidedCount, blooms: bloomCount, given: givenCount };
+const COUNTERS = { decided: decidedCount, blooms: bloomCount, given: givenCount, cloud: (s) => S(s).cloud };
 const stepSeen = (save, step) => (step.count ? Math.min(step.count.n, (COUNTERS[step.count.buds] || (() => 0))(save)) : step.triggers.filter((t) => S(save).seen[t.scene]).length);
 const stepNeed = (step) => (step.count ? step.count.n : step.need || step.triggers.length);
 const stepDone = (save, step) => stepSeen(save, step) >= stepNeed(step);
@@ -169,18 +177,21 @@ const stepDone = (save, step) => stepSeen(save, step) >= stepNeed(step);
  * Chương đang chơi: { ch, index, stepIdx, step, seen, need, locked, checks, finished }
  *  locked: chương kế chưa đủ điều kiện · finished: đã xong hết các chương hiện có
  */
-export function current(save) {
+export function current(save, arc = 'main') {
   const st = S(save);
-  const index = CHAPTERS.findIndex((c) => !st.done[c.id]);
-  if (index < 0) return { finished: true };
+  const index = CHAPTERS.findIndex((c) => arcOf(c) === arc && !st.done[c.id]);
+  if (index < 0) return { finished: true, arc };
   const ch = CHAPTERS[index];
   const checks = needChecks(save, ch);
-  if (!checks.every((c) => c.ok)) return { ch, index, locked: true, checks };
+  if (!checks.every((c) => c.ok)) return { ch, index, locked: true, checks, arc };
   let stepIdx = ch.steps.findIndex((sp) => !stepDone(save, sp));
   if (stepIdx < 0) stepIdx = ch.steps.length - 1;
   const step = ch.steps[stepIdx];
-  return { ch, index, stepIdx, step, seen: stepSeen(save, step), need: stepNeed(step), checks, locked: false };
+  return { ch, index, stepIdx, step, seen: stepSeen(save, step), need: stepNeed(step), checks, locked: false, arc };
 }
+
+/** Chương đang chơi của mọi mạch: { main: …, en: … } */
+export const currentAll = (save) => Object.fromEntries(ARC_IDS.map((a) => [a, current(save, a)]));
 
 /**
  * Các điểm kích hoạt đang mở: cảnh trong hàng chờ (tự chiếu) + bước hiện tại + cảnh chưa xem của những bước trước trong cùng chương.
@@ -189,17 +200,19 @@ export function current(save) {
 export function triggers(save, ctx = {}) {
   const st = S(save);
   const out = st.queue.filter((id) => sceneOf(id)).map((scene) => ({ scene, via: 'auto', queued: true }));
-  const cur = current(save);
-  if (cur.finished || cur.locked) return out;
   const night = ctx.hour == null || isNight(ctx.hour);
-  cur.ch.steps.forEach((step, i) => {
-    if (i > cur.stepIdx) return;
-    for (const t of step.triggers) {
-      if (st.seen[t.scene]) continue;
-      if ((t.via === 'mo' || t.night) && !night) continue;
-      out.push({ ...t, chapter: cur.ch.id, stepIdx: i, optional: i < cur.stepIdx });
-    }
-  });
+  for (const arc of ARC_IDS) {
+    const cur = current(save, arc);
+    if (cur.finished || cur.locked) continue;
+    cur.ch.steps.forEach((step, i) => {
+      if (i > cur.stepIdx) return;
+      for (const t of step.triggers) {
+        if (st.seen[t.scene]) continue;
+        if ((t.via === 'mo' || t.night) && !night) continue;
+        out.push({ ...t, chapter: cur.ch.id, arc, stepIdx: i, optional: i < cur.stepIdx });
+      }
+    });
+  }
   return out;
 }
 
@@ -250,17 +263,24 @@ export function setFlag(save, flag) { S(save).flags[flag] = 1; }
 export function saveProgress(save, id, i, picks) { S(save).cur = { id, i, picks: [...picks] }; }
 export function clearProgress(save) { S(save).cur = null; }
 
-/** So tiến độ trước/sau: xong bước? xong chương (đánh dấu done, trả quà để game cộng)? */
-function settle(save, before) {
-  if (before.finished || before.locked) return {};
+/** So tiến độ trước/sau của 1 mạch: xong bước? xong chương (đánh dấu done, trả quà để game cộng)? */
+function settleArc(save, before) {
+  if (!before || before.finished || before.locked) return {};
   const st = S(save);
   const ch = before.ch;
   if (ch.steps.every((sp) => stepDone(save, sp))) {
     st.done[ch.id] = 1;
-    return { stepDone: true, chapterDone: ch, reward: ch.reward || {}, next: current(save) };
+    return { stepDone: true, chapterDone: ch, reward: ch.reward || {}, next: current(save, before.arc) };
   }
-  const after = current(save);
+  const after = current(save, before.arc);
   return { stepDone: after.stepIdx > before.stepIdx, nextGoal: after.step?.goal, next: after };
+}
+
+/** before = currentAll(save) lấy TRƯỚC khi thay đổi. Trả về kết quả của mạch có tiến triển (ưu tiên mạch vừa xong chương). */
+function settle(save, before) {
+  const all = before && before.main ? before : { [before?.arc || 'main']: before };
+  const res = Object.values(all).map((b) => settleArc(save, b));
+  return res.find((r) => r.chapterDone) || res.find((r) => r.stepDone) || res.find((r) => r.next) || {};
 }
 
 /**
@@ -269,7 +289,7 @@ function settle(save, before) {
  */
 export function finishScene(save, sceneId) {
   const st = S(save);
-  const before = current(save);
+  const before = currentAll(save);
   st.cur = null;
   st.queue = st.queue.filter((x) => x !== sceneId);
   if (st.seen[sceneId]) return { already: true, ...settle(save, before) };
@@ -277,7 +297,10 @@ export function finishScene(save, sceneId) {
   return settle(save, before);
 }
 
-/** Gọi sau việc không phải cảnh (vd Giữ hoa ở tiệm): before = current(save) lấy TRƯỚC khi làm việc đó */
+/** ☁️ Cộng điểm "Mây về" (thu hoạch hoa ở Mũi Én) */
+export function addCloud(save, n) { const st = S(save); st.cloud = Math.max(0, st.cloud + n); return st.cloud; }
+
+/** Gọi sau việc không phải cảnh (vd Giữ hoa ở tiệm, cộng Mây): before = currentAll(save) lấy TRƯỚC khi làm việc đó */
 export const checkProgress = (save, before) => settle(save, before);
 
 // ---------------- chữ ----------------
@@ -313,10 +336,10 @@ export function moLine(save, rng = Math.random) {
 export const diepLine = (rng = Math.random) => pickLine(DIEP_LINES, rng);
 
 /** Tóm tắt cho Sổ tay: [{ ch, state: 'done'|'active'|'locked'|'later', scenes: [{id,title,seen}], goal, seen, need, checks }] */
-export function overview(save) {
+export function overview(save, arc = 'main') {
   const st = S(save);
-  const cur = current(save);
-  return CHAPTERS.map((ch, i) => {
+  const cur = current(save, arc);
+  return CHAPTERS.map((ch, i) => [ch, i]).filter(([ch]) => arcOf(ch) === arc).map(([ch, i]) => {
     const scenes = ch.steps.flatMap((sp) => sp.triggers.map((t) => ({ id: t.scene, title: SCENES[t.scene]?.title || t.scene, seen: !!st.seen[t.scene] })));
     // các cảnh "Trao lại" xem lại được ở thẻ chương 6
     if (ch.id === 'c6') for (const id of BUD_IDS) { const g = BUDS[id].give; if (st.seen[g]) scenes.push({ id: g, title: SCENES[g]?.title || g, seen: true }); }

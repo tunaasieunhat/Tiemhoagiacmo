@@ -155,6 +155,22 @@ var VARIANTS = {
     white: { name: "tuy\u1EBFt tr\u1EAFng", petal: "#ffffff", petalDark: "#dcecff", tones: ["cool", "pastel"], meanings: ["purity", "health"], rarity: "legend", default: true }
   }
 };
+Object.assign(VARIANTS, {
+  sealavender: {
+    violet: { name: "t\xEDm bi\u1EC3n", petal: "#9b8fe0", petalDark: "#7566c4", tones: ["cool", "natural"], meanings: ["loyalty", "longing"], rarity: "common", default: true },
+    silver: { name: "b\u1EA1c", petal: "#dfe3f0", petalDark: "#bfc6da", tones: ["cool", "pastel"], meanings: ["purity", "hope"], rarity: "uncommon", breed: [["violet", "violet", 0.22]] },
+    dusk: { name: "ho\xE0ng h\xF4n", petal: "#f0a58f", petalDark: "#d9836c", tones: ["warm", "natural"], meanings: ["longing", "love"], rarity: "rare", breed: [["violet", "silver", 0.08]] }
+  },
+  saltdaisy: {
+    white: { name: "tr\u1EAFng", petal: "#fbfbf4", petalDark: "#e6e4d6", tones: ["natural", "pastel"], meanings: ["hope", "purity"], rarity: "common", default: true },
+    gold: { name: "v\xE0ng c\xE1t", petal: "#f6d98a", petalDark: "#e0bb5e", tones: ["warm", "natural"], meanings: ["gratitude", "joy"], rarity: "uncommon", breed: [["white", "white", 0.22]] },
+    blue: { name: "xanh s\xF3ng", petal: "#9fd3ee", petalDark: "#72b6da", tones: ["cool", "pastel"], meanings: ["health", "friendship"], rarity: "rare", breed: [["white", "gold", 0.08]] }
+  },
+  beachglory: {
+    pink: { name: "h\u1ED3ng", petal: "#f3a6d6", petalDark: "#d77fb8", tones: ["pastel", "cool"], meanings: ["longing", "apology"], rarity: "common", default: true },
+    lilac: { name: "t\xEDm nh\u1EA1t", petal: "#cdb4f0", petalDark: "#a98ad9", tones: ["cool", "pastel"], meanings: ["respect", "loyalty"], rarity: "uncommon", breed: [["pink", "pink", 0.2]] }
+  }
+});
 
 // data/flowers.js
 var FLOWERS = {
@@ -356,6 +372,59 @@ var FLOWERS = {
     meaning: "Sang tr\u1ECDng, t\xECnh y\xEAu \u0111\u1EB9p",
     tones: ["cool", "pastel"],
     colors: { petal: "#c98be0", petalDark: "#a865c7", center: "#ffd34e", stem: "#4f8f5a", leaf: "#5fa86a" }
+  },
+  // ---------------- 🌫️ HOA CHỊU MẶN CỦA MŨI ÉN (GĐ21) ----------------
+  // salt: true = chỉ mọc trên đất mặn Mũi Én (và đất Mũi Én chỉ trồng được các loài này). Dùng lại mô hình loài có sẵn (model).
+  sealavender: {
+    id: "sealavender",
+    name: "O\u1EA3i h\u01B0\u01A1ng bi\u1EC3n",
+    icon: "\u{1F33E}",
+    model: "lavender",
+    salt: true,
+    growHours: 7,
+    waterPerDay: 1,
+    fertilizerNeeded: 1,
+    seasons: ["xuan", "ha", "thu", "dong"],
+    basePrice: 58,
+    seedPrice: 30,
+    unlockLevel: 16,
+    meaning: "Ch\u1EDD \u0111\u1EE3i, l\xF2ng th\u1EE7y chung",
+    tones: ["cool", "natural"],
+    colors: { petal: "#9b8fe0", petalDark: "#7566c4", stem: "#7fa58e", leaf: "#9fc2ae" }
+  },
+  saltdaisy: {
+    id: "saltdaisy",
+    name: "C\xFAc mu\u1ED1i",
+    icon: "\u26AA",
+    model: "daisy",
+    salt: true,
+    growHours: 9,
+    waterPerDay: 1,
+    fertilizerNeeded: 1,
+    seasons: ["xuan", "ha", "thu", "dong"],
+    basePrice: 72,
+    seedPrice: 38,
+    unlockLevel: 16,
+    meaning: "B\u1EC1n b\u1EC9, hy v\u1ECDng",
+    tones: ["natural", "pastel"],
+    colors: { petal: "#fbfbf4", petalDark: "#e6e4d6", center: "#f2c14e", stem: "#7fa58e", leaf: "#a4c4b0" }
+  },
+  beachglory: {
+    id: "beachglory",
+    name: "Mu\u1ED1ng bi\u1EC3n",
+    icon: "\u{1F41A}",
+    model: "cosmos",
+    salt: true,
+    growHours: 12,
+    waterPerDay: 1,
+    fertilizerNeeded: 2,
+    seasons: ["xuan", "ha", "thu", "dong"],
+    basePrice: 96,
+    seedPrice: 52,
+    unlockLevel: 16,
+    meaning: "\u0110\u01B0\u1EDDng v\u1EC1 nh\xE0, n\u1ED7i nh\u1EDB",
+    tones: ["pastel", "cool"],
+    colors: { petal: "#f3a6d6", petalDark: "#d77fb8", center: "#fff2b8", stem: "#6f9d86", leaf: "#8fbda2" }
   },
   // ---------------- 🍀 CÂY VẬN MAY (GĐ15) ----------------
   crystal: {

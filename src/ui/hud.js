@@ -176,6 +176,7 @@ export class Hud {
         <button class="round" data-act="go-market" aria-label="Khu chợ">🧺</button>
         <button class="round" data-act="go-lab" aria-label="Nhà lai tạo">🧬<span class="badge hidden lab-badge">✓</span></button>
         <button class="round" data-act="go-village" aria-label="Làng Hoa">🏘️</button>
+        <button class="round hidden" data-act="go-en" aria-label="Ra khơi: Mũi Én / về Đảo Mây">⛵</button>
         <button class="round" data-act="friends" aria-label="Bạn bè">👥<span class="badge hidden fr-badge"></span></button>
         <button class="round" data-act="quests" aria-label="Nhiệm vụ">📋<span class="badge hidden q-badge"></span></button>
         <button class="round" data-act="rank" aria-label="Xếp hạng và cuộc thi">🏆</button>
@@ -299,6 +300,7 @@ export class Hud {
       case 'notebook': this.notebook.open(b.dataset.tab || (this.game.storyTrig.length ? 'story' : undefined)); break;
       case 'go-lab': this.openLab(); break;
       case 'go-village': this.closeModal(); g.goVillage(); break;
+      case 'go-en': this.closeModal(); g.sail(); break;
       case 'see-villager': this.closeModal(); g.focusVillager(b.dataset.id); break;
       case 'knock': this.openVillager(b.dataset.id); break;
       case 'friends': this.friends.open(); break;
@@ -531,6 +533,8 @@ export class Hud {
   updateStoryBadge() {
     const b = $('.nb-badge', this.root);
     if (b) b.classList.toggle('hidden', !this.game.storyTrig.length);
+    // nút ⛵ chỉ hiện khi đã có thuyền (GĐ21)
+    $('[data-act="go-en"]', this.root)?.classList.toggle('hidden', !storySys.has(this.game.save, 'boat_ready'));
   }
 
   /** 🌱 Kệ Nụ Mộng (GĐ20B): mỗi nụ đang đợi gì; hoa đã nở thì Trao lại hoặc Giữ ở tiệm */
@@ -579,13 +583,14 @@ export class Hud {
       wake: ['Kết thúc: Thức giấc', 'Bà Diệp đã tỉnh dậy và ngồi uống trà bên hiên tiệm mỗi ngày. Mơ đã về với bà.'],
       dream: ['Kết thúc: Mơ tiếp', 'Bà Diệp vẫn mơ dưới gốc Cây Mộng. Mơ ở lại trông tiệm cùng bạn, và bạn nhớ bà giùm cả làng.'],
       all: ['Kết thúc ẩn: Cả làng cùng mơ', 'Cả làng đã nhớ lại. Bà Diệp tỉnh dậy, Mơ vẫn ở đây, và trước hiên tiệm có thêm một ngọn đèn nhỏ không bao giờ tắt.'],
-    }[ending];
+    }[ch.id === 'c7' ? ending : null] || (ch.id === 'e5' ? ['Hết truyện: Cơn mưa đi lạc', storySys.has(this.game.save, 'en_off') ? 'Ngọn đèn Mũi Én đã tắt sau ba mươi năm, để người gác đèn được ngủ một giấc trọn.' : 'Ngọn đèn Mũi Én vẫn sáng, giờ là cho những con thuyền của người khác.'] : null);
+    const arcName = ch.arc === 'en' ? 'Mũi Én · ' : '';
     let nextHtml;
-    if (!next || next.finished) nextHtml = `${END ? `<p class="fin">🌟 ${esc(END[0])}</p><p class="small">${esc(END[1])}</p>` : ''}<p class="muted small">Cảm ơn bạn đã đi hết câu chuyện cùng Mơ 💛 Vào 📖 Sổ tay › Cốt truyện, xem lại cảnh cuối để thử lựa chọn khác${ending === 'all' ? '' : ' (trao lại đủ 5 Hoa Mộng sẽ mở thêm một lựa chọn)'}.</p>`;
+    if (!next || next.finished) nextHtml = `${END ? `<p class="fin">🌟 ${esc(END[0])}</p><p class="small">${esc(END[1])}</p>` : ''}<p class="muted small">Cảm ơn bạn đã đi hết câu chuyện cùng Mơ 💛 Vào 📖 Sổ tay › Cốt truyện, xem lại cảnh cuối để thử lựa chọn khác${ch.id !== 'c7' || ending === 'all' ? '' : ' (trao lại đủ 5 Hoa Mộng sẽ mở thêm một lựa chọn)'}.</p>`;
     else if (next.locked) nextHtml = `<p class="small">Chương ${next.ch.n} — <b>${esc(next.ch.title)}</b> mở khi: ${next.checks.map((c) => `${c.ok ? '✅' : '⬜'} ${esc(c.text)}`).join(' · ')}</p>`;
     else nextHtml = `<p class="small">Tiếp theo — Chương ${next.ch.n}: <b>${esc(next.ch.title)}</b><br>🎯 ${esc(next.step.goal)}</p>`;
     this.openModal('story', `<div class="story chapter-done">
-      <div class="cd-icon">📜</div><small class="muted">Hết chương ${ch.n}</small><h2>${esc(ch.title)}</h2>
+      <div class="cd-icon">📜</div><small class="muted">${arcName}Hết chương ${ch.n}</small><h2>${esc(ch.title)}</h2>
       <p class="story-text">${esc(ch.outro || '')}</p>
       <h3>🎁 Quà tặng</h3><ul class="unlocks">${items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>
       ${nextHtml}

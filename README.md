@@ -22,6 +22,7 @@ Công nghệ: Three.js + Vite, sau này dùng Supabase cho tài khoản online.
 - ✅ Giai đoạn 11 — Làng Hoa: 6 nhà + trường làng, dân làng đi lại & làm việc theo giờ, mở rộng bản đồ.
 - ✅ Giai đoạn 12 — kết thân với dân làng: tình thân 10 ❤️, trò chuyện có lựa chọn, tặng hoa theo sở thích, sinh nhật, 24 sự kiện rẽ nhánh, quà mốc tim. Dân làng nhờ việc với 7 mini game (xỏ kim, câu cá, đóng đinh, pha cà phê, chấm toán, ghép vần thơ, lật thẻ).
 - ✅ Giai đoạn 13 — mua đất của dân làng: 4 mảnh đất, giá theo tình thân & tâm trạng mỗi ngày, trả giá, có thể bị từ chối.
+- ✅ Giai đoạn 21 — vùng đất Mũi Én (đi thuyền) + cốt truyện "Cơn mưa đi lạc" 5 chương chạy song song mạch chính; 3 loài hoa chịu mặn, 3 lô bậc thang luật đất riêng, thanh "Mây về" đổi màu đảo, 3 dân đảo mới để kết thân; sửa lỗi kéo bản đồ tới làng bị khựng.
 - ✅ Giai đoạn 20B — cốt truyện chính chương 3–7: Nụ Mộng nở theo thời tiết (có điềm báo), Hoa Mộng "trao lại hay giữ", Đồi Mộng + Cây Mộng + cây cầu, 3 kết thúc (1 kết ẩn), thành tựu "Người kể chuyện"; thanh công cụ và thanh thời tiết gọn hơn.
 - ✅ Giai đoạn 20A — cốt truyện chính "Giấc mơ của tiệm hoa" (chương 1–2) + hệ thống hội thoại kiểu phim (chân dung có nét mặt, lựa chọn, hồi ức, tranh minh họa, bỏ qua / tự chạy / nhật ký thoại), bé Mơ ban đêm; 🪴 treo hoa ở tiệm + 📝 đơn đặt trước.
 - ✅ Giai đoạn 17 — mini game hay hơn: 3 mức khó theo tình thân, combo + hiệu ứng + kỷ lục, 2 game mới (cắm hoa theo mẫu, bắt bướm), góc chơi lại trong Sổ tay.
