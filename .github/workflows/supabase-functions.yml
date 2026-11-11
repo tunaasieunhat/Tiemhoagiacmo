@@ -35,4 +35,4 @@ jobs:
           version: latest
       - name: Đưa contest-submit lên (tắt Verify JWT như hướng dẫn)
         if: steps.chk.outputs.skip != '1'
-        run: supabase functions deploy contest-submit --project-ref "$PROJECT_REF" --no-verify-jwt --use-api
+        run: supabase functions deploy contest-submit --project-ref "$PROJECT_REF" --no-verify-jwt --use-api --yes # --yes: bản CLI mới đòi xác nhận, máy tự động không hỏi được
