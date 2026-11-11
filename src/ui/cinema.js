@@ -200,6 +200,8 @@ export class Cinema {
         else if (op === 'set') { if (!replay && !ff) { storySys.setFlag(save, ln[1]); g.syncStoryWorld(); } }
         else if (op === 'bud') { if (!replay && !ff) g.storyBud(ln[1]); }
         else if (op === 'give') { if (!replay && !ff) g.storyGive(ln[1]); }
+        else if (op === 'bait') { if (!replay && !ff) g.storyBait(ln[1], ln[2] || 1); }
+        else if (op === 'rod') { if (!replay && !ff) g.storyRod(ln[1]); }
         else if (op === 'plot') { if (!replay && !ff) g.storyPlot(ln[1]); }
         else if (op === 'seed') { if (!replay && !ff) g.storySeeds(ln[1], ln[2] || 1); }
         else if (op === 'title') { if (!ff) await this.title(ln[1], ln[2]); }
@@ -381,6 +383,9 @@ export class Cinema {
       html = `<div class="cg-sign"><div class="cg-sign-hand"><b>${esc(s.name)}</b><span>${esc(s.sub)}</span><i>${esc(s.by)}</i></div><div class="cg-sign-paint"><b>${esc(s.name)}</b></div></div>`;
     } else if (kind === 'page') {
       html = `<div class="cg-paper page"><small>Trang ${(o.i || 0) + 1}/${CG_TEXT.pages.length}</small><p>${smudge(CG_TEXT.pages[o.i || 0])}</p></div>`;
+    } else if (kind === 'bottle') {
+      const b = CG_TEXT.bottles[o.i || 0];
+      html = `<div class="cg-paper letter bottle"><small>🍾 ${esc(b.year)}</small>${b.text.split('\n').map((l) => `<p>${esc(l)}</p>`).join('')}</div>`;
     } else if (kind === 'fade') {
       html = `<div class="cg-paper page fading"><p>${smudge(CG_TEXT.pages[0])}</p><b class="cg-sig">Diệp</b></div>`;
     }

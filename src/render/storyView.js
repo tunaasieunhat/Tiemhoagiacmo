@@ -115,6 +115,30 @@ export class StoryView {
     this.mo.shown = !!moOn;
   }
 
+  /**
+   * (0.23) Dò điểm sáng / bé Mơ theo KHOẢNG CÁCH TRÊN MÀN HÌNH tới chỗ chạm (không dùng tia chiếu):
+   * nhà, dân làng, khách đứng chắn phía trước không còn "nuốt" mất cú chạm. toScreen(pos) → { x, y } theo px.
+   */
+  pickNear(toScreen, x, y, radius = 46) {
+    if (!this.root.visible) return null;
+    let best = null, bd = radius;
+    for (const g of this.markers.values()) {
+      if (!g.visible) continue;
+      const p = toScreen(g.position);
+      const d = Math.hypot(p.x - x, p.y - y);
+      if (d < bd) { bd = d; best = g.userData.pick; }
+    }
+    if (this.mo.g.visible) {
+      const p = toScreen(this.mo.g.position.clone().setY(this.mo.g.position.y + 0.45));
+      const d = Math.hypot(p.x - x, p.y - y);
+      if (d < bd) { bd = d; best = this.mo.g.userData.pick; }
+    }
+    return best;
+  }
+
+  /** Vị trí điểm sáng của 1 cảnh (để Sổ tay chỉ đường) */
+  markerPos(scene) { const g = this.markers.get(scene); return g ? g.position.clone().setY(0) : null; }
+
   /** Vị trí 1 diễn viên của cốt truyện (mo, diep...) hoặc null */
   actorPos(id) {
     if (id === 'mo') return new THREE.Vector3(this.mo.x, 0, this.mo.z);

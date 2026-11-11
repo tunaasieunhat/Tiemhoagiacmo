@@ -7,6 +7,7 @@
 //  weekly : quà sự kiện tuần (không bán ở Chợ)
 // =============================================================
 export const DECOR = {
+  fishtank: { name: 'Bể cá cảnh', icon: '🐠', price: 4000, level: 20, beauty: 12, size: 0.8 }, // (GĐ22) cá bơi vòng quanh trong bể
   bench: { name: 'Ghế gỗ', icon: '🪑', price: 240, level: 1, beauty: 2, size: 0.8 },
   pot: { name: 'Chậu hoa to', icon: '🪴', price: 160, level: 1, beauty: 1, size: 0.45 },
   lantern: { name: 'Đèn lồng', icon: '🏮', price: 300, level: 2, beauty: 2, size: 0.55 },

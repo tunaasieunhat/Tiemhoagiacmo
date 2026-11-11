@@ -15,6 +15,8 @@ import { CHAPTERS, SCENES, STORY_LINES, STORY_LINES_B, MO_LINES, DIEP_LINES, STO
 import { heartsOf, addFp, BOND_IDS } from './relations.js';
 import { VILLAGER_IDS } from './village.js';
 import { isNight } from './time.js';
+import { isLowTide, rareCaught, F as fishState } from './fishing.js';
+import { CG_TEXT } from '../../data/story.js';
 
 export const createStoryState = () => ({ seen: {}, flags: {}, done: {}, cur: null, buds: {}, queue: [], cloud: 0 });
 export const ARC_IDS = Object.keys(ARCS);
@@ -168,7 +170,17 @@ export function needChecks(save, ch) {
 }
 
 // ---------------- tiến độ ----------------
-const COUNTERS = { decided: decidedCount, blooms: bloomCount, given: givenCount, cloud: (s) => S(s).cloud };
+const COUNTERS = {
+  decided: decidedCount, blooms: bloomCount, given: givenCount, cloud: (s) => S(s).cloud,
+  // (GĐ22) câu cá
+  bottles: (s) => fishState(s).bottles, caught: (s) => fishState(s).caught, rare: (s) => rareCaught(s), mong: (s) => fishState(s).mong,
+};
+
+/** Bước đang làm của mạch Cồn Lặng có đang cần thứ này không ('bottles' | 'mong') — để lúc quăng cần biết có thả chai thư / Cá Mộng */
+export function wants(save, what) {
+  const cur = current(save, 'lang');
+  return !cur.finished && !cur.locked && cur.step?.count?.buds === what && cur.seen < cur.need;
+}
 const stepSeen = (save, step) => (step.count ? Math.min(step.count.n, (COUNTERS[step.count.buds] || (() => 0))(save)) : step.triggers.filter((t) => S(save).seen[t.scene]).length);
 const stepNeed = (step) => (step.count ? step.count.n : step.need || step.triggers.length);
 const stepDone = (save, step) => stepSeen(save, step) >= stepNeed(step);
@@ -209,6 +221,7 @@ export function triggers(save, ctx = {}) {
       for (const t of step.triggers) {
         if (st.seen[t.scene]) continue;
         if ((t.via === 'mo' || t.night) && !night) continue;
+        if (t.lowTide && ctx.hour != null && !isLowTide(ctx.hour)) continue; // chỉ hiện lúc triều xuống
         out.push({ ...t, chapter: cur.ch.id, arc, stepIdx: i, optional: i < cur.stepIdx });
       }
     });
@@ -231,6 +244,13 @@ export function moVisible(save, hour) {
 /** Cảnh theo mã. 'bloom_<nụ>' được dựng tự động từ BUDS[nụ].bloom */
 export function sceneOf(id) {
   if (SCENES[id]) return SCENES[id];
+  // 'bottle_<n>': vớt được chai thư thứ n (GĐ22) — hiện lá thư + 1 câu của Nhum
+  const bt = /^bottle_(\d+)$/.exec(id || '');
+  if (bt && CG_TEXT.bottles[+bt[1] - 1]) {
+    const n = +bt[1];
+    const say = { 2: 'Lại là “K.” nữa! Ổng đi lạc trong sương hả chị? Sao ổng không kêu to lên?', 3: 'Ổng lấy vợ rồi. Chắc ổng hết buồn rồi ha chị. ...Mà sao ổng vẫn còn viết thư?', 4: 'Có em bé! Chị ơi, cái cằm bướng là cằm làm sao?', 5: '“Lần này con không quay đầu.” Vậy là ổng về tới chưa hả chị?' }[n] || '...';
+    return { title: `Chai thư thứ ${n}`, lines: [['cg', 'bottle', { i: n - 1 }], ['nar', 'Thêm một chiếc chai nữa. Giấy bên trong còn khô.'], ['nhum', n === 5 ? 'sad' : 'think', say], ['cg', null], ['end']] };
+  }
   const m = /^bloom_(\w+)$/.exec(id || '');
   const b = m && BUDS[m[1]];
   if (!b) return null;

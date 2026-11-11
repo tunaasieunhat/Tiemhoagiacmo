@@ -12,11 +12,13 @@ import { FAVORS, MINIGAMES, DIFFICULTY } from '../../data/minigames.js';
 import { runMiniGame } from './minigames.js';
 import * as storySys from '../systems/story.js';
 import { COMING_CHAPTERS, ARCS } from '../../data/story.js';
-import { EN_PEOPLE, EN_RULES } from '../../data/muien.js';
+import { EN_PEOPLE, EN_RULES, CO_PEOPLE } from '../../data/muien.js';
+import * as fishSys from '../systems/fishing.js';
+import { FISH_RULES } from '../../data/fishing.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const SEASON_NAMES = { xuan: 'Xuân', ha: 'Hạ', thu: 'Thu', dong: 'Đông' };
-const TABS = [['story', '📜 Cốt truyện'], ['flowers', '🌸 Bộ sưu tập'], ['meanings', '💬 Ngôn ngữ hoa'], ['regulars', '💌 Khách quen'], ['village', '🏘️ Dân làng'], ['games', '🎮 Mini game']];
+const TABS = [['story', '📜 Cốt truyện'], ['flowers', '🌸 Bộ sưu tập'], ['meanings', '💬 Ngôn ngữ hoa'], ['regulars', '💌 Khách quen'], ['village', '🏘️ Dân làng'], ['games', '🎮 Mini game'], ['fish', '🎣 Sổ cá']];
 
 /** Mini game nào do ai nhờ (lấy tên & biểu tượng từ việc nhờ) */
 const GAME_INFO = (() => {
@@ -38,7 +40,7 @@ export class NotebookPanel {
 
   render() {
     const p = bookProgress(this.save);
-    const body = { story: this.story, flowers: this.flowers, meanings: this.meanings, regulars: this.regulars, village: this.village, games: this.games }[this.tab].call(this);
+    const body = { fish: this.fishBook, story: this.story, flowers: this.flowers, meanings: this.meanings, regulars: this.regulars, village: this.village, games: this.games }[this.tab].call(this);
     this.hud.openModal('notebook', `
       <h2>📖 Sổ tay thực vật</h2>
       <div class="book-prog"><div class="track"><i style="width:${p.pct}%;background:#f6a6b9"></i></div>
@@ -57,6 +59,7 @@ export class NotebookPanel {
       if (o.state === 'done') body = `<p class="small">${esc(ch.outro || '')}</p><div class="st-scenes">${sceneBtns}</div>`;
       else if (o.state === 'active') body = `<p class="small">${esc(ch.intro)}</p>
         <div class="st-goal">🎯 <b>${esc(o.goal)}</b>${o.need > 1 ? ` <small>(${o.seen}/${o.need})</small>` : ''}</div>
+        ${this.guideBtns(arc)}
         ${sceneBtns ? `<div class="st-scenes">${sceneBtns}</div>` : ''}`;
       else if (o.state === 'locked') body = `<p class="small muted">${esc(ch.intro)}</p><div class="st-need">Mở khi: ${o.checks.map((c) => `<span class="${c.ok ? 'ok' : ''}">${c.ok ? '✅' : '⬜'} ${esc(c.text)}${c.ok ? '' : ` (${c.value}/${c.n})`}</span>`).join('')}</div>`;
       else body = '<p class="small muted">Xong chương trước để mở.</p>';
@@ -73,14 +76,38 @@ export class NotebookPanel {
       ${arcHtml('main')}
       ${storySys.BUD_IDS.some((id) => storySys.budOf(s, id)) ? `<div class="st-card st-wide"><div class="st-head"><b>🌱 Nụ Mộng</b><i>đã nở ${storySys.bloomCount(s)}/5 · đã trao ${storySys.givenCount(s)}/5</i></div><p class="small">Kệ Nụ Mộng nằm cạnh hiên tiệm.</p><button class="btn" data-nb="buds">Xem kệ Nụ Mộng</button></div>` : ''}
       ${enHead}${showEn ? arcHtml('en') : ''}
+      ${s.story?.done?.e3 ? `<div class="st-arc st-wide"><b>${ARCS.lang.icon} ${esc(ARCS.lang.name)}</b><small>${esc(ARCS.lang.desc)}${storySys.has(s, 'co_fish') ? ` · 🍾 Chai thư: <b>${fishSys.F(s).bottles}</b> · 🐟 Đã câu: <b>${fishSys.F(s).caught}</b> con` : ''}</small></div>${arcHtml('lang')}` : ''}
       ${coming ? `<div class="st-card later st-wide"><div class="st-head"><b>Sắp ra mắt</b></div><div class="chips">${coming}</div></div>` : ''}`;
+  }
+
+  /** 🎣 Sổ cá (GĐ22): từng chỗ câu có những loài nào, con to nhất đã câu */
+  fishBook() {
+    const s = this.save;
+    if (!storySys.has(s, 'co_fish')) return '<div class="empty-shop">🎣<p>Bạn chưa biết câu cá. Sổ cá sẽ mở trong cốt truyện Cồn Lặng (sau khi xong truyện Mũi Én, cấp 20).</p></div>';
+    const cond = (f) => [f.night && '🌙 đêm', f.day && '☀️ ngày', f.rain && '🌧️ mưa', f.fog && '🌫️ sương mù', f.moon && '🌕 đêm rằm'].filter(Boolean).join(' · ');
+    const secs = fishSys.bookBySpot(s).map(({ def, fish, done }) => {
+      const got = fish.filter((x) => x.got).length;
+      const cards = fish.map(({ f, got: b }) => (b
+        ? `<div class="fb-card" style="--tc:${FISH_RULES.tierColors[f.t]}"><span class="fb-icon">${f.icon}</span><b>${b.shiny ? '✨ ' : ''}${esc(f.name)}</b><small class="fb-tier">${FISH_RULES.tierNames[f.t]} <i class="stars">${'★'.repeat(b.q)}</i></small><small>Đã câu ${b.n} · to nhất ${b.max} cm</small><small class="muted">${esc(cond(f) || 'lúc nào cũng có')}</small></div>`
+        : `<div class="fb-card unk" style="--tc:${FISH_RULES.tierColors[f.t]}"><span class="fb-icon">❔</span><b>???</b><small class="fb-tier">${FISH_RULES.tierNames[f.t]}</small><small class="muted">${esc(cond(f) || 'chưa gặp')}</small></div>`)).join('');
+      return `<div class="fb-sec"><h3>${def.icon} ${esc(def.name)} <small class="muted">${got}/${fish.length}${done ? ' · ✔ đã nhận thưởng' : ''}</small></h3><div class="fb-grid">${cards}</div></div>`;
+    }).join('');
+    return `<p class="muted small st-wide">Đã sưu tầm ${fishSys.speciesCaught(s)}/${fishSys.FISH_IDS.length} loài · câu được tổng cộng ${fishSys.F(s).caught} con. Sưu tầm đủ cá của một chỗ câu sẽ có thưởng. Chạm 🎣 ở mép nước để câu.</p>${secs}`;
+  }
+
+  /** (0.23) Nút "📍 Chỉ đường" cho từng việc đang làm được của mạch truyện: lia máy quay tới đúng chỗ */
+  guideBtns(arc) {
+    const trig = this.game.storyTrig.filter((t) => t.arc === arc && !t.optional && !t.queued);
+    if (!trig.length) return '<p class="muted small">Chưa tới lúc: đọc kỹ mục tiêu (ban đêm, triều xuống...) rồi quay lại nhé.</p>';
+    const name = (t) => (t.via === 'villager' ? `Tìm ${villagerInfo(t.who)?.name || ''}` : t.via === 'mo' ? 'Tới chỗ bé Mơ' : `Tới chỗ ${t.icon || '✨'}`);
+    return `<div class="st-scenes">${trig.slice(0, 6).map((t) => `<button class="chip-btn on" data-nb="goto" data-id="${t.scene}">📍 ${esc(name(t))}</button>`).join('')}</div>`;
   }
 
   village() {
     const s = this.save;
     const day = this.game.today;
     // người Mũi Én chỉ hiện sau khi bạn đã cập bến (GĐ21)
-    const rows = rel.BOND_IDS.filter((id) => !EN_PEOPLE.includes(id) || storySys.has(s, 'e1_boat')).map((id) => {
+    const rows = rel.BOND_IDS.filter((id) => (!EN_PEOPLE.includes(id) || storySys.has(s, 'e1_boat')) && (!CO_PEOPLE.includes(id) || storySys.has(s, 'l1_path'))).map((id) => {
       const info = villagerInfo(id);
       const b = BONDS[id];
       const h = rel.heartsOf(s, id);
@@ -197,6 +224,7 @@ export class NotebookPanel {
     if (act === 'sp') { this.sp = el.dataset.id; this.render(); }
     if (act === 'play') this.play(el.dataset.k, +el.dataset.lv);
     if (act === 'buds') this.hud.openBuds();
+    if (act === 'goto') { this.hud.closeModal(); this.game.focusStory(el.dataset.id); }
     if (act === 'replay') this.hud.playStory(el.dataset.id, { replay: true });
   }
 }

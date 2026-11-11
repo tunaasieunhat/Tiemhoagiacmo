@@ -1,5 +1,5 @@
 // Làng Hoa (GĐ11) — LOGIC THUẦN: ai đang ở đâu, làm gì (theo giờ game, thời tiết); tìm đường theo đường đá.
-import { VILLAGE, HOUSES, NEW_VILLAGERS, REGULAR_ROLES, LEAVES_AFTER_STORY, ACTIVITIES, SPOTS, SCHEDULES, NODES, EDGES, LINES } from '../../data/village.js';
+import { VILLAGE, HOUSES, NEW_VILLAGERS, REGULAR_ROLES, LEAVES_AFTER_STORY, GONE_WHEN, ACTIVITIES, SPOTS, SCHEDULES, NODES, EDGES, LINES } from '../../data/village.js';
 import { REGULARS } from '../../data/regulars.js';
 import { BAD_WEATHER as BAD_WEATHER_LIST } from '../../data/seasons.js';
 
@@ -31,6 +31,8 @@ export function scheduleAt(id, hour) {
  * ctx: { hour, weather, festivalId, save }
  */
 export function desiredState(id, { hour, weather = null, festivalId = null, save = null } = {}) {
+  const gone = GONE_WHEN[id];
+  if (gone && save?.story?.done?.l6 && save.story.flags?.[gone.flag]) return { absent: true, reason: 'moved', note: gone.note };
   const leave = LEAVES_AFTER_STORY[id];
   // (GĐ20B) holdByStory: người này là nhân vật của cốt truyện chính ⇒ hoãn chuyến đi, ở lại đảo
   if (leave && !(leave.holdByStory && save?.story) && (save?.regulars?.[id]?.hearts || 0) >= leave.hearts && !(leave.back || []).includes(festivalId)) {

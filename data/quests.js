@@ -20,6 +20,7 @@ export const QUEST_TEMPLATES = {
     { id: 'serve', text: 'Phục vụ {n} khách ở tiệm', icon: '🏪', event: 'serve', n: [2, 4, 6] },
     { id: 'bouquet', text: 'Gói {n} bó hoa cho khách', icon: '💐', event: 'bouquet', n: [1, 2, 3] },
     { id: 'earn', text: 'Kiếm {n} 💰 từ bán hoa', icon: '💰', event: 'earn', n: [150, 400, 800] },
+    { id: 'fish', text: 'Câu được {n} con cá', icon: '🎣', event: 'fish', n: [3, 5, 8], flag: 'co_fish' }, // flag: chỉ có khi đã có dấu cốt truyện này
     { id: 'bugs', text: 'Bắt {n} con sâu trên luống hoa', icon: '🐛', event: 'bug', n: [3, 5, 8] },
   ],
   weekly: [
@@ -30,6 +31,8 @@ export const QUEST_TEMPLATES = {
     { id: 'w_regular', text: 'Làm khách quen vui lòng {n} lần', icon: '💌', event: 'regular', n: [1, 2, 3] },
     { id: 'w_help', text: 'Tưới giúp bạn bè {n} lần', icon: '👥', event: 'help', n: [1, 3, 5], online: true },
     { id: 'w_newcolor', text: 'Khám phá {n} màu hoa mới', icon: '📖', event: 'newcolor', n: [1, 1, 2], minLevel: 3 },
+    { id: 'w_fish', text: 'Câu được {n} con cá', icon: '🎣', event: 'fish', n: [15, 25, 40], flag: 'co_fish' },
+    { id: 'w_fishrare', text: 'Câu được {n} con cá bậc Hiếm trở lên', icon: '🐠', event: 'fishrare', n: [2, 3, 5], flag: 'co_fish' },
     { id: 'w_order', text: 'Giao {n} đơn hàng lớn', icon: '📦', event: 'order', n: [1, 2, 3], minLevel: 3 },
   ],
 };

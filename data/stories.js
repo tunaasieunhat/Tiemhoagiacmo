@@ -27,6 +27,72 @@ export const REACTION = {
 };
 
 export const BONDS = {
+  // ---------------------------------------------------------------- CỒN LẶNG (GĐ22)
+  chu_luoi: {
+    birthday: { season: 'dong', day: 4 },
+    gifts: { love: ['saltdaisy', 'daisy:white', 'lily:white'], like: ['tone:natural', 'meaning:longing', 'sealavender'], dislike: ['tone:warm'], hate: ['meaning:congrats'] },
+    giftLines: {
+      love: '...Trắng. (Ông cầm bông hoa rất lâu.) Để đó. Chiều tao mang ra bến.',
+      like: 'Ờ. Cắm vô cái vỏ ốc trên bàn kia.',
+      neutral: 'Ừ.',
+      dislike: 'Chói. Ở đây không ai mặc màu đó.',
+      hate: 'Mừng cái gì. Cầm về.',
+    },
+    rewards: {
+      3: { msg: 'Chú Lưới ném cho bạn một túi mồi “câu dở thì phải có mồi ngon”. (Tính ra tiền.)', coins: 600 },
+      5: { msg: 'Chú Lưới chỉ cho bạn chỗ ông giấu tiền bán cá ba chục năm chưa tiêu, bảo cầm lấy một nắm.', coins: 2000 },
+      7: { msg: 'Chú Lưới đưa bạn mớ hạt cúc muối mọc hoang sau chòi.', seeds: { 'saltdaisy:white': 6 }, coins: 1000 },
+      10: { msg: 'Chú Lưới gọi bạn là “đứa nhỏ nhà tao”. Ông cho bạn hạt cúc muối xanh sóng ông nhặt ngoài rặng đá.', seeds: { 'saltdaisy:blue': 4 }, coins: 2500, xp: 100 },
+    },
+    talks: [
+      { say: 'Mày câu kiểu đó thì tới mùa sau cũng chưa dính.', ch: [
+        { t: 'Chú chỉ cháu với.', fp: 18, r: 'Thả lỏng cổ tay. Cá nó giật thì mày nhường. Nó mệt thì mày kéo. Vậy thôi.' },
+        { t: 'Cháu câu được khối con rồi đó chú.', fp: 10, r: 'Cá cơm thì đừng có kể.' },
+      ] },
+      { say: 'Con Nhum nó nói nhiều. Mày đừng có chiều nó.', ch: [
+        { t: 'Em ấy vui tính mà chú.', fp: 18, r: '...Ừ. Nhà này có mình nó biết cười.' },
+        { t: 'Chú thương em ấy lắm, cháu thấy.', fp: 20, r: 'Ai nói mày. ...Biển cho thì tao giữ. Vậy thôi.' },
+      ] },
+      { say: 'Ngày rằm đừng ra bến.', ch: [
+        { t: 'Sao vậy chú?', fp: 8, r: 'Nói đừng là đừng.' },
+        { t: 'Dạ. Cháu ở trong chòi phụ Nhum vá lưới.', fp: 18, r: 'Ờ. Được.' },
+      ] },
+    ],
+    events: [],
+  },
+  nhum: {
+    birthday: { season: 'ha', day: 5 },
+    gifts: { love: ['hydrangea:blue', 'daisy:blue', 'saltdaisy:blue'], like: ['tone:cool', 'meaning:hope', 'cosmos'], dislike: ['lavender'], hate: ['rose:black'] },
+    giftLines: {
+      love: 'Màu xanh! Chị ơi biển thiệt nó màu này hả? Cháu cất dưới gối nha!',
+      like: 'Thơm ghê. Ở đây chỉ có mùi cá với mùi sương thôi à.',
+      neutral: 'Cháu cảm ơn chị.',
+      dislike: 'Mùi này giống thuốc xoa lưng của ông quá...',
+      hate: 'Đen thui như đáy đầm. Cháu sợ.',
+    },
+    rewards: {
+      3: { msg: 'Nhum dúi cho bạn mớ phân cá nó tự ủ: “bón hoa tốt lắm, mà hơi hôi”.', items: { fertilizer: 10 } },
+      5: { msg: 'Nhum chia cho bạn tiền lời quầy cá tuần này.', coins: 1500 },
+      7: { msg: 'Nhum tặng bạn hạt muống biển nó nhặt được trong bụng một con cá.', seeds: { 'beachglory:lilac': 3 }, coins: 800 },
+      10: { msg: 'Nhum gọi bạn là chị ruột. Nó tặng bạn nguyên hũ tiền để dành mua thuyền, bảo “chị giữ giùm, cháu sợ xài mất”.', coins: 3000, xp: 100 },
+    },
+    talks: [
+      { say: 'Chị ơi, bên ngoài sương người ta có đông không?', ch: [
+        { t: 'Đông lắm. Mai mốt chị dắt em sang chơi.', fp: 20, r: 'Thiệt hả! Cháu phải xin ông đã. Mà chắc ông không cho đâu...' },
+        { t: 'Cũng vừa vừa thôi.', fp: 10, r: 'Vừa vừa là mấy người? Hơn hai là đông rồi đó chị.' },
+      ] },
+      { say: 'Sổ cá của cháu ghi được bốn chục loài rồi. Mà cháu chưa câu được con nào bự hết.', ch: [
+        { t: 'Để chị câu con bự cho em đo.', fp: 18, r: 'Hứa nha! Cháu có sẵn thước dây nè.' },
+        { t: 'Em giỏi vậy rồi còn gì.', fp: 15, r: 'Hì. Ông không khen đâu, mà ông có lén coi sổ cháu.' },
+      ] },
+      { say: 'Con cá gỗ này cháu đeo từ nhỏ. Chị thấy nó giống con gì?', ch: [
+        { t: 'Giống một con cá đang bơi về nhà.', fp: 20, r: 'Cháu cũng nghĩ vậy. Nó cứ quay đầu về phía bến hoài.' },
+        { t: 'Cá chép?', fp: 8, r: 'Không phải! Biển làm gì có cá chép chị.' },
+      ] },
+    ],
+    events: [],
+  },
+
   // ---------------------------------------------------------------- MŨI ÉN (GĐ21)
   ong_hai: {
     birthday: { season: 'thu', day: 3 },

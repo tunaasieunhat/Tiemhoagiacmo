@@ -25,6 +25,9 @@ export const HOUSES = {
   hai: { name: 'Chòi gác đèn của Ông Hải', owner: 'ong_hai', x: 65.2, z: -3.5, style: { wall: '#f4f1ea', roof: '#c8554a', trim: '#8a6a55' } },
   sao: { name: 'Nhà Bà Sáo', owner: 'ba_sao', x: 57.5, z: 10.5, style: { wall: '#f6ead8', roof: '#b9a4c9', trim: '#a87458', flowers: '#c9b8a0' } },
   trieu: { name: 'Nhà Triều', owner: 'trieu', x: 67.5, z: 12, style: { wall: '#eaf3f5', roof: '#7fb3c9', trim: '#7c6a8f' } },
+  // (GĐ22) Cồn Lặng — làng chài trong sương phía tây
+  luoi: { name: 'Chòi của Chú Lưới', owner: 'chu_luoi', x: -43.5, z: 0.5, style: { wall: '#e9e4da', roof: '#6f7f8f', trim: '#7a6a5a' } },
+  nhum: { name: 'Chòi cá của Nhum', owner: 'nhum', x: -36.5, z: 11, style: { wall: '#f1ede2', roof: '#8fb7b0', trim: '#8a6a55' } },
   school: { name: 'Trường làng', owner: null, x: -11.4, z: 37.6, style: { wall: '#fff3e0', roof: '#e8384f', trim: '#ffffff', school: true } },
 };
 
@@ -34,6 +37,17 @@ export const NEW_VILLAGERS = {
     name: 'Cô Mai', self: 'cô', role: 'Cô giáo dạy văn',
     look: { skin: '#f8d4b8', hair: '#3b2a2a', outfit: '#f6a6b9', hat: null, bun: true },
     bio: 'Cô giáo dạy văn của trường làng, thích làm thơ và chăm giàn hoa giấy trước nhà. Hình như cô biết thầy Duy hay nhìn trộm mình...',
+  },
+  // (GĐ22) hai ông cháu ở Cồn Lặng
+  chu_luoi: {
+    name: 'Chú Lưới', self: 'tao', role: 'Ngư dân cuối cùng của Cồn Lặng',
+    look: { skin: '#c99670', hair: '#9a9a9a', outfit: '#5f7286', hat: '#b8a888' },
+    bio: 'Ít nói, câu cá giỏi nhất vùng. Đêm nào cũng ra cầu tàu vá một tấm lưới không hề rách.',
+  },
+  nhum: {
+    name: 'Nhum', self: 'cháu', role: 'Cô bé trông quầy cá',
+    look: { skin: '#f0c8a4', hair: '#4a3a30', outfit: '#f6c98a', hat: null },
+    bio: 'Mười hai tuổi, lớn lên trong sương, chưa từng thấy biển xanh. Mê câu cá và ghi tên từng con vào sổ. Trên cổ lúc nào cũng đeo một con cá gỗ.',
   },
   // (GĐ21) ba người còn ở lại Mũi Én
   ong_hai: {
@@ -67,6 +81,9 @@ export const REGULAR_ROLES = {
 };
 
 // Những người sẽ rời làng khi xong cốt truyện (vd Bà Tư lên thành phố) — Tết thì về chơi
+// (GĐ22) Người rời đảo hẳn khi cốt truyện có dấu này (vd chú Lưới ở kết "Ở lại trong sương")
+export const GONE_WHEN = { chu_luoi: { flag: 'co_stay', note: 'Thuyền của chú Lưới không còn ở bến. Chiếc áo tơi vẫn vắt trên cọc cầu tàu.' } };
+
 export const LEAVES_AFTER_STORY = { ba_tu: { holdByStory: true, hearts: 5, back: ['tet'], note: 'Bà đã lên thành phố ở với con trai. Tết bà sẽ về thăm làng!' } };
 
 // Việc làm: icon hiện trên đầu, outdoor = ngoài trời (trời mưa / bão thì về nhà), anim = kiểu cử động
@@ -86,6 +103,8 @@ export const ACTIVITIES = {
   play: { name: 'Đang chơi đùa', icon: '🎈', outdoor: true, anim: 'play' },
   watch: { name: 'Đang ngắm hoa', icon: '🌸', outdoor: true, anim: 'idle' },
   stroll: { name: 'Đang đi dạo ngắm biển', icon: '🌊', outdoor: true, anim: 'idle' },
+  net: { name: 'Đang vá lưới', icon: '🕸️', anim: 'work' },
+  fishsell: { name: 'Đang trông quầy cá', icon: '🐟', anim: 'idle' },
   lamp: { name: 'Đang trông đèn hải đăng', icon: '💡', anim: 'idle' },
   jars: { name: 'Đang hứng sương vào hũ', icon: '🫙', outdoor: true, anim: 'water' },
   sell: { name: 'Đang bán hoa khô', icon: '💐', anim: 'idle' },
@@ -108,6 +127,12 @@ export const SPOTS = {
   plaza_s: { x: -0.6, z: 37.2, rot: 180, node: 'S' },
   fence: { x: 6.6, z: 8.2, rot: 300, node: 'm0' },
   shop_win: { x: 12.4, z: -1.3, rot: 190, node: 'e1' },
+  // (GĐ22) Cồn Lặng
+  co_pier: { x: -40.2, z: 16.4, rot: 0, node: 'co_pier' },
+  co_pier2: { x: -41.9, z: 16.9, rot: 0, node: 'co_pier' },
+  co_net: { x: -44.4, z: 9.4, rot: 120, node: 'co_c' },
+  co_stall: { x: -35.2, z: 4.6, rot: 150, node: 'co_in' },
+  door_luoi: { node: 'd_luoi', door: 'luoi' }, door_nhum: { node: 'd_nhum', door: 'nhum' },
   // (GĐ21) Mũi Én
   en_light: { x: 66.6, z: -0.4, rot: 215, node: 'd_hai' },
   en_dock: { x: 52.4, z: 6.9, rot: 270, node: 'en_dock' },
@@ -128,6 +153,9 @@ export const SCHEDULES = {
   co_mai: [[0, 'home', 'sleep'], [6, 'mai_garden', 'water'], [7, 'door_school', 'teach'], [11.5, 'home', 'home'], [13, 'door_school', 'teach'], [16.5, 'well', 'chat'], [18.5, 'cafe_t', 'coffee'], [20, 'home', 'home'], [22, 'home', 'sleep']],
   be_su: [[0, 'home', 'sleep'], [7, 'door_school', 'study'], [11, 'home', 'home'], [13, 'swing_su', 'play'], [15.5, 'plaza_s', 'play'], [17, 'shop_win', 'watch'], [18.5, 'home', 'home'], [20.5, 'home', 'sleep']],
   co_ngan: [[0, 'home', 'sleep'], [6, 'cafe_c', 'serve'], [12, 'home', 'home'], [13.5, 'cafe_c', 'serve'], [17, 'dock', 'stroll'], [18.5, 'cafe_c', 'serve'], [21, 'home', 'home'], [22.5, 'home', 'sleep']],
+  // (GĐ22) Cồn Lặng
+  chu_luoi: [[0, 'home', 'sleep'], [4.5, 'co_pier', 'fish'], [9, 'co_net', 'net'], [12, 'home', 'home'], [14, 'co_net', 'net'], [17, 'co_pier', 'fish'], [20.5, 'home', 'home'], [22, 'home', 'sleep']],
+  nhum: [[0, 'home', 'sleep'], [6, 'co_pier2', 'fish'], [9.5, 'co_stall', 'fishsell'], [12.5, 'home', 'home'], [14, 'co_stall', 'fishsell'], [17.5, 'co_pier2', 'fish'], [19.5, 'home', 'home'], [21, 'home', 'sleep']],
   // (GĐ21) Mũi Én
   ong_hai: [[0, 'en_light', 'lamp'], [5.5, 'home', 'sleep'], [10, 'en_dock', 'fish'], [13, 'home', 'home'], [15, 'en_bench', 'read'], [17.5, 'en_light', 'lamp']],
   trieu: [[0, 'home', 'sleep'], [5.5, 'en_jars', 'jars'], [9, 'en_bench', 'ledger'], [11.5, 'home', 'home'], [13.5, 'en_dock', 'stroll'], [16.5, 'en_jars', 'jars'], [19.5, 'home', 'home'], [22, 'home', 'sleep']],
@@ -144,6 +172,8 @@ export const NODES = {
   s1: { x: 0, z: 43 }, pier: { x: 0, z: 46.6 },
   d_tu: { x: -6.0, z: 39.9 }, d_duy: { x: -7.5, z: 31.6 }, d_mai: { x: -3.9, z: 26.4 }, d_ba: { x: 4.8, z: 26.3 },
   d_su: { x: 7.5, z: 32.0 }, d_cafe: { x: 5.9, z: 39.5 }, d_school: { x: -9.4, z: 37.0 },
+  // (GĐ22) Cồn Lặng
+  co_in: { x: -32.2, z: 6.2 }, co_c: { x: -39.6, z: 7.6 }, co_pier: { x: -41, z: 15.6 }, d_luoi: { x: -41.6, z: 2.0 }, d_nhum: { x: -34.6, z: 12.2 },
   // (GĐ21) Mũi Én
   en_dock: { x: 53.2, z: 6.2 }, en_c: { x: 60.4, z: 6.2 }, en_n: { x: 62.6, z: -1.6 },
   d_hai: { x: 64.6, z: -1.4 }, d_sao: { x: 56.4, z: 8.9 }, d_trieu: { x: 65.4, z: 11.2 },
@@ -154,6 +184,8 @@ export const EDGES = [
   ['S', 's1', true], ['s1', 'pier', true],
   ['SW', 'd_tu', true], ['W', 'd_duy', true], ['NW', 'd_mai', true], ['entry', 'd_mai', true], ['NE', 'd_ba', true], ['entry', 'd_ba', true],
   ['E', 'd_su', true], ['SE', 'd_cafe', true], ['W', 'd_school', true], ['SW', 'd_school', false],
+  // (GĐ22) Cồn Lặng
+  ['co_in', 'co_c', true], ['co_c', 'co_pier', true], ['co_c', 'd_luoi', true], ['co_in', 'd_nhum', true],
   // (GĐ21) Mũi Én
   ['en_dock', 'en_c', true], ['en_c', 'en_n', true], ['en_n', 'd_hai', true], ['en_c', 'd_sao', true], ['en_c', 'd_trieu', true],
 ];
@@ -179,6 +211,14 @@ export const LINES = {
   co_ngan: {
     any: ['Ghé quán Mây làm ly cà phê muối không? Cô mời!', 'Quán cô thích cắm hoa đồng nội, mộc mạc mà xinh.', 'Ngồi đây nghe sóng biển là quên hết mệt mỏi.'],
     morning: ['Mẻ cà phê đầu tiên trong ngày thơm nhất đấy.'], evening: ['Chiều nào cô cũng ra cầu tàu ngắm hoàng hôn một lúc.'], rain: ['Mưa thế này khách vào trú mưa đông lắm.'],
+  },
+  chu_luoi: {
+    any: ['Muốn gì.', 'Cá bến này sáng với chiều mới ăn mồi. Trưa câu chỉ tổ phí.', 'Lưới phải vá hoài. Không vá là nó thủng.'],
+    morning: ['Triều đang xuống. Ra rặng đá thì coi chừng trơn.'], evening: ['Tối rồi. Về bên kia đi.'], rain: ['Mưa thì cá lên. Mà mày ướt thì ráng chịu.'],
+  },
+  nhum: {
+    any: ['Chị câu được con gì rồi? Cho cháu ghi vô sổ với!', 'Mồi cháu bán rẻ nhất vùng đó. Tại cả vùng có mình cháu bán.', 'Bên ngoài sương có gì nữa hả chị? Kể cháu nghe đi.'],
+    morning: ['Sáng sớm cá ăn mồi dữ lắm, chị quăng lẹ đi!'], evening: ['Chiều rồi, cháu ra bến câu với ông đây.'], rain: ['Mưa trong sương nghe như ai rải gạo á chị.'],
   },
   ong_hai: {
     any: ['Thuyền từ Đảo Mây sang đấy à? Lâu lắm rồi bến này mới có thuyền lạ.', 'Đèn thì phải sáng. Người đi biển không cần biết ai thắp, chỉ cần biết còn có chỗ để về.', 'Một trăm hai mươi bậc. Ông đếm mỗi tối, chưa lần nào thiếu.'],

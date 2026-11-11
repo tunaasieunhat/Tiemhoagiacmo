@@ -388,6 +388,27 @@ Object.assign(BUILDERS, {
   },
 });
 
+// (GĐ22) bể cá cảnh: 3 con cá bơi vòng (dùng hiệu ứng orbit có sẵn)
+BUILDERS.fishtank = function fishtank() {
+  const g = new THREE.Group();
+  g.add(at(rbox(1.3, 0.5, 0.8, '#a88a6c', 0.06), 0, 0.25, 0));
+  const glass = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.7), new THREE.MeshStandardMaterial({ color: '#bfe9ff', transparent: true, opacity: 0.4, roughness: 0.2 }));
+  glass.position.y = 0.92; g.add(glass);
+  g.add(at(rbox(1.3, 0.06, 0.8, '#8a6f55', 0.02), 0, 1.35, 0));
+  const ring = new THREE.Group(); ring.position.y = 0.92;
+  ['#ff9f5a', '#ffd34e', '#f47a93'].forEach((c, i) => {
+    const f = new THREE.Group();
+    const body = sphere(0.09, c, 8); body.scale.set(1.6, 0.9, 0.6); f.add(body);
+    const tail = sphere(0.06, c, 6); tail.scale.set(0.5, 1.1, 0.3); tail.position.x = -0.15; f.add(tail);
+    const a = (i / 3) * Math.PI * 2;
+    f.position.set(Math.cos(a) * 0.36, (i - 1) * 0.16, Math.sin(a) * 0.2); f.rotation.y = -a + Math.PI / 2;
+    ring.add(f);
+  });
+  g.add(ring);
+  g.userData.orbit = ring;
+  return g;
+};
+
 export function buildDecor(id) {
   const g = (BUILDERS[id] || BUILDERS.pot)();
   g.traverse((o) => { if (o.isMesh) o.castShadow = true; });

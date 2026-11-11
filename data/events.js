@@ -29,6 +29,7 @@ export const EVENT_POINTS = {
   bouquetTheme: 6,  // giao bó hoa có hoa chủ đề
   perfect: 3,       // khách cực kỳ hài lòng
   bug: 2,           // bắt 1 con sâu
+  fish: 2,          // câu được 1 con cá (GĐ22)
   order: 15,        // giao 1 đơn hàng lớn
   favor: 5,         // giúp dân làng (≥1⭐)
 };

@@ -31,6 +31,8 @@ export const EN_PLOTS = {
 };
 
 export const EN_PEOPLE = ['ong_hai', 'trieu', 'ba_sao'];
+// (GĐ22) người Cồn Lặng: Sổ tay ẩn tới khi bạn đã vào sương (cảnh l1_path)
+export const CO_PEOPLE = ['chu_luoi', 'nhum'];
 
 /** Lô đất này có nằm ở Mũi Én không */
 export const isEnPlot = (plot) => !!(plot && plot.parcel && EN_PLOTS[plot.parcel]);

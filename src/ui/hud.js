@@ -18,7 +18,7 @@ import { FAVOR_RULES, DIFFICULTY } from '../../data/minigames.js';
 import * as favorsSys from '../systems/favors.js';
 import { FRIEND, REACTION, BONDS } from '../../data/stories.js';
 import { DECOR as DECOR_ALL } from '../../data/decor.js';
-import { ACTIVITIES, HOUSES, LEAVES_AFTER_STORY, SPOTS } from '../../data/village.js';
+import { ACTIVITIES, HOUSES, LEAVES_AFTER_STORY, GONE_WHEN, SPOTS } from '../../data/village.js';
 import { isNative, openExternal } from '../online/native.js';
 import { ONLINE } from '../../data/online.js';
 import { TUTORIAL } from '../game.js';
@@ -47,6 +47,9 @@ import { wholesalePrice, tierInfo } from '../systems/shop.js';
 import { ZONES, PLOT_SLOTS } from '../render/world.js';
 import { GAME_VERSION, GAME_STAGE } from '../version.js';
 import { Cinema } from './cinema.js';
+import { FishingUI } from './fishingGame.js';
+import * as fishSys from '../systems/fishing.js';
+import { FISH, FISH_RULES, FISH_SPOTS, BAITS, RODS, GEAR } from '../../data/fishing.js';
 import * as storySys from '../systems/story.js';
 import { STORY_RULES, BUDS } from '../../data/story.js';
 
@@ -126,6 +129,10 @@ export class Hud {
     em.on('story-chapter', (e) => { if (this.modal) this.afterClose = () => this.showChapterDone(e); else this.showChapterDone(e); });
     em.on('refresh', () => this.maybeAutoStory());
     em.on('buds', () => this.openBuds());
+    // GĐ22: câu cá
+    this.fishing = new FishingUI(this);
+    em.on('fish', ({ id }) => this.openFish(id));
+    em.on('fishstall', () => this.openFishStall());
     em.on('sync', (s) => this.updateSync(s));
     this.updateClock(game.clock);
     this.updateToolbar();
@@ -228,6 +235,8 @@ export class Hud {
     if (rk) { this.rank.onAction(rk.dataset.rk, rk); return; }
     const ld = e.target.closest('[data-ld]');
     if (ld) { this.onLandAct(ld); return; }
+    const fh = e.target.closest('[data-fh]');
+    if (fh) { this.onFishStall(fh); return; }
     const bd = e.target.closest('[data-bd]');
     if (bd) { this.onBudAct(bd); return; }
     const vg = e.target.closest('[data-vg]');
@@ -301,6 +310,7 @@ export class Hud {
       case 'go-lab': this.openLab(); break;
       case 'go-village': this.closeModal(); g.goVillage(); break;
       case 'go-en': this.closeModal(); g.sail(); break;
+      case 'fish-stall': this.openFishStall(); break;
       case 'see-villager': this.closeModal(); g.focusVillager(b.dataset.id); break;
       case 'knock': this.openVillager(b.dataset.id); break;
       case 'friends': this.friends.open(); break;
@@ -523,7 +533,7 @@ export class Hud {
     const g = this.game;
     if (g.cine || this.modal || g.visit || g.decorMode || this.autoBusy) return;
     if (performance.now() - this.bootAt < STORY_RULES.autoDelay * 1000) return;
-    if (document.getElementById('minigame') || document.getElementById('force-update')) return;
+    if (document.getElementById('minigame') || document.getElementById('force-update') || document.getElementById('fishing')) return;
     const t = g.storyTrig.find((x) => x.via === 'auto');
     if (!t) return;
     this.autoBusy = true;
@@ -535,6 +545,77 @@ export class Hud {
     if (b) b.classList.toggle('hidden', !this.game.storyTrig.length);
     // nút ⛵ chỉ hiện khi đã có thuyền (GĐ21)
     $('[data-act="go-en"]', this.root)?.classList.toggle('hidden', !storySys.has(this.game.save, 'boat_ready'));
+  }
+
+  // ---------- 🎣 câu cá (GĐ22) ----------
+  openFish(spotId) {
+    const g = this.game;
+    if (g.cine || g.visit) return;
+    if (!storySys.has(g.save, 'co_fish')) { this.toast('Bạn chưa biết câu cá. Theo cốt truyện 🎣 Cồn Lặng trong 📖 Sổ tay nhé!', 'info'); return; }
+    this.fishing.open(spotId);
+  }
+
+  /** Quầy cá của Nhum: mua mồi, cần, nâng cấp; đổi cá lấy tiền / hạt giống / phân bón */
+  openFishStall(tab) {
+    const g = this.game, s = g.save;
+    if (!storySys.has(s, 'co_fish')) { this.toast('Quầy cá chưa mở. Nhum còn đang dọn hàng.', 'info'); return; }
+    if (tab) this.fishTab = tab;
+    const cur = this.fishTab || 'shop';
+    const st = fishSys.F(s);
+    const tabs = `<div class="mk-tabs"><button class="${cur === 'shop' ? 'on' : ''}" data-fh="tab" data-id="shop">🪱 Mồi & đồ câu</button><button class="${cur === 'bag' ? 'on' : ''}" data-fh="tab" data-id="bag">🐟 Đổi cá <span class="pill">${fishSys.bagCount(s)}</span></button></div>`;
+    let body;
+    if (cur === 'shop') {
+      const baits = Object.entries(BAITS).map(([id, b]) => `<div class="mk-item"><div class="mk-icon">${b.icon}</div><div class="mk-info"><b>${esc(b.name)} <small class="muted">đang có ${st.bait[id] || 0}</small></b><small>${esc(b.desc)}</small></div>
+        <div class="mk-buy"><span class="price">${b.price} 💰</span><div class="row-btns">${[5, 20].map((n) => `<button class="btn ${s.player.coins < b.price * n ? 'disabled' : 'primary'}" data-fh="bait" data-id="${id}" data-n="${n}">Mua ${n}</button>`).join('')}</div></div></div>`).join('');
+      const rods = Object.entries(RODS).filter(([id, r]) => !r.need || st.rods.includes(id)).map(([id, r]) => {
+        const own = st.rods.includes(id), using = st.rod === id;
+        return `<div class="mk-item ${using ? 'done' : ''}"><div class="mk-icon">${r.icon}</div><div class="mk-info"><b>${esc(r.name)}</b><small>${esc(r.desc)}</small></div>
+          <div class="mk-buy">${using ? '<span class="maxed">✔ Đang dùng</span>' : own ? `<button class="btn" data-fh="rod" data-id="${id}">Dùng</button>` : `<span class="price">${r.price.toLocaleString('vi-VN')} 💰</span><button class="btn ${s.player.coins < r.price ? 'disabled' : 'primary'}" data-fh="rod" data-id="${id}">Mua</button>`}</div></div>`;
+      }).join('');
+      const gear = Object.entries(GEAR).map(([id, gr]) => {
+        const lv = st[id] || 0, max = lv >= gr.prices.length;
+        return `<div class="mk-item"><div class="mk-icon">${gr.icon}</div><div class="mk-info"><b>${esc(gr.name)} <small class="muted">bậc ${lv}/${gr.prices.length}</small></b><small>${esc(gr.desc)}</small></div>
+          <div class="mk-buy">${max ? '<span class="maxed">✔ Tối đa</span>' : `<span class="price">${gr.prices[lv].toLocaleString('vi-VN')} 💰</span><button class="btn ${s.player.coins < gr.prices[lv] ? 'disabled' : 'primary'}" data-fh="gear" data-id="${id}">Nâng</button>`}</div></div>`;
+      }).join('');
+      body = `<h3>Mồi câu <small class="muted">· mỗi lần quăng tốn 1 mồi</small></h3><div class="mk-body">${baits}</div><h3>Cần câu</h3><div class="mk-body">${rods}</div><h3>Nâng cấp</h3><div class="mk-body">${gear}</div>`;
+    } else {
+      const ids = fishSys.FISH_IDS.filter((id) => fishSys.countOf(s, id) > 0);
+      const rows = ids.map((id) => {
+        const f = FISH[id], n = fishSys.countOf(s, id), d = fishSys.seedDeal(id);
+        const keys = Object.keys(st.bag).filter((k) => fishSys.parseFishKey(k).id === id);
+        const value = keys.reduce((a, k) => a + fishSys.priceOf(k) * st.bag[k], 0);
+        const detail = keys.map((k) => { const p = fishSys.parseFishKey(k); return `${p.shiny ? '✨' : ''}${'★'.repeat(p.q)}×${st.bag[k]}`; }).join(' · ');
+        return `<div class="mk-item fh-fish" style="--tc:${FISH_RULES.tierColors[f.t]}"><div class="mk-icon">${f.icon}</div>
+          <div class="mk-info"><b>${esc(f.name)} <small class="fh-tier">${FISH_RULES.tierNames[f.t]}</small></b><small>Có ${n} con · ${detail}</small></div>
+          <div class="fh-acts"><button class="btn primary" data-fh="sell" data-id="${id}">💰 Bán hết · ${value.toLocaleString('vi-VN')}</button>
+            <button class="btn ${n >= d.cost ? '' : 'disabled'}" data-fh="seed" data-id="${id}">🌱 ${d.cost} con → ${d.give} hạt ${esc(d.name)}</button>
+            <button class="btn" data-fh="fert" data-id="${id}">🧪 Ủ hết → ${FISH_RULES.fertPer[f.t] * n} phân</button></div></div>`;
+      }).join('');
+      body = ids.length ? `<div class="row-btns"><button class="btn primary" data-fh="sellall">💰 Bán tất cả · ${fishSys.bagValue(s).toLocaleString('vi-VN')} 💰</button></div><div class="mk-body">${rows}</div>
+        <p class="muted small">Mỗi loài cá đổi ra một loại hạt nhất định; cá Hiếm trở lên đổi được hạt màu hiếm không bán ở Chợ. Đổi hạt và ủ phân lấy con ít sao trước, giữ con đẹp lại.</p>`
+        : '<div class="empty-shop">🧺<p>Giỏ cá đang trống. Ra mép nước, chạm 🎣 để câu nhé!</p></div>';
+    }
+    this.openModal('fishstall', `<h2>🐟 Quầy cá của Nhum</h2><div class="mk-wallet">💰 ${s.player.coins.toLocaleString('vi-VN')}</div>${tabs}${body}`, 'wide');
+  }
+
+  onFishStall(el) {
+    const g = this.game, s = g.save, id = el.dataset.id;
+    if (el.classList.contains('disabled')) { g.toast(el.dataset.fh === 'seed' ? 'Chưa đủ số cá để đổi hạt' : 'Không đủ tiền', 'warn'); return; }
+    const top = this.scrollBox()?.scrollTop || 0;
+    switch (el.dataset.fh) {
+      case 'tab': this.fishTab = id; break;
+      case 'bait': g.afterFishTrade(fishSys.buyBait(s, id, +el.dataset.n)); break;
+      case 'rod': g.afterFishTrade(fishSys.buyRod(s, id)); break;
+      case 'gear': g.afterFishTrade(fishSys.buyGear(s, id)); break;
+      case 'sell': { let coins = 0, n = 0; for (const k of Object.keys(fishSys.F(s).bag).filter((q) => fishSys.parseFishKey(q).id === id)) { const r = fishSys.sellFish(s, k); coins += r.coins || 0; n += r.n || 0; } g.afterFishTrade({ ok: n > 0, coins, n }); break; }
+      case 'sellall': g.afterFishTrade(fishSys.sellAll(s)); break;
+      case 'seed': g.afterFishTrade(fishSys.tradeSeed(s, id)); break;
+      case 'fert': g.afterFishTrade(fishSys.tradeFert(s, id, Infinity)); break;
+      default:
+    }
+    this.openFishStall();
+    const box = this.scrollBox();
+    if (box && el.dataset.fh !== 'tab') box.scrollTop = top;
   }
 
   /** 🌱 Kệ Nụ Mộng (GĐ20B): mỗi nụ đang đợi gì; hoa đã nở thì Trao lại hoặc Giữ ở tiệm */
@@ -583,8 +664,8 @@ export class Hud {
       wake: ['Kết thúc: Thức giấc', 'Bà Diệp đã tỉnh dậy và ngồi uống trà bên hiên tiệm mỗi ngày. Mơ đã về với bà.'],
       dream: ['Kết thúc: Mơ tiếp', 'Bà Diệp vẫn mơ dưới gốc Cây Mộng. Mơ ở lại trông tiệm cùng bạn, và bạn nhớ bà giùm cả làng.'],
       all: ['Kết thúc ẩn: Cả làng cùng mơ', 'Cả làng đã nhớ lại. Bà Diệp tỉnh dậy, Mơ vẫn ở đây, và trước hiên tiệm có thêm một ngọn đèn nhỏ không bao giờ tắt.'],
-    }[ch.id === 'c7' ? ending : null] || (ch.id === 'e5' ? ['Hết truyện: Cơn mưa đi lạc', storySys.has(this.game.save, 'en_off') ? 'Ngọn đèn Mũi Én đã tắt sau ba mươi năm, để người gác đèn được ngủ một giấc trọn.' : 'Ngọn đèn Mũi Én vẫn sáng, giờ là cho những con thuyền của người khác.'] : null);
-    const arcName = ch.arc === 'en' ? 'Mũi Én · ' : '';
+    }[ch.id === 'c7' ? ending : null] || (ch.id === 'l6' ? (storySys.has(this.game.save, 'co_clear') ? ['Kết thúc: Sương tan', 'Chú Lưới đã gặp lại con trai, một đêm. Sương tan hết, và mỗi chiều có một bông hoa trắng trên rặng đá.'] : ['Kết thúc: Ở lại trong sương', 'Chú Lưới đã đi theo con. Sương vẫn phủ Cồn Lặng, nhưng đêm nào Nhum cũng thắp đèn.']) : null) || (ch.id === 'e5' ? ['Hết truyện: Cơn mưa đi lạc', storySys.has(this.game.save, 'en_off') ? 'Ngọn đèn Mũi Én đã tắt sau ba mươi năm, để người gác đèn được ngủ một giấc trọn.' : 'Ngọn đèn Mũi Én vẫn sáng, giờ là cho những con thuyền của người khác.'] : null);
+    const arcName = ch.arc === 'en' ? 'Mũi Én · ' : ch.arc === 'lang' ? 'Cồn Lặng · ' : '';
     let nextHtml;
     if (!next || next.finished) nextHtml = `${END ? `<p class="fin">🌟 ${esc(END[0])}</p><p class="small">${esc(END[1])}</p>` : ''}<p class="muted small">Cảm ơn bạn đã đi hết câu chuyện cùng Mơ 💛 Vào 📖 Sổ tay › Cốt truyện, xem lại cảnh cuối để thử lựa chọn khác${ch.id !== 'c7' || ending === 'all' ? '' : ' (trao lại đủ 5 Hoa Mộng sẽ mở thêm một lựa chọn)'}.</p>`;
     else if (next.locked) nextHtml = `<p class="small">Chương ${next.ch.n} — <b>${esc(next.ch.title)}</b> mở khi: ${next.checks.map((c) => `${c.ok ? '✅' : '⬜'} ${esc(c.text)}`).join(' · ')}</p>`;
@@ -626,13 +707,15 @@ export class Hud {
     const parcelId = Object.keys(PARCELS).find((k) => PARCELS[k].owner === id && !landSys.ownsParcel(g.save, k));
     const landBtn = parcelId ? `<button class="btn wide" data-ld="open" data-id="${parcelId}">🗺️ Hỏi mua ${esc(PARCELS[parcelId].name.toLowerCase())}</button>` : '';
     // 📜 cốt truyện chính: người này có chuyện để hỏi ⇒ nút nổi bật ở trên cùng; câu chào đổi theo tiến độ truyện
-    const stTrig = meet.ok ? g.storyTrigger('villager', id) : null;
+    // (0.23) nút cốt truyện hiện cả khi người đó đang ở trong nhà (cảnh truyện sẽ mời họ ra cửa); chỉ ẩn khi họ vắng hẳn
+    const stTrig = !g.villagers.stateOf(id)?.state?.absent ? g.storyTrigger('villager', id) : null;
     const storyBtn = stTrig ? `<button class="btn primary glow wide story-btn" data-vg="story" data-id="${id}" data-scene="${stTrig.scene}">📜 ${esc(stTrig.label || 'Cốt truyện')}</button>` : '';
     const hello = storySys.storyLine(g.save, id) || greeting(id, ctx);
     this.openModal('villager', `
       <div class="vg-head">${avatarSVG(info.look, 64)}<div><h2>${esc(info.name)}${bday ? ' 🎂' : ''}</h2><small class="muted">${esc(info.role)}${info.home ? ` · ${esc(HOUSES[info.home].name)}` : ''}</small>${this.heartBar(id)}</div></div>
       <p class="vg-say">“${esc(hello)}”</p>
       ${storyBtn}
+      ${id === 'nhum' && storySys.has(g.save, 'co_fish') ? '<button class="btn wide" data-act="fish-stall">🐟 Mở quầy cá</button>' : ''}
       ${bday ? `<p class="bday">🎂 Hôm nay là <b>sinh nhật</b> của ${esc(info.name)}! Tặng quà được gấp đôi tình thân.</p>` : ''}
       <div class="vg-acts">
         <button class="btn ${ev ? 'primary glow' : 'primary'} ${!meet.ok || !canTalk ? 'disabled' : ''}" data-vg="talk" data-id="${id}">${ev ? `✨ ${esc(ev.title)}` : '💬 Trò chuyện'}${canTalk ? '' : ' ✓'}</button>
@@ -867,7 +950,7 @@ export class Hud {
       const o = hs.owner;
       const d = hs.state;
       let line;
-      if (d.absent && d.reason === 'moved') line = `✈️ ${esc(LEAVES_AFTER_STORY[o.id]?.note || 'Chủ nhà đã đi xa.')}`;
+      if (d.absent && d.reason === 'moved') line = `✈️ ${esc(GONE_WHEN[o.id]?.note || LEAVES_AFTER_STORY[o.id]?.note || 'Chủ nhà đã đi xa.')}`;
       else if (d.absent && d.reason === 'shop') line = `🌷 ${esc(o.name)} đang ghé tiệm hoa của bạn!`;
       else if (hs.atHome) line = d.act === 'sleep' ? `💤 ${esc(o.name)} đang ngủ, nhẹ nhàng thôi nhé.` : `🏠 ${esc(o.name)} đang ở nhà.`;
       else line = `🚶 Chủ nhà đi vắng — ${hs.act ? `${hs.act.icon} ${esc(hs.act.name.toLowerCase())}` : 'đang ở ngoài'}.`;
@@ -879,7 +962,8 @@ export class Hud {
       if (nearby) line = `${hs.act ? hs.act.icon : '👋'} ${esc(o.name)} đang ở ngay trước ${esc(hs.house.name)}${hs.act ? ` — ${esc(hs.act.name.toLowerCase())}` : ''}.`;
       body = `<div class="vg-head">${avatarSVG(o.look, 56)}<div><b>${esc(o.name)}</b><br><small class="muted">${esc(o.role)}</small></div></div>
         <p>${line}</p>${nearby ? `<button class="btn primary wide" data-act="knock" data-id="${esc(o.id)}">💬 Nói chuyện với ${esc(o.name)}</button>` : canSee ? `<button class="btn wide" data-act="see-villager" data-id="${esc(o.id)}">📍 Tìm ${esc(o.name)}</button>` : ''}
-        ${canKnock ? `<button class="btn primary wide" data-act="knock" data-id="${esc(o.id)}">🚪 Gõ cửa hỏi thăm</button>` : ''}`;
+        ${canKnock ? `<button class="btn primary wide" data-act="knock" data-id="${esc(o.id)}">🚪 Gõ cửa hỏi thăm</button>` : ''}
+        ${(() => { const st = !d.absent ? g.storyTrigger('villager', o.id) : null; return st ? `<button class="btn primary glow wide story-btn" data-vg="story" data-id="${esc(o.id)}" data-scene="${st.scene}">📜 ${esc(st.label || 'Cốt truyện')}</button>` : ''; })()}`;
     }
     this.openModal('house', `<h2>🏡 ${esc(hs.house.name)}</h2>${body}`);
   }

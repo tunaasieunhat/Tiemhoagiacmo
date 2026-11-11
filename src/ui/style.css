@@ -1309,3 +1309,63 @@ body.cine-sepia #game canvas { filter: sepia(.85) saturate(.75) contrast(.95) br
 .st-arc b { font-family: 'Baloo 2', inherit; font-size: 16px; }
 .st-arc small { color: var(--ink-soft); font-size: 12px; line-height: 1.35; }
 .m-notebook .mk-body > .st-arc { grid-column: 1 / -1; }
+
+
+/* ================= 🎣 CÂU CÁ (GĐ22) ================= */
+#fishing { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 10px calc(10px + var(--safe-right)) 10px calc(10px + var(--safe-left)); background: linear-gradient(rgba(40, 70, 90, .35), rgba(30, 60, 85, .6)); backdrop-filter: blur(2px); animation: fade .2s; user-select: none; -webkit-user-select: none; touch-action: none; }
+.fs-card { position: relative; width: min(520px, 100%); max-height: 100%; overflow: auto; background: var(--card); border: 2px solid var(--line); border-radius: 24px; padding: 14px 16px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 8px; }
+.fs-card h2, .fs-card h3, .fs-card p { margin: 0; }
+.fs-x { position: absolute; right: 10px; top: 10px; }
+.fs-note { background: #eef8ff; border-radius: 12px; padding: 6px 10px; font-size: 13px; font-weight: 700; }
+.fs-note.warn { background: #fff1e6; }
+.fs-baits { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 6px; }
+.fs-bait { display: flex; flex-direction: column; align-items: center; gap: 1px; font: inherit; color: inherit; background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 6px 4px; cursor: pointer; }
+.fs-bait span { font-size: 22px; line-height: 1.1; } .fs-bait b { font-size: 12px; } .fs-bait small { font-size: 11px; color: var(--ink-soft); font-weight: 800; }
+.fs-bait.on { border-color: #6fb7e0; background: #eef8ff; box-shadow: 0 0 0 3px rgba(111, 183, 224, .25); }
+.fs-bait.empty { opacity: .5; }
+.fs-card.play { background: linear-gradient(#dff3fb, #bfe3f3); border-color: #9fd6f0; align-items: center; text-align: center; min-height: 230px; justify-content: center; cursor: pointer; }
+.fs-hint { font-weight: 700; font-size: 14px; }
+.fs-kind { font-weight: 800; color: var(--tc); font-size: 13px; }
+.fs-power, .fs-tension { position: relative; width: min(420px, 100%); height: 30px; border-radius: 15px; background: #fff; border: 2px solid #9fd6f0; overflow: hidden; }
+.fs-gold { position: absolute; top: 0; bottom: 0; left: 78%; width: 17%; background: linear-gradient(#ffe38a, #f6c84a); }
+.fs-needle { position: absolute; top: -2px; bottom: -2px; width: 6px; margin-left: -3px; border-radius: 3px; background: #d0577a; box-shadow: 0 0 0 2px #fff; }
+.fs-zone { position: absolute; top: 0; bottom: 0; background: linear-gradient(#b6ecb0, #7cc27f); border-radius: 10px; transition: none; }
+.fs-tension.good { border-color: #7cc27f; } .fs-tension.danger { border-color: #ec6b6b; animation: nudge .25s linear infinite; }
+.fs-snap { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; font-weight: 800; color: #fff; background: #ec6b6b; }
+.fs-tension.snapped .fs-snap { display: flex; }
+.fs-prog { width: min(420px, 100%); height: 12px; border-radius: 6px; background: #fff; border: 2px solid #9fd6f0; overflow: hidden; }
+.fs-prog i { display: block; height: 100%; background: linear-gradient(90deg, #8fd3ff, #6fb7e0); }
+.fs-reelbtn { font-weight: 800; font-size: 15px; background: #fff; border: 2px solid #9fd6f0; border-radius: 999px; padding: 8px 22px; box-shadow: 0 4px 0 rgba(0, 0, 0, .1); }
+.fs-water { position: relative; width: min(420px, 100%); height: 130px; border-radius: 18px; background: linear-gradient(#9fd6f0, #6fb0d4); overflow: hidden; }
+.fs-water::before { content: ''; position: absolute; left: -10%; right: -10%; top: 38%; height: 4px; background: rgba(255, 255, 255, .5); border-radius: 2px; animation: fsWave 2.4s ease-in-out infinite; }
+.fs-bob { position: absolute; left: 50%; top: 28%; font-style: normal; font-size: 24px; transform: translateX(-50%); animation: fsBob 1.6s ease-in-out infinite; }
+.fs-shadow { position: absolute; left: 30%; top: 62%; width: 54px; height: 18px; border-radius: 50%; background: rgba(20, 50, 80, .28); animation: fsSwim 5s ease-in-out infinite; }
+.fs-bang { position: absolute; left: 50%; top: 2%; transform: translateX(-50%) scale(0); font-size: 30px; transition: transform .12s; }
+.fs-water.nib .fs-bob { animation: none; transform: translate(-50%, 7px); }
+.fs-water.bite .fs-bob { animation: none; transform: translate(-50%, 26px) scale(.8); opacity: .6; }
+.fs-water.bite .fs-bang { transform: translateX(-50%) scale(1); }
+.fs-res { display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; padding: 6px 0; --tc: #9b7b6c; }
+.fs-big { font-size: 54px; line-height: 1.1; animation: pop .35s ease-out; }
+.fs-big.shiny { filter: drop-shadow(0 0 10px #ffd34e) saturate(1.5); }
+.fs-res b { font-size: 18px; } .fs-res small { font-size: 13px; color: var(--ink-soft); font-weight: 700; }
+.fs-tier, .fh-tier, .fb-tier { color: var(--tc); font-weight: 800; }
+.fs-new { color: #2f8f5a !important; }
+.fh-fish { flex-wrap: wrap; border-left: 5px solid var(--tc); }
+.fh-acts { display: flex; flex-wrap: wrap; gap: 5px; width: 100%; }
+.fh-acts .btn { flex: 1 1 auto; padding: 5px 9px; font-size: 12px; }
+.fb-sec { grid-column: 1 / -1; } .fb-sec h3 { margin: 6px 0 4px; }
+.fb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 6px; }
+.fb-card { display: flex; flex-direction: column; gap: 1px; background: #fff; border: 2px solid var(--line); border-top: 4px solid var(--tc); border-radius: 12px; padding: 6px 8px; }
+.fb-card.unk { background: #f8f4ef; opacity: .8; }
+.fb-icon { font-size: 22px; line-height: 1.1; } .fb-card b { font-size: 13px; } .fb-card small { font-size: 11px; line-height: 1.3; }
+.cg-paper.bottle p { font-size: clamp(12px, 3vh, 16px); }
+.cg-paper.letter.bottle p:nth-child(7) { color: inherit; font-weight: 600; }
+@keyframes fsBob { 50% { transform: translate(-50%, 4px); } }
+@keyframes fsWave { 50% { transform: translateX(4%); } }
+@keyframes fsSwim { 50% { left: 55%; } }
+@media (max-height: 480px) {
+  .fs-card { padding: 9px 12px; gap: 5px; border-radius: 18px; width: min(600px, 100%); }
+  .fs-card.play { min-height: 0; }
+  .fs-water { height: 96px; } .fs-big { font-size: 38px; }
+  .fs-baits { grid-template-columns: repeat(5, 1fr); } .fs-bait span { font-size: 18px; } .fs-bait b { font-size: 10.5px; }
+}

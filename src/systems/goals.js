@@ -27,6 +27,8 @@ export function statValue(save, stat) {
     case 'hearts': return VILLAGER_IDS.reduce((a, id) => a + heartsOf(save, id), 0);
     case 'plots': return save.farm.plots.length;
     case 'beauty': return beautyOf(save.decor?.placed || []) + extraBeauty(save);
+    case 'fish': return save.fish?.caught || 0;
+    case 'fishSpecies': return Object.values(save.fish?.book || {}).filter((b) => b.n).length;
     case 'chapters': return Object.keys(save.story?.done || {}).length;
     case 'luckSpecies': return LUCK_FLOWER_IDS.filter((id) => (save.luck?.got?.[id] || 0) > 0).length;
     case 'level': return save.player.level;
@@ -129,6 +131,7 @@ export function addEventPoints(save, kind, ctx = {}, ms = Date.now()) {
   else if (kind === 'sell') pts = (ctx.items || []).reduce((a, it) => a + (inTheme(it.species) ? EVENT_POINTS.sellTheme * it.n : 0), 0)
     + (ctx.bouquet && (ctx.items || []).some((it) => inTheme(it.species)) ? EVENT_POINTS.bouquetTheme : 0)
     + (ctx.perfect ? EVENT_POINTS.perfect : 0);
+  else if (kind === 'fish') pts = EVENT_POINTS.fish || 0;
   else if (kind === 'bug') pts = EVENT_POINTS.bug * (theme.bugMult || 1);
   else if (kind === 'order') pts = EVENT_POINTS.order;
   else if (kind === 'favor') pts = EVENT_POINTS.favor;

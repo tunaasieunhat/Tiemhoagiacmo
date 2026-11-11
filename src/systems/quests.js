@@ -7,8 +7,8 @@ export function createQuestState() {
   return { day: 0, week: 0, daily: [], weekly: [] };
 }
 
-function pickQuests(list, count, rng, { level, online }) {
-  const pool = list.filter((t) => (!t.minLevel || level >= t.minLevel) && (!t.online || online));
+function pickQuests(list, count, rng, { level, online, flags = {} }) {
+  const pool = list.filter((t) => (!t.minLevel || level >= t.minLevel) && (!t.online || online) && (!t.flag || flags[t.flag]));
   const out = [];
   const used = new Set();
   while (out.length < count && used.size < pool.length) {
@@ -25,8 +25,8 @@ export function refreshQuests(save, day, { rng = Math.random, online = false } =
   const q = save.quests || (save.quests = createQuestState());
   const week = Math.floor((day - 1) / 7) + 1;
   let changed = false;
-  if (q.day !== day) { q.day = day; q.daily = pickQuests(QUEST_TEMPLATES.daily, QUESTS.perDay, rng, { level: save.player.level, online }); changed = true; }
-  if (q.week !== week) { q.week = week; q.weekly = pickQuests(QUEST_TEMPLATES.weekly, QUESTS.perWeek, rng, { level: save.player.level, online }); changed = true; }
+  if (q.day !== day) { q.day = day; q.daily = pickQuests(QUEST_TEMPLATES.daily, QUESTS.perDay, rng, { level: save.player.level, online, flags: save.story?.flags || {} }); changed = true; }
+  if (q.week !== week) { q.week = week; q.weekly = pickQuests(QUEST_TEMPLATES.weekly, QUESTS.perWeek, rng, { level: save.player.level, online, flags: save.story?.flags || {} }); changed = true; }
   return changed;
 }
 

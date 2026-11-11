@@ -27,6 +27,17 @@ export const MG_FX = {
 
 // Việc nhờ của từng người. game: needle | hammer | fishing | pour | math | rhyme | memory
 export const FAVORS = {
+  // (GĐ22) Cồn Lặng
+  chu_luoi: [
+    { id: 'luoi_hammer', game: 'hammer', title: 'Đóng lại ván cầu tàu', icon: '🔨',
+      ask: 'Ván cầu tàu long hết đinh. Tay tao run, đóng trật. Mày đóng.',
+      thanks: 'Được. Chắc đó.', fail: 'Đưa búa đây. Coi mà học.' },
+  ],
+  nhum: [
+    { id: 'nhum_math', game: 'math', title: 'Tính tiền quầy cá', icon: '🧮',
+      ask: 'Chị ơi cháu cộng sổ quầy cá hoài không ra. Ông mà biết cháu tính sai là ông không cho trông quầy nữa. Chị tính giùm cháu nha?',
+      thanks: 'Khớp rồi! Chị tính lẹ như máy luôn!', fail: 'Hic, vẫn lệch... thôi để cháu đếm lại từng con.' },
+  ],
   // (GĐ21) Mũi Én
   ong_hai: [
     { id: 'hai_fish', game: 'fishing', title: 'Câu bữa tối cho Ông Hải', icon: '🎣',

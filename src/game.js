@@ -29,7 +29,7 @@ import { DECOR, DECOR_RULES, DECOR_EVENTS } from '../data/decor.js';
 import * as decorSys from './systems/decor.js';
 import { DecorView } from './render/decorView.js';
 import { VillagerView } from './render/villagers.js';
-import { VILLAGE } from '../data/village.js';
+import { VILLAGE, HOUSES } from '../data/village.js';
 import * as relations from './systems/relations.js';
 import * as favors from './systems/favors.js';
 import { desiredState } from './systems/village.js';
@@ -63,6 +63,9 @@ import { StoryView } from './render/storyView.js';
 import { Director } from './render/director.js';
 import { DreamWorld } from './render/dreamWorld.js';
 import { MuiEnView } from './render/muien.js';
+import { ConLangView, CON } from './render/conlang.js';
+import * as fishing from './systems/fishing.js';
+import { FISH_SPOTS, FISH_RULES, SPOT_REWARD } from '../data/fishing.js';
 import { EN, EN_RULES, EN_PLOTS, isEnPlot } from '../data/muien.js';
 import { BUDS, STORY_RULES, ARCS } from '../data/story.js';
 import { VIP } from '../data/shopTiers.js';
@@ -80,6 +83,9 @@ const ACTIONS = {
   treat: (t, s, o, now) => farming.treat(t, s, now),
 };
 const FX = { till: 'dirt', plant: 'seed', water: 'water', fertilize: 'fert', harvest: 'sparkle', treat: 'spray' };
+
+/** Vật chạm được ưu tiên hơn nhà / dân làng / khách / ô đất khi nằm trùng tia chạm */
+const PRIORITY_PICKS = new Set(['story', 'mo', 'buds', 'sail', 'diep', 'fishspot', 'fishstall', 'fogwall']);
 
 export const TUTORIAL = [
   { text: 'Chọn 🪏 Xẻng rồi chạm vào ô đất để xới đất (hoặc chạm ô đất bằng ✋ để xem).', done: (a) => a === 'till' },
@@ -135,6 +141,7 @@ export class Game {
     this.director = new Director(this);
     this.dreamWorld = new DreamWorld(stage.scene, world.shop); // GĐ20B: Đồi Mộng, cầu, kệ Nụ Mộng...
     this.muien = new MuiEnView(stage.scene); // GĐ21: đảo Mũi Én
+    this.conlang = new ConLangView(stage.scene); // GĐ22: Cồn Lặng + các điểm câu cá
     this.syncStoryWorld();
     this.cine = false;
     this.storyTrig = [];
@@ -415,6 +422,7 @@ export class Game {
     this.storyView.update(dt, this.dayNight.night || 0);
     this.dreamWorld.update(dt, { night: this.dayNight.night || 0, hour: c.hourFloat, flash: this.flash });
     this.muien.update(dt, { night: this.dayNight.night || 0 });
+    this.conlang.update(dt, { night: this.dayNight.night || 0, hide: this.cine });
     // 🎵 nhạc riêng Mũi Én: máy quay ở Mũi Én (hoặc đang chiếu cảnh truyện ở đó) thì phát nhạc đảo
     const area = !this.visit && this.atEn ? 'en' : 'main';
     if (area !== this.musicArea) { this.musicArea = area; this.audio?.music?.setArea?.(area); }
@@ -428,8 +436,23 @@ export class Game {
 
   // ---------------- chọn & chạm ----------------
   pickAt(x, y) {
+    // (0.23) điểm sáng cốt truyện / bé Mơ: ưu tiên tuyệt đối, dò theo khoảng cách trên màn hình
+    // (trước đây điểm sáng nằm trong vùng chạm của nhà hay sau lưng dân làng thì chạm mãi không được ⇒ kẹt nhiệm vụ)
+    if (!this.decorMode && !this.visit) {
+      const sp = this.storyView.pickNear((p) => this.toScreen(p), x, y) || this.conlang.spotNear((p) => this.toScreen(p), x, y);
+      if (sp) return sp;
+    }
     this.raycaster.setFromCamera(this.controls.ndc(x, y), this.stage.camera);
     const hits = this.raycaster.intersectObjects(this.pickRoots, true);
+    // các vật của cốt truyện / câu cá (kệ nụ, thuyền, chỗ câu, quầy cá...) cũng thắng nhà, khách, ô đất nằm trùng tia chạm
+    if (!this.decorMode && !this.visit) {
+      for (const h of hits) {
+        if (!isShown(h.object)) continue;
+        let o = h.object;
+        while (o && !o.userData?.pick) o = o.parent;
+        if (o && PRIORITY_PICKS.has(o.userData.pick.kind)) return o.userData.pick;
+      }
+    }
     // ô đất nằm ngay dưới ngón tay (chiếu xuống mặt ruộng)
     const ground = new THREE.Vector3();
     const under = !this.decorMode && this.raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -TILE_TOP), ground)
@@ -493,6 +516,9 @@ export class Game {
     if (!pick) { this.select(null); return; }
     if (pick.kind === 'bug') { this.catchBug(pick.id); return; }
     if (pick.kind === 'story') { this.select(null); this.playTrigger(pick.scene); return; }
+    if (pick.kind === 'fishspot') { this.select(null); this.emitter.emit('fish', { id: pick.id }); return; }
+    if (pick.kind === 'fishstall') { this.select(null); this.emitter.emit('fishstall'); return; }
+    if (pick.kind === 'fogwall') { this.select(null); this.toast('🌫️ Sương dày quá, không thấy đường vào. Hình như ngoài đó có một hòn cồn...', 'info'); return; }
     if (pick.kind === 'sail') { this.select(null); this.sail(); return; }
     if (pick.kind === 'buds') { this.select(null); this.emitter.emit('buds'); return; }
     if (pick.kind === 'diep') { this.select(null); this.toast(`🌿 Bà Diệp: “${story.diepLine()}”`, 'info'); return; }
@@ -805,7 +831,7 @@ export class Game {
       g.visible = !plots.some((p) => p.parcel === id);
       return g.visible && !this.visit;
     }).map(([, g]) => g);
-    this.pickRoots = this.decorMode ? [this.decorView.root] : [this.bugView.root, this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, ...locked, ...parcels, this.villagers.root, ...this.villagers.housePick(), this.storyView.root, this.dreamWorld.root, this.muien.root];
+    this.pickRoots = this.decorMode ? [this.decorView.root] : [this.bugView.root, this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, ...locked, ...parcels, this.villagers.root, ...this.villagers.housePick(), this.storyView.root, this.dreamWorld.root, this.muien.root, this.conlang.root];
   }
 
   /** Vị trí lô thứ pi (lô của dân làng nằm ở mảnh đất riêng) */
@@ -1583,6 +1609,24 @@ export class Game {
     this.emitter.emit('story');
   }
 
+  /** Sổ tay "📍 Chỉ đường": lia máy quay tới nơi làm bước truyện đó (điểm sáng, dân làng, hiên tiệm) */
+  focusStory(scene) {
+    const t = this.storyTrig.find((q) => q.scene === scene);
+    if (!t) return false;
+    if (t.via === 'villager') {
+      const d = desiredState(t.who, this.villageCtx());
+      const v = this.villagers.list.find((q) => q.id === t.who);
+      const info = v?.info;
+      if (v && (v.mode === 'at' || v.mode === 'walk')) { this.controls.focusOn(new THREE.Vector3(v.x, 0, v.z), Math.max(this.controls.zoom, 1.5)); return true; }
+      const h = info?.home && HOUSES[info.home];
+      if (h) { this.controls.focusOn(new THREE.Vector3(h.x, 0, h.z), Math.max(this.controls.zoom, 1.4)); this.toast(d.absent ? `${info.name} đang đi vắng, lát nữa quay lại nhé` : `${info.name} đang ở trong nhà. Chạm vào ngôi nhà để gặp.`, 'info'); return true; }
+      return false;
+    }
+    if (t.via === 'mo') { this.controls.focusOn(new THREE.Vector3(STORY_RULES.moSpot[0], 0, STORY_RULES.moSpot[1]), 1.6); return true; }
+    if (t.via === 'spot') { this.controls.focusOn(new THREE.Vector3(t.at[0], 0, t.at[2]), Math.max(this.controls.zoom, 1.4)); return true; }
+    return false;
+  }
+
   storyTrigger(via, key) { return this.storyTrig.find((t) => t.via === via && (via === 'villager' ? t.who === key : via === 'spot' ? t.scene === key : true)) || null; }
 
   /** Chiếu 1 cảnh. replay: xem lại từ Sổ tay (không ghi gì). Trả về kết quả finishScene. */
@@ -1655,9 +1699,65 @@ export class Game {
       lamp: !f.en_off, sapling: !!f.en_sapling, boat: !!f.boat_ready,
       owned: Object.fromEntries(Object.keys(EN_PLOTS).map((id) => [id, s.farm.plots.some((pl) => pl.parcel === id)])),
     });
+    // 🎣 Cồn Lặng (GĐ22): sương mỏng dần theo cốt truyện; tan hẳn ở kết "Sương tan", còn lại một lớp mỏng ở kết "Ở lại trong sương"
+    const d = s.story.done, over = !!d.l6;
+    const fog = !f.co_open ? 1 : f.co_clear ? 0 : f.co_stay ? 0.3 : d.l5 ? 0.36 : d.l3 ? 0.46 : 0.56;
+    this.conlang.sync({
+      open: !!f.co_open, fog, fishing: !!f.co_fish,
+      spots: Object.fromEntries(Object.entries(FISH_SPOTS).map(([id, sp]) => [id, ['pond', 'vpier'].includes(id) || (sp.need ? !!f[sp.need] : !!f.co_open)])),
+      wreck: !!f.co_wreck, flower: over && !!f.co_clear, lamp: !!f.co_lamp, luoiGone: !!f.co_stay && (over || !!f.co_lamp),
+    });
+    if (f.co_open && this.controls && !this.coRegion) { this.coRegion = { x: 0, z: 0, r: this.controls.regions[0].r, x2: CON.center[0], z2: CON.center[1], r2: CON.camRadius }; this.controls.regions.push(this.coRegion); }
     // mở vùng camera Mũi Én khi đã có thuyền
     if (f.boat_ready && this.controls && !this.enRegion) { this.enRegion = { x: EN.center[0], z: EN.center[1], r: EN.camRadius }; this.controls.regions.push(this.enRegion); }
   }
+
+  // ---------------- 🎣 câu cá (GĐ22) ----------------
+  fishCtx() { return { hour: this.clock.hourFloat, day: this.today, weather: this.save.weather?.today?.type }; }
+
+  /** Quăng cần ở 1 chỗ câu: trừ mồi, quyết định thứ cắn câu (cốt truyện đang cần chai thư / Cá Mộng thì có cơ hội gặp) */
+  fishCast(spotId, far) {
+    const c = fishing.cast(this.save, spotId, this.fishCtx(), Math.random, { far, wantBottle: story.wants(this.save, 'bottles'), wantMong: story.wants(this.save, 'mong') });
+    this.saveMgr.markDirty();
+    return c;
+  }
+
+  /** Kéo xong: ghi nhận, thưởng, đẩy cốt truyện */
+  fishLand(c, landed) {
+    const s = this.save;
+    const before = story.currentAll(s);
+    const res = fishing.land(s, c, landed);
+    if (res.kind === 'junk') s.player.coins += res.coins;
+    else if (res.kind === 'chest') { s.player.coins += res.coins; if (res.luck) { luck.grantTickets(s, { luck: 1 }); this.emitter.emit('luck'); } }
+    else if (res.kind === 'bottle') { if (res.n <= 5) story.S(s).queue.push(res.n === 1 ? 'l3_bottle' : `bottle_${res.n}`); }
+    else if (res.kind === 'fish') {
+      s.stats.fish = (s.stats.fish || 0) + 1;
+      this.gainXp(FISH_RULES.xp[res.fish.t]);
+      this.questEvent('fish');
+      if (res.fish.t >= 2) this.questEvent('fishrare');
+      this.eventPts('fish');
+      if (res.pearl) s.player.coins += res.pearl.coins;
+      if (res.spotComplete) { s.player.coins += SPOT_REWARD.coins; luck.grantTickets(s, { luck: SPOT_REWARD.luck }); this.toast(`📖 Sưu tầm đủ cá ở ${FISH_SPOTS[res.spotComplete.spot].name}: +${SPOT_REWARD.coins} 💰 +${SPOT_REWARD.luck} 🎟️`, 'good'); this.emitter.emit('luck'); }
+    } else if (res.kind === 'mong') this.gainXp(FISH_RULES.xp[4]);
+    const prog = story.checkProgress(s, before);
+    if (prog.chapterDone || prog.stepDone) this.afterStoryProgress(prog);
+    else { this.storyKey = this.storyKey && 'x'; this.refreshStory(); this.saveMgr.markDirty(); }
+    this.emitter.emit('inventory');
+    return res;
+  }
+
+  /** Sau khi mua / đổi ở quầy cá */
+  afterFishTrade(res) {
+    if (!res.ok) { if (res.msg) this.toast(res.msg, 'warn'); return res; }
+    if (res.msg) this.toast(res.msg, 'good');
+    if (res.coins) { this.questEvent('earn', res.coins); this.toast(`🐟 Bán ${res.n} con cá: +${res.coins.toLocaleString('vi-VN')} 💰`, 'good'); }
+    this.saveMgr.markDirty();
+    this.emitter.emit('inventory');
+    return res;
+  }
+
+  storyBait(id, n) { const st = fishing.F(this.save); st.bait[id] = (st.bait[id] || 0) + n; st.baitSel = id; this.syncStoryWorld(); this.saveMgr.markDirty(); }
+  storyRod(id) { fishing.grantRod(this.save, id); story.setFlag(this.save, `rod_${id}`); this.saveMgr.markDirty(); }
 
   // ---------------- 🌫️ Mũi Én (GĐ21) ----------------
   get atEn() { return this.controls.target.x > 40; }
@@ -1764,6 +1864,7 @@ export class Game {
   storyChoice(opt) {
     const r = story.applyChoice(this.save, opt);
     for (const b of r.bonds) this.afterBond(b.id, b.res);
+    this.syncStoryWorld(); // lựa chọn có thể đổi cảnh vật ngay (vd sương tan)
     this.saveMgr.markDirty();
     return r;
   }

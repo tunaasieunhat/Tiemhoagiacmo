@@ -24,6 +24,7 @@ import { createLuckState } from '../systems/luck.js';
 import { createOrdersState } from '../systems/orders.js';
 import { createAchState, createEventState } from '../systems/goals.js';
 import { createStoryState } from '../systems/story.js';
+import { createFishState } from '../systems/fishing.js';
 
 const toVkeys = (obj) => Object.fromEntries(Object.entries(obj).map(([k, n]) => [k.includes(':') ? k : vkey(k), n]));
 
@@ -97,6 +98,7 @@ export function createNewSave() {
     event: createEventState(),       // 📅 sự kiện tuần thật (GĐ18)
     shopLevel: 0,                    // 🏪 quy mô tiệm 0..3 (GĐ18)
     story: createStoryState(),       // 📜 cốt truyện chính: cảnh đã xem, dấu lựa chọn, chương đã xong (GĐ20)
+    fish: createFishState(),         // 🎣 câu cá: mồi, cần, giỏ cá, Sổ cá (GĐ22, tự bổ sung bằng fillDefaults)
     mg: {},                          // 🎮 kỷ lục mini game { kind: { plays, best, perfect, combo } } (GĐ17, tự bổ sung bằng fillDefaults)
     farm: {
       plots: [{ ...createPlot('plot-1'), slot: 0 }], // slot = vị trí trong nông trại; lô mua của dân làng có parcel (GĐ13)
