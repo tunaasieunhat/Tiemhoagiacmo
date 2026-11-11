@@ -32,7 +32,8 @@ export function scheduleAt(id, hour) {
  */
 export function desiredState(id, { hour, weather = null, festivalId = null, save = null } = {}) {
   const leave = LEAVES_AFTER_STORY[id];
-  if (leave && (save?.regulars?.[id]?.hearts || 0) >= leave.hearts && !(leave.back || []).includes(festivalId)) {
+  // (GĐ20B) holdByStory: người này là nhân vật của cốt truyện chính ⇒ hoãn chuyến đi, ở lại đảo
+  if (leave && !(leave.holdByStory && save?.story) && (save?.regulars?.[id]?.hearts || 0) >= leave.hearts && !(leave.back || []).includes(festivalId)) {
     return { absent: true, reason: 'moved', note: leave.note };
   }
   // khách quen đang đứng ở tiệm hoa => không có mặt ở làng

@@ -17,9 +17,9 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
   Vận May hiếm hơn (vàng 3%, bảo hiểm 50), xỏ kim dễ hơn. **Giữ nguyên `LEVEL_XP`** vì SQL `level_from_xp` (migration GĐ8) dùng
   cùng bảng — muốn đổi phải thêm migration mới. Mô phỏng tiến độ: chạy thử với số liệu `data/*` (cấp 10 ≈ 3 giờ chơi chăm).
   ✅ GĐ16 (0.17.0) chăm sóc có kỹ năng. ✅ GĐ18 (0.18.0) mục tiêu dài hạn. ✅ GĐ17 (0.19.0) mini game hay hơn.
-  ✅ GĐ20A (0.20.0) cốt truyện chính chương 1–2 + hội thoại kiểu phim + treo hoa. **Việc tiếp theo: GĐ20B** (chương 3–7,
-  Nụ Mộng nở theo thời tiết, Hoa Mộng "giữ hay trao", 3 kết thúc) — chỉ làm khi người dùng đồng ý. Đề xuất khác đã nêu:
-  GĐ19 xưởng chế biến + nuôi ong, GĐ21 vùng đất mới, GĐ22 điểm danh + sổ thưởng mùa, GĐ23 tùy biến nhân vật, GĐ24 hội làng.
+  ✅ GĐ20A (0.20.0) cốt truyện chính chương 1–2 + hội thoại kiểu phim + treo hoa. ✅ GĐ20B (0.21.0) chương 3–7, Nụ Mộng,
+  3 kết thúc — cốt truyện chính đã trọn bộ. Việc tiếp theo: hỏi người dùng. Đề xuất đã nêu: GĐ19 xưởng chế biến + nuôi ong,
+  GĐ21 vùng đất mới (kết ẩn đã gợi ý: thuyền ông Ba xuống nước), GĐ22 điểm danh + sổ thưởng mùa, GĐ23 tùy biến nhân vật, GĐ24 hội làng.
 - Đưa lên mạng: Netlify (`netlify.toml`, `docs/HUONG_DAN_DUA_LEN_MANG.md`) — trang thật: https://tiem-hoa-giac-mo.netlify.app
   (Netlify đang deploy nhánh `ccr-845954e0-2hh7a1`; `main` chỉ có commit đầu tiên). APK: Capacitor + GitHub Actions
   (`.github/workflows/android.yml`, `android-keystore.yml`, `docs/HUONG_DAN_APK.md`); thư mục `android/` KHÔNG commit,
@@ -143,6 +143,18 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   (`#hud.cine`), camera khóa phím. `game.playScene(id, { replay })`, `refreshStory()` mỗi 0,25 giây, cảnh `auto` do
   `hud.maybeAutoStory` gọi (đợi `STORY_RULES.autoDelay`, không có bảng mở). Mơ chỉ hiện ban đêm (`time.isNight`).
   Bài thử cũ muốn bỏ qua cảnh mở đầu: đặt `save.story.seen.c1_letter = 1` trước, hoặc bấm ⏭ 2 lần.
+- **Nụ Mộng & kết truyện** (GĐ20B): `BUDS` trong `data/story.js` (owner, flower, `when: { weather, night, season, water }`, hint,
+  bloom, give). `save.story.buds[id] = { st: bud|bloom|kept|given, day, wait, streak, lastWater }`, `save.story.queue` = cảnh chờ tự
+  chiếu (`bloom_<nụ>` dựng tự động trong `story.sceneOf`). `game.budTick` (0,25 giây) cho nở khi đúng thời tiết (không nở ngay hôm
+  nhận); sang ngày mới `story.omen` đếm ngày chờ, quá `STORY_RULES.omenDays` thì **ép thời tiết ngày mai** (sửa thẳng
+  `save.weather.tomorrow`) + Mơ báo. Trao = cảnh `give_*` có lệnh `['give', id]` (đặt dấu `gave_<id>`, đủ 5 ⇒ `all_given`); giữ =
+  `game.budKeep` (+`budBeauty` qua `story.extraBeauty`, cộng trong `goals.statValue('beauty')`). Bước không có cảnh dùng
+  `count: { buds: 'decided', n }` + `story.checkProgress(save, before)`. Điều kiện chương thêm `blooms`. Lựa chọn có `if` (kết ẩn).
+  Kết thúc = dấu `end_wake|end_dream|end_all` + `done.c7` (`story.ending`); sau `wake` Mơ không hiện nữa (`moKnown`).
+  3D: `src/render/dreamWorld.js` (Đồi Mộng tại `STORY_RULES.hill`, cầu gãy/lành theo dấu `bridge`, kệ nụ pick `buds` gắn vào
+  `world.shop`, hoa đã trao đặt trước nhà chủ, thuyền ông Ba, đèn Mơ, bà Diệp pick `diep`) — vẽ lại bằng `game.syncStoryWorld()`.
+  Điểm sáng có `cost` (góp tiền sửa cầu) đi qua `game.playTrigger`; `night: true` chỉ hiện ban đêm. `['place', id, x, z, face]`.
+  Bà Tư không còn rời đảo (`LEAVES_AFTER_STORY.ba_tu.holdByStory`). UI: `hud.openBuds` (`data-bd`), thành tựu `story` (stat `chapters`).
 - **Treo hoa** (0.20): `save.shop.display = [loài]` (rỗng = bán tất cả), số móc `shop.displaySlots` = `DISPLAY.baseSlots` + quy mô tiệm.
   `shopTick` chỉ sinh khách hỏi loài đang treo; tỉ lệ `DISPLAY.preorderChance` sinh đơn đặt trước qua hàm `preorder` do game truyền
   (`orders.makePreorder`, đơn có `pre: true, npc`; không tính vào thành tựu/nhiệm vụ đơn hàng lớn, `orders.preDone`). Khách quen

@@ -181,6 +181,7 @@ export class StoryView {
   update(dt, night = 1) {
     this.t += dt;
     for (const g of this.markers.values()) {
+      g.visible = !this.hideMarkers; // đang chiếu cảnh thì ẩn điểm sáng
       g.position.y = g.userData.baseY + Math.sin(this.t * 2.2 + g.userData.phase) * 0.14;
       const k = 1.6 + Math.sin(this.t * 3.1 + g.userData.phase) * 0.18;
       g.userData.sprite.scale.set(k, k, 1);

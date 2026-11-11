@@ -197,14 +197,16 @@ export class Cinema {
         else if (op === 'label') { /* mốc nhảy */ }
         else if (op === 'go') jump = ln[1];
         else if (op === 'if') { if (storySys.cond(save, ln[1])) jump = ln[2]; }
-        else if (op === 'set') { if (!replay && !ff) storySys.setFlag(save, ln[1]); }
+        else if (op === 'set') { if (!replay && !ff) { storySys.setFlag(save, ln[1]); g.syncStoryWorld(); } }
+        else if (op === 'bud') { if (!replay && !ff) g.storyBud(ln[1]); }
+        else if (op === 'give') { if (!replay && !ff) g.storyGive(ln[1]); }
         else if (op === 'title') { if (!ff) await this.title(ln[1], ln[2]); }
         else if (op === 'nar') { if (!ff) await this.say(null, 'normal', ln[1]); }
         else if (op === 'wait') { if (!ff && !this.skipping) await sleep(ln[1] * 1000); }
         else if (op === 'sfx') { if (!ff && !this.skipping) g.audio?.sfx?.chime?.(ln[2] || 3); }
         else if (op === 'cam') dir.cam(ln[1], ln[2]);
         else if (op === 'meet') dir.meet(ln[1]);
-        else if (op === 'place') dir.place(ln[1], ln[2], ln[3]);
+        else if (op === 'place') dir.place(ln[1], ln[2], ln[3], ln[4]);
         else if (op === 'walk') dir.walk(ln[1], ln[2], ln[3]);
         else if (op === 'hide') dir.hide(ln[1]);
         else if (op === 'emote') { if (!ff && !this.skipping) { dir.emote(ln[1], ln[2]); await sleep(350); } }
@@ -212,14 +214,17 @@ export class Cinema {
         else if (op === 'cg') await this.cg(ln[1], ln[2] || {}, ff);
         else if (op === 'choice') {
           this.skipping = false;
+          // lựa chọn có if: chỉ hiện khi đủ điều kiện (vd kết ẩn). Xem lại từ Sổ tay cũng theo điều kiện hiện tại.
+          const opts = ln[1].filter((o) => storySys.cond(save, o.if));
           let k;
           if (ff) k = oldPicks[picks.length] ?? 0;
-          else k = await this.choose(ln[1]);
-          const opt = ln[1][k] || ln[1][0];
+          else k = await this.choose(opts);
+          const opt = opts[k] || opts[0];
           picks.push(k);
           if (!ff) {
             this.log.push({ pick: true, text: opt.t });
             if (!replay) { const r = g.storyChoice(opt); this.note(opt, r); }
+            else g.syncStoryWorld({ [opt.set]: 1 });
           }
           jump = opt.go || null;
         } else {
@@ -240,6 +245,7 @@ export class Cinema {
     await this.fx('sepia', false, true);
     this.cg(null, {}, true);
     dir.end();
+    g.syncStoryWorld();
     await sleep(380);
     this.$('.cn-dark').classList.remove('on');
     this.el.classList.add('hidden');

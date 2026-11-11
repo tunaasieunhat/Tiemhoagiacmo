@@ -4,6 +4,17 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.21.0',
+    notes: [
+      '📜 Cốt truyện "Giấc mơ của tiệm hoa" trọn bộ: Chương 3–7 (cấp 8 → 20) — con thuyền đóng dở, bí mật của Bà Tư, cây cầu lên Đồi Mộng, và người ngủ dưới gốc Cây Mộng',
+      '🌱 NỤ MỘNG: 5 chiếc nụ là giấc mơ người làng bỏ lại. Mỗi nụ chỉ nở đúng khoảnh khắc của nó (ngày gió lớn, đêm sao băng, cầu vồng, đêm tuyết, tưới 3 ngày liền) — bé Mơ sẽ báo trước một ngày',
+      '🌸 Hoa Mộng nở rồi: TRAO LẠI để người ấy nhớ ra giấc mơ của mình, hoặc GIỮ ở tiệm (+40 điểm xinh xắn). Lựa chọn của bạn quyết định kết truyện',
+      '🌠 3 kết thúc: Thức giấc · Mơ tiếp · và một kết ẩn khi trao lại đủ 5 Hoa Mộng. Xem lại cảnh cuối trong Sổ tay để thử lựa chọn khác',
+      '🗺️ Vùng mới phía bắc: Đồi Mộng và Cây Mộng (sửa cầu ở chương 4) · thành tựu mới "Người kể chuyện" với danh hiệu "Người giữ giấc mơ"',
+      '📐 Thanh công cụ và thanh giờ/thời tiết gọn lại, đỡ che màn hình',
+    ],
+  },
+  {
     version: '0.20.0',
     notes: [
       '📜 CỐT TRUYỆN CHÍNH "Giấc mơ của tiệm hoa" — Chương 1 "Tiệm không có tên chủ" và Chương 2 "Trang giấy phai" (mở ở cấp 5): ai là người chủ cũ mà cả đảo đã quên?',

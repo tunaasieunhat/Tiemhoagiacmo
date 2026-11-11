@@ -66,7 +66,8 @@ export class NotebookPanel {
     const coming = COMING_CHAPTERS.map((c) => `<span class="chip-s unk">Chương ${c.n} · ???</span>`).join('');
     return `<p class="muted small st-wide">“Giấc mơ của tiệm hoa” — câu chuyện về người chủ cũ mà cả đảo đã quên. Người có chuyện để kể sẽ hiện 📜 trên đầu; ban đêm (sau 19:00) bé Mơ ở trước hiên tiệm.</p>
       ${cards}
-      <div class="st-card later st-wide"><div class="st-head"><b>Sắp ra mắt</b></div><div class="chips">${coming}</div></div>`;
+      ${storySys.BUD_IDS.some((id) => storySys.budOf(s, id)) ? `<div class="st-card st-wide"><div class="st-head"><b>🌱 Nụ Mộng</b><i>đã nở ${storySys.bloomCount(s)}/5 · đã trao ${storySys.givenCount(s)}/5</i></div><p class="small">Kệ Nụ Mộng nằm cạnh hiên tiệm.</p><button class="btn" data-nb="buds">Xem kệ Nụ Mộng</button></div>` : ''}
+      ${coming ? `<div class="st-card later st-wide"><div class="st-head"><b>Sắp ra mắt</b></div><div class="chips">${coming}</div></div>` : ''}`;
   }
 
   village() {
@@ -188,6 +189,7 @@ export class NotebookPanel {
     if (act === 'tab') { this.tab = el.dataset.id; this.render(); }
     if (act === 'sp') { this.sp = el.dataset.id; this.render(); }
     if (act === 'play') this.play(el.dataset.k, +el.dataset.lv);
+    if (act === 'buds') this.hud.openBuds();
     if (act === 'replay') this.hud.playStory(el.dataset.id, { replay: true });
   }
 }

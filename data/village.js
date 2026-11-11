@@ -47,7 +47,7 @@ export const REGULAR_ROLES = {
 };
 
 // Những người sẽ rời làng khi xong cốt truyện (vd Bà Tư lên thành phố) — Tết thì về chơi
-export const LEAVES_AFTER_STORY = { ba_tu: { hearts: 5, back: ['tet'], note: 'Bà đã lên thành phố ở với con trai. Tết bà sẽ về thăm làng!' } };
+export const LEAVES_AFTER_STORY = { ba_tu: { holdByStory: true, hearts: 5, back: ['tet'], note: 'Bà đã lên thành phố ở với con trai. Tết bà sẽ về thăm làng!' } };
 
 // Việc làm: icon hiện trên đầu, outdoor = ngoài trời (trời mưa / bão thì về nhà), anim = kiểu cử động
 export const ACTIVITIES = {

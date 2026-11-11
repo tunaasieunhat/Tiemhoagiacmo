@@ -51,6 +51,7 @@ export class Director {
     if (t === 'you') return g.player.root.position.clone().setY(0);
     if (t === 'shop') return ZONES.shop.center.clone().add(new THREE.Vector3(Math.sin(SHOP_ROT), 0, Math.cos(SHOP_ROT)).multiplyScalar(2.2));
     if (t === 'village') return new THREE.Vector3(0, 0, 34);
+    if (t === 'shelf') return g.dreamWorld.shelfPos();
     const v = this.villager(t);
     if (v) return new THREE.Vector3(v.stage?.x ?? v.x, 0, v.stage?.z ?? v.z);
     return g.storyView.actorPos(t);
@@ -97,12 +98,20 @@ export class Director {
     this.focus(p.clone().lerp(me, 0.5), id === 'mo' ? 2.15 : 2.0);
   }
 
-  place(id, x, z) {
+  /** face: quay mặt về phía ai ('mã') hoặc điểm nào ([x, z]) */
+  place(id, x, z, face = null) {
     const g = this.g;
-    if (id === 'you') { g.player.root.position.set(x, 0, z); g.player.root.visible = true; return; }
+    let heading = null;
+    if (face) { const f = this.posOf(face); if (f) heading = Math.atan2(f.x - x, f.z - z); }
+    if (id === 'you') {
+      const pl = g.player;
+      pl.root.position.set(x, 0, z); pl.root.visible = !g.flash;
+      if (heading != null) { pl.heading = heading; pl.root.rotation.y = heading; }
+      return;
+    }
     const v = this.villager(id);
-    if (v) { v.stage = { ...(v.stage || {}), x, z, hidden: false }; return; }
-    g.storyView.place(id, x, z);
+    if (v) { v.stage = { ...(v.stage || {}), x, z, hidden: false }; if (heading != null) v.stage.heading = heading; return; }
+    g.storyView.place(id, x, z, heading);
   }
 
   walk(id, x, z) {

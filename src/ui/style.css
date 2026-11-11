@@ -1250,3 +1250,56 @@ body.cine-sepia #game canvas { filter: sepia(.85) saturate(.75) contrast(.95) br
   .tutorial .tstep { font-size: 10.5px; padding: 2px 6px; }
   .tutorial.mini { padding: 3px; }
 }
+
+/* ================= THANH CÔNG CỤ + THANH THỜI TIẾT GỌN (0.21) ================= */
+.clock { padding: 2px 12px 2px 6px; min-height: 40px; gap: 6px; }
+.clock-icon { font-size: 21px; width: 28px; }
+.ctime { font-size: 16px; }
+.cinfo small { font-size: 11px; }
+@media (min-height: 481px) { .bottom { width: min(470px, calc(100% - 16px)); } }
+.toolbar { padding: 4px; gap: 3px; border-radius: 22px; }
+.tool { height: 50px; border-radius: 16px; }
+.tool .ti { font-size: 21px; }
+.tool .tl { font-size: 11px; }
+.tutorial { bottom: calc(80px + var(--safe-bottom)); }
+.bottom:has(.seedbar:not(.hidden)) ~ .tutorial { bottom: calc(146px + var(--safe-bottom)); }
+@media (max-height: 480px) {
+  .clock { padding: 1px 10px 1px 5px; min-height: 34px; gap: 5px; }
+  .clock-icon { font-size: 17px; width: 22px; }
+  .ctime { font-size: 14px; letter-spacing: 0; }
+  .cinfo small { font-size: 10px; }
+  .toolbar { padding: 3px; gap: 1px; border-radius: 18px; }
+  .tool { width: 42px; height: 34px; border-radius: 13px; }
+  .tool .ti { font-size: 17px; }
+  .tool .badge { top: -3px; right: -2px; min-width: 14px; height: 14px; font-size: 9px; padding: 0 3px; }
+  .tutorial { bottom: calc(46px + var(--safe-bottom)); }
+  .sheet { bottom: calc(46px + var(--safe-bottom)); }
+  .toasts { top: calc(50px + var(--safe-top)); }
+}
+
+
+/* ================= 🌱 KỆ NỤ MỘNG (GĐ20B) ================= */
+.bd-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px; margin: 8px 0; }
+.bd-card { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; background: #fff; border: 2px solid var(--line); border-radius: 16px; padding: 8px 10px; }
+.bd-card.bloom, .bd-card.kept { border-color: var(--bc); box-shadow: 0 0 0 3px color-mix(in srgb, var(--bc) 30%, transparent); }
+.bd-card.given { background: #f4fbf1; }
+.bd-card.none { background: #faf6f1; opacity: .75; }
+.bd-icon { font-size: 26px; flex: none; width: 34px; text-align: center; }
+.bd-info { flex: 1; min-width: 150px; display: flex; flex-direction: column; gap: 2px; }
+.bd-info small { color: var(--ink-soft); font-size: 12px; line-height: 1.35; }
+.bd-info .bd-prog { color: #2f7fb8; }
+.bd-btns { display: flex; gap: 6px; flex-wrap: wrap; width: 100%; }
+.bd-btns:empty { display: none; }
+.bd-btns .btn { flex: 1; padding: 6px 10px; font-size: 13px; }
+
+@media (max-height: 480px) {
+  .chapter-done { gap: 3px; }
+  .chapter-done .cd-icon { font-size: 24px; }
+  .chapter-done h2 { font-size: 18px; }
+  .chapter-done h3 { margin: 2px 0; font-size: 14px; }
+  .chapter-done .story-text { padding: 6px 10px; font-size: 13px; }
+  .chapter-done p { margin: 0; }
+  .bd-list { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; }
+  .bd-card { padding: 6px 8px; gap: 6px; }
+  .bd-icon { font-size: 22px; width: 28px; }
+}

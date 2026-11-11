@@ -12,6 +12,7 @@ import { roundOf } from './contest.js';
 import { beautyOf } from './decor.js';
 import { heartsOf } from './relations.js';
 import { VILLAGER_IDS } from './village.js';
+import { extraBeauty } from './story.js';
 
 export const createAchState = () => ({ claimed: {}, title: null });
 export const createEventState = () => ({ week: null, theme: null, pts: 0, claimed: [], completed: 0 });
@@ -25,7 +26,8 @@ export function statValue(save, stat) {
     case 'colors': return Object.keys(save.book?.found || {}).length;
     case 'hearts': return VILLAGER_IDS.reduce((a, id) => a + heartsOf(save, id), 0);
     case 'plots': return save.farm.plots.length;
-    case 'beauty': return beautyOf(save.decor?.placed || []);
+    case 'beauty': return beautyOf(save.decor?.placed || []) + extraBeauty(save);
+    case 'chapters': return Object.keys(save.story?.done || {}).length;
     case 'luckSpecies': return LUCK_FLOWER_IDS.filter((id) => (save.luck?.got?.[id] || 0) > 0).length;
     case 'level': return save.player.level;
     case 'events': return save.event?.completed || 0;

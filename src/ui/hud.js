@@ -48,7 +48,7 @@ import { ZONES, PLOT_SLOTS } from '../render/world.js';
 import { GAME_VERSION, GAME_STAGE } from '../version.js';
 import { Cinema } from './cinema.js';
 import * as storySys from '../systems/story.js';
-import { STORY_RULES, CHAPTERS } from '../../data/story.js';
+import { STORY_RULES, BUDS } from '../../data/story.js';
 
 const TOOLS = [
   { id: 'hand', icon: '✋', label: 'Xem' },
@@ -125,6 +125,7 @@ export class Hud {
     // đang hiện bảng khác (vd vừa lên cấp nhờ XP của chương) thì đợi đóng bảng đó rồi mới hiện "Hết chương"
     em.on('story-chapter', (e) => { if (this.modal) this.afterClose = () => this.showChapterDone(e); else this.showChapterDone(e); });
     em.on('refresh', () => this.maybeAutoStory());
+    em.on('buds', () => this.openBuds());
     em.on('sync', (s) => this.updateSync(s));
     this.updateClock(game.clock);
     this.updateToolbar();
@@ -226,6 +227,8 @@ export class Hud {
     if (rk) { this.rank.onAction(rk.dataset.rk, rk); return; }
     const ld = e.target.closest('[data-ld]');
     if (ld) { this.onLandAct(ld); return; }
+    const bd = e.target.closest('[data-bd]');
+    if (bd) { this.onBudAct(bd); return; }
     const vg = e.target.closest('[data-vg]');
     if (vg) { this.onVillagerAct(vg); return; }
     const db = e.target.closest('[data-db]');
@@ -530,10 +533,55 @@ export class Hud {
     if (b) b.classList.toggle('hidden', !this.game.storyTrig.length);
   }
 
-  showChapterDone({ ch, reward, next }) {
-    const items = [reward.coins && `+${reward.coins} 💰`, reward.xp && `+${reward.xp} XP`, reward.luck && `+${reward.luck} 🎟️ vé may mắn`].filter(Boolean);
+  /** 🌱 Kệ Nụ Mộng (GĐ20B): mỗi nụ đang đợi gì; hoa đã nở thì Trao lại hoặc Giữ ở tiệm */
+  openBuds() {
+    const g = this.game;
+    const list = storySys.budList(g.save, g.today);
+    const cards = list.map(({ id, def, st, streak, need, canWater }) => {
+      if (!st) return '<div class="bd-card none"><span class="bd-icon">❔</span><div class="bd-info"><b>Chỗ còn trống</b><small>Một giấc mơ nào đó vẫn đang nằm quên ở đâu đó trên đảo.</small></div></div>';
+      let body, btns = '';
+      if (st === 'bud') {
+        body = `<small>${esc(def.hint)}</small>${need ? `<small class="bd-prog">💧 Đã tưới <b>${streak}/${need}</b> ngày liền</small>` : ''}`;
+        if (need) btns = `<button class="btn ${canWater ? 'primary' : 'disabled'}" data-bd="water" data-id="${id}">💧 Tưới${canWater ? '' : ' ✓'}</button>`;
+      } else if (st === 'bloom' || st === 'kept') {
+        body = `<small>Giấc mơ của ${esc(def.who)}: <i>${esc(def.dream)}</i>.</small><small>${st === 'kept' ? `🏪 Đang giữ ở tiệm (+${STORY_RULES.budBeauty} điểm xinh xắn). Vẫn trao lại được.` : 'Hoa đã nở. Trao lại thì người ấy nhớ ra giấc mơ của mình; giữ thì tiệm đẹp hơn.'}</small>`;
+        btns = `<button class="btn primary" data-bd="give" data-id="${id}">🎁 Trao lại ${esc(def.who)}</button>${st === 'bloom' ? `<button class="btn" data-bd="keep" data-id="${id}">🏪 Giữ ở tiệm</button>` : ''}`;
+      } else body = `<small>✔ Đã trao lại cho ${esc(def.who)}. Bông hoa đang sáng trước nhà họ.</small>`;
+      const title = st === 'bud' ? `Nụ Mộng của ${def.who}` : def.flower;
+      return `<div class="bd-card ${st}" style="--bc:${def.glow}"><span class="bd-icon">${st === 'bud' ? '🌱' : def.icon}</span><div class="bd-info"><b>${esc(title)}</b>${body}</div><div class="bd-btns">${btns}</div></div>`;
+    }).join('');
+    this.openModal('buds', `<h2>🌱 Kệ Nụ Mộng</h2>
+      <p class="muted small">Mỗi nụ là một giấc mơ người làng bỏ lại, chỉ nở đúng khoảnh khắc của giấc mơ ấy. Đã nở ${storySys.bloomCount(g.save)}/5 · đã trao lại ${storySys.givenCount(g.save)}/5.</p>
+      <div class="bd-list">${cards}</div>`, 'wide');
+  }
+
+  onBudAct(el) {
+    const g = this.game, id = el.dataset.id;
+    switch (el.dataset.bd) {
+      case 'water': g.budWater(id); this.openBuds(); break;
+      case 'keep': g.budKeep(id); if (this.modal === 'buds') this.openBuds(); break;
+      case 'give':
+        // trao rồi không lấy lại được ⇒ bấm 2 lần
+        if (!el.dataset.armed) {
+          el.dataset.armed = '1'; el.textContent = 'Trao thật nhé? (không lấy lại được)';
+          setTimeout(() => { if (el.isConnected) { delete el.dataset.armed; el.textContent = `🎁 Trao lại ${BUDS[id].who}`; } }, 3000);
+          return;
+        }
+        this.playStory(BUDS[id].give);
+        break;
+      default:
+    }
+  }
+
+  showChapterDone({ ch, reward, next, ending }) {
+    const items = [reward.coins && `+${reward.coins.toLocaleString('vi-VN')} 💰`, reward.xp && `+${reward.xp} XP`, reward.luck && `+${reward.luck} 🎟️ vé may mắn`, reward.gold && `+${reward.gold} 🎫 vé vàng`].filter(Boolean);
+    const END = {
+      wake: ['Kết thúc: Thức giấc', 'Bà Diệp đã tỉnh dậy và ngồi uống trà bên hiên tiệm mỗi ngày. Mơ đã về với bà.'],
+      dream: ['Kết thúc: Mơ tiếp', 'Bà Diệp vẫn mơ dưới gốc Cây Mộng. Mơ ở lại trông tiệm cùng bạn, và bạn nhớ bà giùm cả làng.'],
+      all: ['Kết thúc ẩn: Cả làng cùng mơ', 'Cả làng đã nhớ lại. Bà Diệp tỉnh dậy, Mơ vẫn ở đây, và trước hiên tiệm có thêm một ngọn đèn nhỏ không bao giờ tắt.'],
+    }[ending];
     let nextHtml;
-    if (!next || next.finished) nextHtml = '<p class="muted small">Các chương tiếp theo sẽ đến trong bản cập nhật sau. Cảm ơn bạn đã đồng hành cùng Mơ! 💛</p>';
+    if (!next || next.finished) nextHtml = `${END ? `<p class="fin">🌟 ${esc(END[0])}</p><p class="small">${esc(END[1])}</p>` : ''}<p class="muted small">Cảm ơn bạn đã đi hết câu chuyện cùng Mơ 💛 Vào 📖 Sổ tay › Cốt truyện, xem lại cảnh cuối để thử lựa chọn khác${ending === 'all' ? '' : ' (trao lại đủ 5 Hoa Mộng sẽ mở thêm một lựa chọn)'}.</p>`;
     else if (next.locked) nextHtml = `<p class="small">Chương ${next.ch.n} — <b>${esc(next.ch.title)}</b> mở khi: ${next.checks.map((c) => `${c.ok ? '✅' : '⬜'} ${esc(c.text)}`).join(' · ')}</p>`;
     else nextHtml = `<p class="small">Tiếp theo — Chương ${next.ch.n}: <b>${esc(next.ch.title)}</b><br>🎯 ${esc(next.step.goal)}</p>`;
     this.openModal('story', `<div class="story chapter-done">

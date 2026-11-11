@@ -61,6 +61,8 @@ import { DISPLAY } from '../data/shop.js';
 import * as story from './systems/story.js';
 import { StoryView } from './render/storyView.js';
 import { Director } from './render/director.js';
+import { DreamWorld } from './render/dreamWorld.js';
+import { BUDS, STORY_RULES } from '../data/story.js';
 import { VIP } from '../data/shopTiers.js';
 import { EVENT_MILESTONES } from '../data/events.js';
 import { BUGS, HARVEST_FUN, FRESH } from '../data/care.js';
@@ -129,6 +131,8 @@ export class Game {
     // GĐ20: cốt truyện chính — điểm sáng, bé Mơ, đạo diễn cảnh
     this.storyView = new StoryView(stage.scene);
     this.director = new Director(this);
+    this.dreamWorld = new DreamWorld(stage.scene, world.shop); // GĐ20B: Đồi Mộng, cầu, kệ Nụ Mộng...
+    this.syncStoryWorld();
     this.cine = false;
     this.storyTrig = [];
     this.storyWho = new Set();
@@ -155,6 +159,8 @@ export class Game {
       onDragEnd: () => {},
     });
     this.controls.regions.push({ x: VILLAGE.center.x, z: VILLAGE.center.z, r: VILLAGE.camRadius });
+    // Đồi Mộng phía bắc + đoạn cầu nối
+    this.controls.regions.push({ x: STORY_RULES.hill[0], z: -27, r: 8 }, { x: STORY_RULES.hill[0], z: STORY_RULES.hill[1] + 1, r: 6.5 });
     // camera bắt đầu nhìn vào lô đất đầu tiên; điện thoại dọc thì zoom gần hơn
     const portrait = innerWidth < innerHeight;
     this.controls.target.copy(PLOT_SLOTS[0]).add(portrait ? new THREE.Vector3(0.7, 0, 0.7) : new THREE.Vector3(1.5, 0, -1));
@@ -270,6 +276,12 @@ export class Game {
   onWeatherEvent(e, ev, offline) {
     this.saveMgr.markDirty();
     if (e.type === 'newday') {
+      // 🌱 Nụ Mộng đợi thời tiết quá lâu ⇒ Mơ "gọi" đúng thời tiết đó cho ngày mai (điềm báo)
+      const om = story.omen(this.save, { weather: this.save.weather.today?.type, day: e.day, seasonTomorrow: calendar.calendarOf(e.day + 1).season.id });
+      if (om && e.tomorrow) {
+        e.tomorrow.type = om.type; e.tomorrow.disease = null;
+        if (!offline) setTimeout(() => this.toast(`✨ Mơ: “Mơ ngửi thấy rồi! Ngày mai trời sẽ có ${WEATHER[om.type].name.toLowerCase()}. Nụ của ${BUDS[om.id].who} đang cựa mình đó!”`, 'good'), 2600);
+      }
       this.applyWeatherVisuals();
       this.emitter.emit('weather');
       // trả lương nhân viên + nhiệm vụ mới
@@ -371,6 +383,7 @@ export class Game {
       }
       this.customers.sync(this.save);
       this.refreshStory();
+      this.budTick();
       const ready = breeding.labReady(this.save) && !this.visit;
       this.labIcon.visible = ready;
       if (ready && !this.labNotified) { this.labNotified = true; this.toast('🧬 Nhà lai tạo đã xong! Bấm 🧬 để nhận hạt giống', 'good'); }
@@ -391,7 +404,9 @@ export class Game {
     this.weatherFx.update(dt, this.controls.target, this.clock.hourFloat);
     this.bugView.root.visible = !this.visit && !this.decorMode && !this.flash;
     this.storyView.root.visible = !this.visit && !this.decorMode;
+    this.storyView.hideMarkers = this.cine;
     this.storyView.update(dt, this.dayNight.night || 0);
+    this.dreamWorld.update(dt, { night: this.dayNight.night || 0, hour: c.hourFloat, flash: this.flash });
     this.bugView.update(dt);
     this.decorView.update(dt);
     this.villagers.update(dt, this.villageCtx());
@@ -466,7 +481,9 @@ export class Game {
     if (this.decorMode) { this.onDecorTap(pick, x, y); return; }
     if (!pick) { this.select(null); return; }
     if (pick.kind === 'bug') { this.catchBug(pick.id); return; }
-    if (pick.kind === 'story') { this.select(null); this.playScene(pick.scene); return; }
+    if (pick.kind === 'story') { this.select(null); this.playTrigger(pick.scene); return; }
+    if (pick.kind === 'buds') { this.select(null); this.emitter.emit('buds'); return; }
+    if (pick.kind === 'diep') { this.select(null); this.toast(`🌿 Bà Diệp: “${story.diepLine()}”`, 'info'); return; }
     if (pick.kind === 'mo') { this.select(null); this.tapMo(); return; }
     if (pick.kind === 'tile') {
       if (this.tool === 'hand') this.select(pick);
@@ -1185,7 +1202,7 @@ export class Game {
     return true;
   }
 
-  beauty(placed = this.save.decor.placed) { return decorSys.beautyOf(placed); }
+  beauty(placed = this.save.decor.placed) { return decorSys.beautyOf(placed) + (placed === this.save.decor.placed ? story.extraBeauty(this.save) : 0); }
 
   setDecorMode(on) {
     if (this.visit) return;
@@ -1557,27 +1574,115 @@ export class Game {
     if (!played.done) return null; // chưa chiếu được (đang bận cảnh khác) thì không tính là đã xem
     if (replay) return {};
     const res = story.finishScene(this.save, id);
+    this.afterStoryProgress(res);
+    return res;
+  }
+
+  /** Xử lý kết quả tiến độ truyện: quà hết chương, báo mục tiêu mới, lưu game */
+  afterStoryProgress(res) {
     if (res.chapterDone) {
       const rw = res.reward || {};
       if (rw.coins) this.save.player.coins += rw.coins;
-      if (rw.luck) luck.grantTickets(this.save, { luck: rw.luck });
+      if (rw.luck || rw.gold) luck.grantTickets(this.save, { luck: rw.luck || 0, gold: rw.gold || 0 });
       if (rw.xp) this.gainXp(rw.xp);
       this.particles.spawn('sparkle', this.player.root.position.clone().setY(1.2));
       this.audio?.sfx?.chime?.(6);
-      this.emitter.emit('story-chapter', { ch: res.chapterDone, reward: rw, next: res.next });
+      this.emitter.emit('story-chapter', { ch: res.chapterDone, reward: rw, next: res.next, ending: story.ending(this.save) });
       this.emitter.emit('luck');
       this.emitter.emit('inventory');
     } else if (res.stepDone && res.nextGoal) {
       this.toast(`📜 Mục tiêu mới: ${res.nextGoal}`, 'good');
-    } else if (!res.already && res.next?.step && res.next.need > 1) {
+    } else if (!res.already && res.next?.step && res.next.need > 1 && res.next.seen > 0) {
       this.toast(`📜 ${res.next.step.goal} (${res.next.seen}/${res.next.need})`, 'info');
     }
     this.storyKey = this.storyKey && 'x'; // buộc cập nhật lại điểm sáng (không báo "mở chương" nhầm)
     this.refreshStory();
+    this.syncStoryWorld();
     this.saveMgr.markDirty();
     this.saveMgr.saveNow('manual');
-    return res;
   }
+
+  /** Chạm điểm sáng: điểm có "cost" thì phải đủ tiền, trừ tiền rồi mới chiếu */
+  playTrigger(sceneId) {
+    const t = this.storyTrigger('spot', sceneId);
+    if (!t) return;
+    if (t.cost) {
+      if (this.save.player.coins < t.cost) { this.toast(`Cần ${t.cost.toLocaleString('vi-VN')} 💰 để góp vật liệu (đang có ${this.save.player.coins.toLocaleString('vi-VN')})`, 'warn'); return; }
+      if (this.cine || this.cinema?.active) return;
+      this.save.player.coins -= t.cost;
+      this.save.stats.spent = (this.save.stats.spent || 0) + t.cost;
+      this.emitter.emit('inventory');
+    }
+    this.playScene(sceneId);
+  }
+
+  // ---------------- 🌱 Nụ Mộng (GĐ20B) ----------------
+  /** Vẽ lại Đồi Mộng, cầu, kệ nụ... theo save. extra: dấu tạm (khi xem lại cảnh, không ghi vào save) */
+  syncStoryWorld(extra = {}) {
+    const s = this.save, f = { ...story.S(s).flags, ...extra }, seen = s.story.seen;
+    const end = story.ending(s);
+    const waking = f.end_wake || f.end_all;
+    this.dreamWorld.sync({
+      buds: Object.fromEntries(story.BUD_IDS.map((id) => [id, story.budOf(s, id)?.st || null])),
+      bridge: !!f.bridge, sleeping: !!(seen.c5_tree || f.tree_bloom) && !waking, bloom: !!f.tree_bloom,
+      leaf: !!seen.c6_end, ending: end, gaveBa: !!f.gave_ba,
+    });
+  }
+
+  /** Nhận 1 nụ trong cảnh truyện */
+  storyBud(id) {
+    if (!story.getBud(this.save, id, this.today)) return;
+    this.syncStoryWorld();
+    this.audio?.sfx?.chime?.(3);
+    this.saveMgr.markDirty();
+  }
+
+  /** Trao hoa cho chủ (lệnh 'give' trong cảnh) */
+  storyGive(id) {
+    if (!story.giveBud(this.save, id)) return;
+    this.syncStoryWorld();
+    this.audio?.sfx?.chime?.(5);
+    this.saveMgr.markDirty();
+  }
+
+  /** Mỗi 0,25 giây: nụ nào gặp đúng khoảnh khắc thì nở (cảnh nở tự chiếu ngay sau đó) */
+  budTick() {
+    if (this.cine || this.visit) return;
+    const bloomed = story.budTick(this.save, { weather: this.save.weather?.today?.type, hour: this.clock.hourFloat, day: this.today });
+    if (!bloomed.length) return;
+    for (const id of bloomed) this.toast(`🌸 ${BUDS[id].flower} đã nở trên kệ Nụ Mộng!`, 'good');
+    this.syncStoryWorld();
+    this.storyKey = this.storyKey && 'x';
+    this.refreshStory();
+    this.saveMgr.markDirty();
+  }
+
+  budWater(id) {
+    const r = story.waterBud(this.save, id, this.today);
+    if (!r.ok) { this.toast(r.msg, 'info'); return r; }
+    this.particles.spawn('sparkle', this.dreamWorld.shelfPos().setY(1.2));
+    this.toast(r.streak >= r.need ? '💧 Đủ ba ngày rồi! Cái nụ đang hé ra...' : `💧 Đã tưới ${r.streak}/${r.need} ngày liền. Mai nhớ tưới tiếp nhé!`, 'good');
+    this.saveMgr.markDirty();
+    return r;
+  }
+
+  /** Giữ hoa ở tiệm */
+  budKeep(id) {
+    const before = story.current(this.save);
+    if (!story.keepBud(this.save, id)) return false;
+    this.toast(`🌸 ${BUDS[id].flower} ở lại tiệm: +${STORY_RULES.budBeauty} điểm xinh xắn. Sau này vẫn trao lại được.`, 'good');
+    this.afterStoryProgress(story.checkProgress(this.save, before));
+    this.emitter.emit('quests');
+    return true;
+  }
+
+  /** Trao lại cho chủ: chiếu cảnh trao */
+  budGive(id) {
+    const b = story.budOf(this.save, id);
+    if (!b || !['bloom', 'kept'].includes(b.st)) return null;
+    return this.playScene(BUDS[id].give);
+  }
+
 
   /** Người chơi chọn 1 câu trong cảnh: ghi dấu, cộng điểm tình thân */
   storyChoice(opt) {

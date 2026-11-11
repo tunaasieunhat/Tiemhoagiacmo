@@ -40,6 +40,8 @@ export const ACHIEVEMENTS = [
     rewards: [{ shard: 20 }, { shard: 60, luck: 3 }, { coins: 10000, gold: 2 }], title: 'Người được thần may mắn chọn' },
   { id: 'level', icon: '⭐', name: 'Kinh nghiệm đầy mình', desc: 'Đạt cấp {n}', stat: 'level', n: [10, 20, 35],
     rewards: [{ coins: 800 }, { coins: 3000, luck: 3 }, { coins: 10000, gold: 2 }], title: 'Huyền thoại Giấc Mơ' },
+  { id: 'story', icon: '📜', name: 'Người kể chuyện', desc: 'Hoàn thành {n} chương cốt truyện', stat: 'chapters', n: [2, 5, 7],
+    rewards: [{ coins: 800, luck: 1 }, { coins: 3000, gold: 1 }, { coins: 10000, gold: 2 }], title: 'Người giữ giấc mơ' },
   { id: 'event', icon: '📅', name: 'Ngôi sao sự kiện', desc: 'Về đích {n} sự kiện tuần', stat: 'events', n: [1, 5, 15],
     rewards: [{ coins: 800, luck: 1 }, { coins: 3000, gold: 1 }, { coins: 10000, gold: 2 }], title: 'Ngôi sao sự kiện' },
 ];
