@@ -179,6 +179,8 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   dân làng; nhiều dân làng trùng tia chạm ⇒ `nearestVillagerHit` chọn người gần tia nhất. Bảng nhà: chủ nhà làm việc ngay trước
   nhà (SPOTS cách < 4,5) ⇒ nút "💬 Nói chuyện" (Cô Ngân bán cà phê trước Quán Mây cũng là nhà cô).
 - **Âm thanh / intro** (bản 0.9.2): nhạc nền `public/audio/*.mp3` (đã nén 112 kbps), số liệu ở `data/audio.js`.
+  (0.22.1) Nhạc theo vùng: `AUDIO.music.areas.en` (2 bài Mũi Én); `MusicPlayer.setArea(area)` nhỏ dần rồi đổi danh sách,
+  `game.update` gọi khi `game.atEn` đổi. Thêm nhạc mới: nén bằng `ffmpeg -i in.mp3 -map 0:a -map_metadata -1 -b:a 112k`.
   Intro DREAMER GAMES (0.9.4) vẽ bằng CSS + canvas, KHÔNG dùng video (đã xóa `intro.mp4`). Code: `src/audio/audio.js` (MusicPlayer, Sfx tạo tiếng bằng Web Audio), `src/ui/tapFx.js` (cánh hoa khi
   chạm), `src/ui/intro.js` (trời đêm + chữ → bình minh + cánh hoa → tên game → tan vào nông trại; chạm để bỏ qua;
   muốn chụp từng cảnh thì đặt `AUDIO.intro.seconds` lớn trong trang thử). Lựa chọn âm thanh lưu trên máy

@@ -22,6 +22,7 @@ const clamp01 = (v) => Math.min(1, Math.max(0, Number(v) || 0));
 export class MusicPlayer {
   constructor(prefs) {
     this.prefs = prefs;
+    this.area = 'main';
     this.tracks = AUDIO.music.tracks;
     this.idx = AUDIO.music.shuffle ? Math.floor(Math.random() * this.tracks.length) : 0;
     this.started = false;   // đã được phép phát (sau intro)
@@ -88,6 +89,35 @@ export class MusicPlayer {
     }
     this.load();
     this.resume();
+  }
+
+  /**
+   * Đổi vùng (vd 'en' = Mũi Én, 'main' = Đảo Mây): nhạc đang phát nhỏ dần rồi chuyển sang danh sách của vùng mới.
+   * Vùng không có nhạc riêng thì dùng danh sách chung.
+   */
+  setArea(area) {
+    const list = AUDIO.music.areas?.[area] || AUDIO.music.tracks;
+    if (area === this.area || !list.length) return;
+    this.area = area;
+    const swap = () => {
+      this.tracks = list;
+      this.broken = new Set();
+      this.idx = AUDIO.music.shuffle ? Math.floor(Math.random() * list.length) : 0;
+      this.loaded = false;
+      if (this.started) { this.load(); this.resume(); }
+    };
+    clearInterval(this.fadeTimer);
+    clearTimeout(this.swapTimer);
+    if (!this.started || this.el.paused) { swap(); return; }
+    // nhỏ dần rồi mới đổi bài
+    const steps = Math.max(1, Math.round((AUDIO.music.crossfadeSeconds ?? 1.5) * 20));
+    const from = this.el.volume;
+    let i = 0;
+    this.fadeTimer = setInterval(() => {
+      i++;
+      try { this.el.volume = clamp01(from * (1 - i / steps)); } catch { /* iOS */ }
+      if (i >= steps) { clearInterval(this.fadeTimer); this.el.pause(); swap(); }
+    }, 50);
   }
 
   setVolume(v) {

@@ -415,6 +415,9 @@ export class Game {
     this.storyView.update(dt, this.dayNight.night || 0);
     this.dreamWorld.update(dt, { night: this.dayNight.night || 0, hour: c.hourFloat, flash: this.flash });
     this.muien.update(dt, { night: this.dayNight.night || 0 });
+    // 🎵 nhạc riêng Mũi Én: máy quay ở Mũi Én (hoặc đang chiếu cảnh truyện ở đó) thì phát nhạc đảo
+    const area = !this.visit && this.atEn ? 'en' : 'main';
+    if (area !== this.musicArea) { this.musicArea = area; this.audio?.music?.setArea?.(area); }
     this.bugView.update(dt);
     this.decorView.update(dt);
     this.villagers.update(dt, this.villageCtx());

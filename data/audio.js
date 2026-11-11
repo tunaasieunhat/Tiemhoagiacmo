@@ -13,6 +13,14 @@ export const AUDIO = {
       { file: 'audio/where-the-petals-sway.mp3', title: 'Where the Petals Sway' },
       { file: 'audio/where-the-grass-bends.mp3', title: 'Where the Grass Bends' },
     ],
+    // (0.22.1) Nhạc riêng từng vùng: khi máy quay ở vùng đó thì chỉ phát các bài này (thay cho tracks ở trên)
+    areas: {
+      en: [ // 🌫️ Mũi Én
+        { file: 'audio/saltwater-and-petals.mp3', title: 'Saltwater and Petals' },
+        { file: 'audio/petals-at-first-light.mp3', title: 'Petals at First Light' },
+      ],
+    },
+    crossfadeSeconds: 1.5, // đổi vùng: nhạc cũ nhỏ dần trong bấy nhiêu giây rồi mới sang bài của vùng mới
   },
 
   sfx: {

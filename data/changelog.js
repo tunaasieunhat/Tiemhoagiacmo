@@ -4,6 +4,12 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.22.1',
+    notes: [
+      '🎵 Nhạc riêng cho Mũi Én: "Saltwater and Petals" và "Petals at First Light" — chỉ phát khi bạn ở Mũi Én, về Đảo Mây thì nhạc cũ trở lại (chuyển nhạc nhẹ nhàng, nhỏ dần rồi đổi bài)',
+    ],
+  },
+  {
     version: '0.22.0',
     notes: [
       '🌫️ VÙNG ĐẤT MỚI: Mũi Én — hòn đảo phía đông ba mươi năm không mưa. Mở sau chương 5 cốt truyện chính + cấp 16; đi bằng thuyền của Ông Ba (chạm thuyền ở cầu tàu hoặc nút ⛵)',
