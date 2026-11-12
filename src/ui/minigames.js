@@ -4,6 +4,7 @@
 import { MINIGAMES, RHYMES, DIFFICULTY, MG_FX } from '../../data/minigames.js';
 import { scaledConfig } from '../systems/favors.js';
 import { HG_ENGINES } from './craftGames.js';
+import { FUN_ENGINES } from './funGames.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -363,6 +364,7 @@ function mathQuestion() {
 
 // (GĐ23) 14 mini game của Đảo Ngàn Hương
 Object.assign(ENGINES, HG_ENGINES);
+Object.assign(ENGINES, FUN_ENGINES); // (GĐ26) quầy trò chơi Khu Vui Chơi
 
 // =============================================================== KHUNG CHẠY GAME
 export function runMiniGame(kind, { title = '', icon = '🎮', ask = '', who = '', sfx = null, level = 0, record = null, practice = false } = {}) {

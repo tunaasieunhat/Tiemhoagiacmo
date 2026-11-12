@@ -29,6 +29,7 @@
 // ---- Diễn viên: tên hiện trên khung thoại, giọng "bíp" (pitch: số càng lớn giọng càng cao), hình dáng ----
 import { HG_CAST, HG_ARC, HG_CHAPTERS, HG_PAGES, HG_SCENES, HG_LINES, HG_MO_LINES } from './storyHuong.js';
 import { VAN_CAST, VAN_ARC, VAN_CHAPTERS, VAN_SCENES, VAN_LINES } from './storyVan.js';
+import { FUN_CAST, FUN_ARC, FUN_CHAPTERS, FUN_SCENES, FUN_LINES } from './storyFun.js';
 
 export const CAST = {
   you: { name: '{name}', pitch: 660 },
@@ -42,6 +43,7 @@ export const CAST = {
   ba_tu: { pitch: 330 }, ong_ba: { pitch: 240 }, co_mai: { pitch: 640 }, anh_duy: { pitch: 420 }, co_ngan: { pitch: 560 }, be_su: { pitch: 1040 },
   ...HG_CAST, // (GĐ23) Đảo Ngàn Hương — xem data/storyHuong.js
   ...VAN_CAST, // (GĐ25) Người mua đảo — xem data/storyVan.js
+  ...FUN_CAST, // (GĐ26) Người dựng đu quay — xem data/storyFun.js
 };
 
 // ---- Số liệu chung ----
@@ -290,6 +292,7 @@ export const ARCS = {
   lang: { name: 'Cồn Lặng · Người giữ sương', icon: '🎣', desc: 'Khối sương phía tây Đảo Mây ba mươi năm không tan. Có người đang giữ nó lại.' },
   huong: HG_ARC,
   van: VAN_ARC,
+  fun: FUN_ARC,
 };
 
 // =============================================================
@@ -1750,3 +1753,8 @@ MO_LINES.push(...HG_MO_LINES);
 CHAPTERS.push(...VAN_CHAPTERS);
 Object.assign(SCENES, VAN_SCENES);
 for (const [id, list] of Object.entries(VAN_LINES)) STORY_LINES_B[id] = [...list, ...(STORY_LINES_B[id] || [])];
+
+// (GĐ26) Gắn mạch truyện ngắn "Người dựng đu quay" (data/storyFun.js)
+CHAPTERS.push(...FUN_CHAPTERS);
+Object.assign(SCENES, FUN_SCENES);
+for (const [id, list] of Object.entries(FUN_LINES)) STORY_LINES_B[id] = [...list, ...(STORY_LINES_B[id] || [])];

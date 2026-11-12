@@ -20,7 +20,7 @@ export const LOBES = [
 export const ISLAND_ZONES = {
   home: { name: 'Nhà của bạn', sub: 'Chạm để trang trí nhà', at: [-7, -12], face: [0, -6] },
   park: { name: 'Công Viên', sub: 'Khu đặt đồ trang trí', at: [-20, -8], fountain: [-20, -7.5], gazebo: [-25, -12.5] },
-  fun: { name: 'Khu Vui Chơi', sub: '🚧 Sắp khai trương', at: [24, -22], fence: 9 },
+  fun: { name: 'Khu Vui Chơi', sub: 'Đu quay · quầy trò chơi · ăn vặt', at: [24, -22], fence: 11.5 }, // (GĐ26) rộng hơn để đủ chỗ trò chơi
   market: { name: 'Khu Mua Bán', sub: 'Hạt giống, vật tư, nâng cấp', at: [31, 1], pier: [43.6, 1.2] },
 };
 

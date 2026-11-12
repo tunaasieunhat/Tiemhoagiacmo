@@ -4,6 +4,20 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.27.0',
+    notes: [
+      '🎆 BIG UPDATE “LỄ HỘI ĐẢO MÂY”!',
+      '🎡 Khu Vui Chơi khai trương (mũi đông bắc, nút 🎡): đu quay Mây, ngựa gỗ xoay, tàu lượn Ong Vàng, nhà gương — có khách đi dạo, đèn sáng ban đêm. Mở bằng truyện ngắn 3 chương “Người dựng đu quay” (cấp 6, hỏi Ông Ba)',
+      '🎯 5 quầy trò chơi: ném vòng, bắn bóng nước, câu vịt, đập chuột chũi, cắm hoa nhanh — được 🪙 Xu Vui để đổi quà (trang phục, trứng thú cưng, gấu bông, bóng bay, vé may mắn)',
+      '🍡 Quầy ăn vặt: làm kẹo bông hoa hồng, kem oải hương, trà sữa, bánh bông lan vạn thọ… từ hoa của bạn, khách đi chơi mua theo giờ. Tối Thứ Bảy là Lễ hội: khách đông gấp đôi',
+      '🎀 Phong cách (nút 🎀): tủ đồ 50 món — 8 kiểu tóc, 10 màu tóc, 11 loại mũ, 14 trang phục (váy, áo dài, yếm, hoodie, áo mưa…), giày, túi, kính. Nhân vật trong game mặc đúng như vậy',
+      '🐾 Thú cưng: 10 loài (mèo, cún, thỏ, vịt, cáo, cú, mèo tam thể, cáo tuyết, rùa hoa, Rồng Hoa nhỏ). Ấp trứng ở ổ trước nhà, thú đi theo bạn, cho ăn & vuốt ve để lớn, biết đào hạt giống, đuổi sâu, mang thư, tìm trứng',
+      '🥚 Trứng thú cưng rơi khi câu cá, hái nguyên liệu, mở gói Vận May; đổi ở Khu Vui Chơi; có trong Sổ thưởng mùa và quà điểm danh',
+      '📖 Sổ thưởng mùa MIỄN PHÍ (🗓️ › Sổ mùa): 30 bậc quà mỗi 14 ngày, kiếm ⭐ từ việc hằng ngày; bậc 10/20/30 có trang phục riêng của mùa',
+      '📅 Điểm danh mỗi ngày: quà 7 ngày lặp lại, mốc 14 ngày (mầm lá trên đầu) và 28 ngày (áo dài đỏ Tết + trứng hoa)',
+    ],
+  },
+  {
     version: '0.26.1',
     notes: [
       '🛍️ Bán hoa dễ thở hơn: khách giờ ưu tiên hỏi những loài bạn ĐANG CÓ trong kho (rồi tới loài đang trồng), thường không đòi nhiều sao hay màu khác hơn thứ bạn có',

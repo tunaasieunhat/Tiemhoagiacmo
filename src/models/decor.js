@@ -409,6 +409,29 @@ BUILDERS.fishtank = function fishtank() {
   return g;
 };
 
+// 🎡 (GĐ26) quà Khu Vui Chơi
+BUILDERS.fun_teddy = () => {
+  const g = new THREE.Group(), c = '#c9925a', l = '#f2d2b0';
+  const b = sphere(0.36, c, 14); b.scale.set(1, 1.1, 0.9); b.position.y = 0.4; g.add(b);
+  g.add(at(sphere(0.2, l, 10), 0, 0.36, 0.22));
+  g.add(at(sphere(0.3, c, 14), 0, 0.92, 0));
+  for (const x of [-0.2, 0.2]) { g.add(at(sphere(0.1, c, 8), x, 1.16, 0)); g.add(at(sphere(0.14, c, 8), x * 1.6, 0.48, 0.1)); g.add(at(sphere(0.15, c, 8), x * 1.1, 0.12, 0.16)); }
+  g.add(at(sphere(0.11, l, 8), 0, 0.86, 0.24));
+  for (const x of [-0.1, 0.1]) g.add(at(sphere(0.035, '#2a1f1c', 6), x, 0.98, 0.26));
+  const bow = sphere(0.08, '#ff8fb1', 8); bow.scale.set(2, 0.8, 0.8); bow.position.set(0, 0.7, 0.2); g.add(bow);
+  return g;
+};
+BUILDERS.fun_balloons = () => {
+  const g = new THREE.Group();
+  g.add(at(cyl(0.12, 0.14, 0.12, '#d9b48a', 8), 0, 0.06, 0));
+  const cols = ['#ff8fb1', '#8fd8ff', '#ffd36e', '#b9a2ff', '#9be29b'];
+  const bob = new THREE.Group();
+  cols.forEach((c, i) => { const a = (i / 5) * Math.PI * 2; const x = Math.cos(a) * 0.22, z = Math.sin(a) * 0.22, y = 1.5 + (i % 2) * 0.25; const bl = sphere(0.2, c, 10); bl.scale.y = 1.2; bl.position.set(x, y, z); bob.add(bl); bob.add(at(cyl(0.006, 0.006, y - 0.1, '#ffffff', 3), x / 2, (y - 0.1) / 2 + 0.05, z / 2)); });
+  g.add(bob);
+  g.userData.bob = bob;
+  return g;
+};
+
 export function buildDecor(id) {
   const g = (BUILDERS[id] || BUILDERS.pot)();
   g.traverse((o) => { if (o.isMesh) o.castShadow = true; });

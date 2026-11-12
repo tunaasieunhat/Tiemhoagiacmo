@@ -25,6 +25,10 @@ import { TUTORIAL } from '../game.js';
 import { ShopPanel } from './shopPanel.js';
 import { MarketPanel } from './marketPanel.js';
 import { ManagePanel } from './managePanel.js';
+import { StylePanel } from './stylePanel.js';
+import { FunPanel } from './funPanel.js';
+import { WARDROBE } from '../../data/wardrobe.js';
+import * as passSys from '../systems/pass.js';
 import { LabPanel } from './labPanel.js';
 import { FriendsPanel, messagesHtml } from './friendsPanel.js';
 import { QuestsPanel } from './questsPanel.js';
@@ -144,6 +148,9 @@ export class Hud {
     em.on('hgshop', () => this.openHgShop());
     // GĐ24: nhà của bạn
     em.on('home', () => this.openHome());
+    // GĐ26: chấm đỏ 🗓️ khi chưa điểm danh / có quà Sổ thưởng chờ nhận
+    em.on('manage', () => this.updateManageBadge());
+    em.on('xp', () => this.updateManageBadge());
     em.on('sync', (s) => this.updateSync(s));
     this.updateClock(game.clock);
     this.updateToolbar();
@@ -153,6 +160,8 @@ export class Hud {
     this.shopPanel = new ShopPanel(this);
     this.marketPanel = new MarketPanel(this);
     this.manage = new ManagePanel(this); // GĐ25: 🗓️ Sổ quản lý
+    this.style = new StylePanel(this); // GĐ26: 🎀 Phong cách
+    this.fun = new FunPanel(this); // GĐ26: 🎡 Khu Vui Chơi
     this.lab = new LabPanel(this);
     this.notebook = new NotebookPanel(this);
     this.friends = new FriendsPanel(this);
@@ -198,7 +207,9 @@ export class Hud {
         <button class="round hidden" data-act="go-en" aria-label="Ra khơi: Mũi Én / về Đảo Mây">⛵</button>
         <button class="round" data-act="friends" aria-label="Bạn bè">👥<span class="badge hidden fr-badge"></span></button>
         <button class="round" data-act="quests" aria-label="Nhiệm vụ">📋<span class="badge hidden q-badge"></span></button>
-        <button class="round" data-act="manage" aria-label="Sổ quản lý: kế hoạch hôm nay, tiệc, chi nhánh, nhân viên">🗓️</button>
+        <button class="round" data-act="manage" aria-label="Sổ quản lý: kế hoạch hôm nay, tiệc, chi nhánh, nhân viên, sổ thưởng mùa">🗓️<span class="badge hidden ql-badge"></span></button>
+        <button class="round" data-act="style" aria-label="Phong cách: tủ đồ, thú cưng, trứng">🎀</button>
+        <button class="round" data-act="go-fun" aria-label="Khu Vui Chơi">🎡</button>
         <button class="round" data-act="rank" aria-label="Xếp hạng và cuộc thi">🏆</button>
         <button class="round" data-act="decor-mode" aria-label="Trang trí">🎨</button>
         <button class="round" data-act="luck" aria-label="Vận May">🍀<span class="badge hidden lk-badge"></span></button>
@@ -266,6 +277,10 @@ export class Hud {
     if (lb) { this.lab.onAction(lb.dataset.lab, lb); return; }
     const nb = e.target.closest('[data-nb]');
     if (nb) { this.notebook.onAction(nb.dataset.nb, nb); return; }
+    const sy = e.target.closest('[data-sy]');
+    if (sy) { this.style.onAction(sy.dataset.sy, sy); return; }
+    const fn = e.target.closest('[data-fn]');
+    if (fn) { this.fun.onAction(fn.dataset.fn, fn); return; }
     const ql = e.target.closest('[data-ql]');
     if (ql && ql.tagName !== 'SELECT') { this.manage.onAction(ql.dataset.ql, ql); return; }
     const mk = e.target.closest('[data-mk]');
@@ -316,6 +331,8 @@ export class Hud {
       case 'go-shop': this.openShop(); break;
       case 'go-market': this.openMarket(b.dataset.tab); break;
       case 'manage': this.manage.open(b.dataset.tab || null); break;
+      case 'style': this.style.open(b.dataset.tab || null); break;
+      case 'go-fun': this.closeModal(); g.goFun(); if (g.funOpen()) setTimeout(() => this.fun.open(), 500); else g.tapFun({ kind: 'fungate', nav: true }); break;
       case 'forecast': this.openForecast(); break;
       case 'quality': g.setQuality(b.dataset.level); this.openSettings(); break;
       case 'music-next': {
@@ -653,6 +670,15 @@ export class Hud {
     if (box && el.dataset.hm !== 'tab') box.scrollTop = top;
   }
 
+  updateManageBadge() {
+    const el = this.root.querySelector('.ql-badge');
+    if (!el) return;
+    const s = this.game.save;
+    const n = (passSys.canCheckin(s) ? 1 : 0) + passSys.claimable(s);
+    el.classList.toggle('hidden', !n);
+    el.textContent = n ? String(n) : '';
+  }
+
   // ---------- 🌸 Đảo Ngàn Hương (GĐ23) ----------
   /** Chạm chỗ hái ⇒ mini game ⇒ nhận nguyên liệu */
   async openGather(id) {
@@ -801,7 +827,7 @@ export class Hud {
   }
 
   showChapterDone({ ch, reward, next, ending }) {
-    const items = [reward.coins && `+${reward.coins.toLocaleString('vi-VN')} 💰`, reward.xp && `+${reward.xp} XP`, reward.luck && `+${reward.luck} 🎟️ vé may mắn`, reward.gold && `+${reward.gold} 🎫 vé vàng`].filter(Boolean);
+    const items = [reward.coins && `+${reward.coins.toLocaleString('vi-VN')} 💰`, reward.xp && `+${reward.xp} XP`, reward.luck && `+${reward.luck} 🎟️ vé may mắn`, reward.gold && `+${reward.gold} 🎫 vé vàng`, reward.outfit && `👗 ${WARDROBE[reward.outfit]?.name || ''}`].filter(Boolean);
     const END = {
       wake: ['Kết thúc: Thức giấc', 'Bà Diệp đã tỉnh dậy và ngồi uống trà bên hiên tiệm mỗi ngày. Mơ đã về với bà.'],
       dream: ['Kết thúc: Mơ tiếp', 'Bà Diệp vẫn mơ dưới gốc Cây Mộng. Mơ ở lại trông tiệm cùng bạn, và bạn nhớ bà giùm cả làng.'],
@@ -1647,7 +1673,7 @@ export class Hud {
     acc.profile = p;
     g.save.player.name = p.display_name;
     g.save.player.avatar = { ...g.save.player.avatar, ...p.avatar };
-    g.player.setAvatar(g.save.player.avatar);
+    g.applyLook(); // (GĐ26) giữ trang phục đang mặc
     g.saveMgr.markDirty?.();
     this.updateProfile();
     this.toast('✨ Đã cập nhật nhân vật', 'good');

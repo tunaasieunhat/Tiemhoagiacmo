@@ -40,6 +40,9 @@ export const DECOR = {
   flowercart: { name: 'Xe hoa sự kiện', icon: '🛒', price: 0, level: 1, beauty: 12, size: 0.9, weekly: true },
   trophy: { name: 'Cúp vàng sự kiện', icon: '🏆', price: 0, level: 1, beauty: 12, size: 0.55, weekly: true },
   carousel: { name: 'Đu quay hoa mini', icon: '🎠', price: 0, level: 1, beauty: 14, size: 1.0, weekly: true },
+  // ---- 🎡 Khu Vui Chơi (GĐ26): đổi bằng 🪙 Xu Vui, không bán ở Chợ ----
+  fun_teddy: { name: 'Gấu bông khổng lồ', icon: '🧸', price: 0, level: 1, beauty: 6, size: 0.6, fun: true },
+  fun_balloons: { name: 'Chùm bóng bay', icon: '🎈', price: 0, level: 1, beauty: 5, size: 0.45, fun: true },
 };
 
 // Sự kiện bán đồ theo mùa

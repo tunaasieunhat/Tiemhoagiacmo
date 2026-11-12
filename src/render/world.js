@@ -492,28 +492,9 @@ function buildZones(world, decorMap, block, rand) {
     if (Math.abs(Math.atan2(Math.sin(a - Math.PI * 0.86), Math.cos(a - Math.PI * 0.86))) < 0.22) continue; // cổng phía tây nam
     world.add(at(rbox(0.12, 0.8, 0.12, i % 2 ? '#ffd36e' : '#ff8fb1', 0.03), ux + Math.cos(a) * F.fence, 0.4, uz + Math.sin(a) * F.fence));
   }
-  decorMap.circles.push({ x: ux, z: uz, r: F.fence + 0.6, name: 'khu vui chơi (sắp mở)' });
+  decorMap.circles.push({ x: ux, z: uz, r: F.fence + 0.6, name: 'khu vui chơi' });
   spots.push([ux, uz, F.fence + 0.4]);
-  const wheel = new THREE.Group();
-  for (const dz of [-0.6, 0.6]) {
-    for (const s of [-1, 1]) { const leg = rbox(0.18, 4.6, 0.18, '#c9c3bb', 0.04); leg.position.set(s * 1.3, 2.2, dz); leg.rotation.z = -s * 0.28; wheel.add(leg); }
-  }
-  const ring = torus(3.2, 0.1, '#ff8fb1'); ring.position.y = 4.3; wheel.add(ring);
-  for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * Math.PI * 2, sp = rbox(0.08, 6.4, 0.08, '#ffffff', 0.02); sp.position.y = 4.3; sp.rotation.z = a; wheel.add(sp);
-    if (i % 2 === 0) wheel.add(at(rbox(0.6, 0.55, 0.6, ['#8fd8ff', '#ffd36e', '#c9a2ff', '#9be29b'][i / 2], 0.1), Math.cos(a) * 3.2, 4.3 + Math.sin(a) * 3.2 - 0.4, 0));
-  }
-  wheel.position.set(ux + 3.5, 0, uz - 3.5); wheel.rotation.y = 0.8;
-  world.add(wheel);
-  const caro = new THREE.Group();
-  caro.add(at(cyl(2.3, 2.4, 0.35, '#ffe6ef', 16), 0, 0.17, 0));
-  for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; caro.add(at(cyl(0.05, 0.05, 2.2, '#ffd36e', 6), Math.cos(a) * 1.7, 1.4, Math.sin(a) * 1.7)); if (i % 2 === 0) caro.add(at(rbox(0.3, 0.4, 0.7, ['#ffffff', '#ffc6d6'][i % 4 ? 1 : 0], 0.1), Math.cos(a) * 1.7, 1.0, Math.sin(a) * 1.7)); }
-  caro.add(at(cone(2.7, 1.2, '#ff8fb1', 16), 0, 3.0, 0));
-  caro.position.set(ux - 3.6, 0, uz + 2.6);
-  world.add(caro);
-  // giàn giáo + thùng gỗ (đang xây)
-  for (const [dx, dz] of [[1.2, 3.6], [-0.4, -4.6], [4.6, 1.8]]) world.add(at(rbox(0.9, 0.7, 0.9, '#c9a27a', 0.05), ux + dx, 0.35, uz + dz));
-  for (let k = 0; k < 3; k++) world.add(at(rbox(0.1, 3 - k * 0.6, 0.1, '#9a8a7a', 0.02), ux - 5.6 + k * 0.7, 1.5 - k * 0.3, uz - 2.2));
+  // (GĐ26) đu quay, ngựa gỗ, quầy trò chơi… dựng ở src/render/funPark.js
   // ---- 🏪 khu mua bán: sạp mở rộng + cầu tàu đông ----
   const [mx, mz] = M.at;
   const extra = [['#ffd36e', ['#ff9a2e', '#ffd36e', '#9be29b'], mx - 1.2, mz - 5.6, 0.2], ['#f6a6b9', ['#ffc6d6', '#c9a2ff', '#ffffff'], mx - 1.6, mz + 5.4, Math.PI - 0.2]];

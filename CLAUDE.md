@@ -21,6 +21,7 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
   3 kết thúc — cốt truyện chính đã trọn bộ. ✅ GĐ21 (0.22.0) đảo Mũi Én + truyện "Cơn mưa đi lạc". ✅ GĐ22 (0.23.0) Cồn Lặng + truyện "Người giữ sương" + câu cá. ✅ GĐ23 (0.24.0) Đảo Ngàn Hương + truyện "Hương để nhớ" + Tiệm Hương Nhài chế biến.
   ✅ GĐ24 (0.25.0) đảo chính mới 6 khu + rừng theo mùa + nhà người chơi + thời tiết chi tiết. Khu vui chơi: để phát triển sau.
   ✅ GĐ25 (0.26.0) "Tiệm Hoa Của Quần Đảo": Sổ quản lý (kế hoạch hôm nay, lịch tuần, tiệc, chi nhánh, nhân viên thông minh) + truyện "Người mua đảo".
+  ✅ GĐ26 (0.27.0) "Lễ Hội Đảo Mây": Khu Vui Chơi + quầy ăn vặt, tủ đồ, thú cưng & trứng, Sổ thưởng mùa + điểm danh. Chưa làm: chơi cùng nhau trực tiếp (Realtime).
   Lồng tiếng: đã đề xuất miễn phí (Piper tạo sẵn trên GitHub Actions + "Phòng thu" tự thu), đang chờ người dùng chọn.
   Việc tiếp theo: hỏi người dùng.
   Đề xuất đã nêu: GĐ19 nuôi ong (một phần đã có ở GĐ23), điểm danh + sổ thưởng mùa, tùy biến nhân vật, hội làng (đánh số GĐ mới khi làm).
@@ -226,6 +227,20 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   làm vườn bắt trong `bugTick`. Truyện: `data/storyVan.js` (mạch `van` v1–v6, gộp cuối `data/story.js`), bộ đếm `parties|branches|shipped|wedding`
   trong `src/systems/story.js`; dấu `party_open`, `branch_open`, `wedding_offer`, `party_great`/`wed_good` (game đặt khi tiệc ≥ 80 điểm), kết
   `van_win|van_join|van_home` (join/home ⇒ chi nhánh ×1,2).
+- **Lễ Hội Đảo Mây** (GĐ26): tất cả save mới qua fillDefaults/lazy (`save.wardrobe`, `pets`, `fun`, `pass`, `checkin`), KHÔNG tăng SAVE_VERSION.
+  Tủ đồ: `data/wardrobe.js` (SLOTS, WARDROBE `{slot, set, price, src, cost}`), `src/systems/wardrobe.js` (`lookOf(save)` = avatar gốc + món đang mặc;
+  chưa mở tủ thì giữ nguyên avatar cũ). `buildCharacter` nhận thêm `hairStyle, hatKind, top, trim, shoes, bag, bagColor, glasses` (mặc định y như cũ ⇒
+  dân làng không đổi); `avatarSVG` vẽ theo. Game: `applyLook/wearItem/buyOutfit`. Thú cưng: `data/pets.js` (PET_SPECIES, EGGS odds/hours, PET_RULES
+  skills/drops), `src/systems/pets.js` (trứng → `incubate` → `hatchTick`, `feed/pat` 1 lần/ngày, `walkTick` theo giờ: dig/egg/mail), mô hình
+  `src/models/pets.js`, 3D `src/render/petView.js` (thú đi theo `player.root`, ổ ấp trước nhà; pick `pet`/`nest`). Khu Vui Chơi: `data/fun.js` (FUN tâm
+  [24,-22] hàng rào 11,5 — `ISLAND_ZONES.fun.fence` cũng 11,5; RIDES/BOOTHS vị trí tương đối; PRIZES; SNACKS/PANTRY; FUN_GAMES gộp vào MINIGAMES),
+  `src/systems/fun.js`, 4 engine mini game `src/ui/funGames.js` (ringtoss/watergun/ducks/whack; quầy cắm hoa dùng `arrange`), 3D `src/render/funPark.js`
+  (pick `ride|booth|snack|prize|fungate`; `rideFx` quay nhanh), UI `src/ui/funPanel.js` (`data-fn`, chạy `runMiniGame` rồi `game.boothResult`).
+  Truyện `data/storyFun.js` (mạch `fun` f1–f3, dấu `fun_open`; bộ đếm `booths|rides|snacks`; quà chương có thể có `outfit`). Lễ hội = Thứ Bảy 18–22h
+  (`game.isFestivalAt`). Sổ thưởng: `data/pass.js` + `src/systems/pass.js` (ngày thật giờ VN, mùa 14 ngày từ `epoch`, `add(kind)` có trần/ngày,
+  `claim`, `checkin`); điểm cộng qua `game.passAdd` (gọi trong `questEvent` cho harvest/serve/order/fish/help + kế hoạch, tiệc, quầy, trò, ăn vặt, thú).
+  Quà chung: `game.grantReward({coins,xu,luck,gold,seeds,egg,outfit,decor})`. UI: `src/ui/stylePanel.js` (`data-sy`, nút 🎀), thẻ "📖 Sổ mùa" trong
+  managePanel (chấm đỏ `.ql-badge`). Nút menu xếp 3 cột khi `max-height: 480px`.
 - **Bán hoa dễ thở** (0.26.1): số liệu `SMART` trong `data/shop.js`. A: `generateRequest` nhận `ctx.stock/growing` (`shop.stockInfo(save)`), ưu tiên loài trong kho
   + giới hạn sao/màu/số cành theo kho (`capToStock`). B: `displayedFlowers` tự treo (`isAutoDisplay`, `autoDisplayList`; `shop.autoDisp=false` = bán mọi loài;
   `game.refreshAutoDisplay` mỗi 3 giây vẽ lại giỏ). C: `evaluateDelivery` trả `exact/subOk/sub` (`ok = exact || sub`, sub chỉ khi `sel.sub`), `subPick`,

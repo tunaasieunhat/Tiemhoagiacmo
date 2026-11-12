@@ -1,4 +1,5 @@
 import { HG_GAMES, HG_LEVELS } from './huong.js';
+import { FUN_GAMES, FUN_LEVELS } from './fun.js';
 // =============================================================
 //  DÂN LÀNG NHỜ VIỆC & MINI GAME (GĐ12)
 //  Mỗi ngày game, mỗi người có thể nhờ bạn 1 việc (xác suất dailyChance). Nhận lời => chơi mini game mô phỏng việc đó.
@@ -165,3 +166,7 @@ export const RHYMES = [
 // (GĐ23) mini game của Đảo Ngàn Hương — số liệu nằm ở data/huong.js
 Object.assign(MINIGAMES, HG_GAMES);
 Object.assign(MG_LEVELS, HG_LEVELS);
+
+// (GĐ26) mini game quầy trò chơi Khu Vui Chơi — số liệu nằm ở data/fun.js
+Object.assign(MINIGAMES, FUN_GAMES);
+Object.assign(MG_LEVELS, FUN_LEVELS);

@@ -1548,7 +1548,7 @@ body.cine-sepia #game canvas { filter: sepia(.85) saturate(.75) contrast(.95) br
   .ql-ship-row { grid-template-columns: 1fr auto; } .ql-ship-row > small { display: none; }
 }
 /* (GĐ25) thêm nút 🗓️: màn thấp (≤ 380px) xếp 3 cột để không tràn đáy màn hình */
-@media (max-height: 380px) { .nav-grid { grid-template-columns: repeat(3, 36px); } }
+@media (max-height: 480px) { .nav-grid { grid-template-columns: repeat(3, 36px); } }
 /* ---------- 🛍️ bán hoa dễ thở hơn (0.26.1) ---------- */
 .serve { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 10px; border: 1.5px solid; }
 .serve.ok { color: #2f7f4f; background: #eaf8e6; border-color: #9fd38f; }
@@ -1560,3 +1560,90 @@ body.cine-sepia #game canvas { filter: sepia(.85) saturate(.75) contrast(.95) br
 .sub-hint { background: #fff6d8; border: 1.5px solid #f2cf6b; border-radius: 12px; padding: 6px 8px; font-size: 13px; margin: 6px 0; }
 .disp-mode { margin: 6px 0 10px; display: flex; flex-wrap: wrap; gap: 6px; }
 @media (max-height: 480px) { .up-row { grid-template-columns: 26px 1fr; } .up-row .serve { grid-column: 2; justify-self: start; } }
+
+/* ---------- 🎯 mini game quầy trò chơi (GĐ26) ---------- */
+.fgm { position: absolute; inset: 0; overflow: hidden; }
+.fgm button { font: inherit; border: 0; background: none; padding: 0; cursor: pointer; touch-action: manipulation; }
+.fg-ring { background: linear-gradient(#ffe9f1 0 55%, #f2d2b0 55%); }
+.fg-lane { position: absolute; left: 0; right: 0; top: 38%; height: 70px; display: flex; justify-content: center; align-items: flex-end; }
+.fg-mark { position: absolute; top: -26px; left: 50%; width: 4px; height: 100px; margin-left: -2px; background: repeating-linear-gradient(#e85a7a 0 8px, transparent 8px 14px); opacity: .7; }
+.fg-bottle { position: absolute; bottom: 0; font-size: 46px; transition: filter .2s; }
+.fg-bottle.gold { filter: drop-shadow(0 0 10px #ffd36e); }
+.fg-bottle.got { filter: drop-shadow(0 0 14px #7be08f) brightness(1.2); }
+.fg-ring-hand { position: absolute; left: 50%; bottom: 14%; transform: translateX(-50%); font-size: 40px; transition: bottom .25s ease-out, font-size .25s; pointer-events: none; }
+.fg-ring-hand.throw { bottom: 52%; font-size: 30px; }
+.fg-balloon { background: linear-gradient(#bfe8ff, #fff6ee); }
+.fg-sky { position: absolute; inset: 0; }
+.fg-bl { position: absolute; font-size: 42px !important; transform: translateX(-50%); }
+.fg-bl.pop { transform: translateX(-50%) scale(1.6); opacity: 0; transition: .18s; }
+.fg-pond { background: linear-gradient(#cfeff5, #8fd0e8); }
+.fg-water { position: absolute; inset: 10% 0 14% 0; display: flex; flex-direction: column; justify-content: space-around; }
+.fg-row { position: relative; height: 64px; border-bottom: 3px dashed rgba(255,255,255,.6); }
+.fg-duck { position: absolute; left: 0; bottom: 4px; font-size: 44px !important; }
+.fg-duck i { position: absolute; right: -6px; top: -8px; font-size: 18px; font-style: normal; }
+.fg-duck.black { filter: grayscale(.4); }
+.fg-duck.caught { transition: .25s; opacity: 0; bottom: 60px; }
+.fg-whack { background: linear-gradient(#c9eab0, #9fd38f); }
+.fg-holes { position: absolute; inset: 8% 10% 16%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.fg-hole { position: relative; border-radius: 50% !important; background: radial-gradient(ellipse at 50% 70%, #5a3f2a 0 45%, #8a6a4a 46% 60%, transparent 61%) !important; overflow: hidden; }
+.fg-hole span { position: absolute; left: 0; right: 0; bottom: -60%; font-size: 40px; transition: bottom .12s; }
+.fg-hole.up span { bottom: 18%; }
+.fg-hole.bonk { transform: scale(.92); }
+
+/* ---------- 🎀 Phong cách · 🎡 Khu Vui Chơi · 📖 Sổ mùa (GĐ26) ---------- */
+.sy-wear { display: grid; grid-template-columns: 170px 1fr; gap: 12px; }
+.sy-preview { display: flex; flex-direction: column; align-items: center; gap: 4px; background: #fff6ee; border: 2px solid var(--line); border-radius: 20px; padding: 10px; align-self: start; }
+.sy-preview small { font-size: 11px; color: #9b7b6c; text-align: center; }
+.sy-slots { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+.sy-slot { font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 12px; border: 2px solid var(--line); background: #fff; cursor: pointer; }
+.sy-slot.on { background: #ffe6ef; border-color: #f6a6b9; font-weight: 700; }
+.sy-grid, .fn-prizes { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.sy-item { font: inherit; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 6px; border-radius: 16px; border: 2px solid var(--line); background: #fff; cursor: pointer; text-align: center; }
+.sy-item .sy-ic { font-size: 28px; }
+.sy-item b { font-size: 12px; line-height: 1.2; }
+.sy-item i { font-style: normal; font-size: 11px; color: #9b7b6c; }
+.sy-item.on { border-color: #f6a6b9; background: #fff0f5; box-shadow: 0 3px 0 #f6a6b9; }
+.sy-item.on i { color: #d9506f; font-weight: 700; }
+.sy-item.buy i { color: #3f9b6b; font-weight: 700; }
+.sy-item.poor { opacity: .6; }
+.sy-item.locked { opacity: .55; cursor: default; }
+.sy-colors { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 8px; font-size: 13px; }
+.sy-color { width: 26px; height: 26px; border-radius: 50%; border: 3px solid #fff; background: var(--c); box-shadow: 0 0 0 2px var(--line); cursor: pointer; }
+.sy-color.on { box-shadow: 0 0 0 3px #f6a6b9; }
+.sy-starter { display: flex; align-items: center; gap: 10px; background: #fffbe6; border: 2px solid #f2cf6b; border-radius: 16px; padding: 8px 10px; margin-bottom: 8px; }
+.sy-starter > span { font-size: 34px; }
+.sy-starter div { flex: 1; display: flex; flex-direction: column; }
+.sy-pet.active { border-color: #9fd38f; background: #f4fbf1; }
+.sy-skills { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.sy-skill { font-size: 11px; padding: 1px 6px; border-radius: 8px; background: #f2ece6; color: #a8958a; }
+.sy-skill.on { background: #eaf8e6; color: #2f7f4f; font-weight: 700; }
+.sy-pbtns { display: flex; flex-direction: column; gap: 4px; }
+.sy-rename { display: flex; gap: 4px; align-items: center; }
+.sy-rename input { width: 110px; font: inherit; padding: 3px 6px; border-radius: 8px; border: 2px solid var(--line); }
+.mk-item.focus { border-color: #ffd36e; box-shadow: 0 0 0 3px #fff1c4; }
+.fn-pantry { display: flex; flex-wrap: wrap; gap: 6px; }
+.fn-pan { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 3px 4px 3px 10px; font-size: 13px; }
+.fn-make { display: flex; flex-direction: column; gap: 4px; }
+.ps-check { background: #fff6ec; border: 2px solid var(--line); border-radius: 16px; padding: 8px; }
+.ps-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.ps-day { display: flex; flex-direction: column; align-items: center; background: #fff; border: 2px solid var(--line); border-radius: 12px; padding: 4px 2px; text-align: center; }
+.ps-day span { font-size: 20px; }
+.ps-day small { font-size: 10px; color: #9b7b6c; }
+.ps-day i { font-style: normal; font-size: 9.5px; line-height: 1.15; color: #7a4e3a; }
+.ps-day.done { background: #eaf8e6; border-color: #9fd38f; }
+.ps-day.today { border-color: #f2cf6b; background: #fffbe6; box-shadow: 0 3px 0 #f2cf6b; }
+.ps-head { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; margin: 4px 0 6px; }
+.ps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 6px; }
+.ps-tier { font: inherit; display: flex; flex-direction: column; align-items: center; padding: 4px; border-radius: 12px; border: 2px solid var(--line); background: #fff; opacity: .7; cursor: pointer; }
+.ps-tier span { font-size: 22px; }
+.ps-tier small { font-size: 10px; color: #9b7b6c; }
+.ps-tier i { font-style: normal; font-size: 9.5px; line-height: 1.15; text-align: center; }
+.ps-tier.big { border-color: #c79cf2; }
+.ps-tier.ready { opacity: 1; border-color: #f2cf6b; background: #fffbe6; box-shadow: 0 0 0 3px #fff1c4; animation: lkBob 1.6s ease-in-out infinite; }
+.ps-tier.got { opacity: 1; background: #eaf8e6; border-color: #9fd38f; }
+@media (max-height: 480px) {
+  .sy-wear { grid-template-columns: 120px 1fr; }
+  .sy-preview svg { width: 100px; height: 100px; }
+  .sy-grid, .fn-prizes { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
+  .ps-day i, .ps-tier i { display: none; }
+}

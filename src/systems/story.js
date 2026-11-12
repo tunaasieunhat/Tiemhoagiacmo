@@ -191,6 +191,10 @@ const COUNTERS = {
   branches: (s) => Object.values(s.branch?.b || {}).filter((b) => b.open).length,
   shipped: (s) => s.branch?.ships || 0,
   wedding: (s) => (s.party?.story_wedding != null ? 1 : 0),
+  // (GĐ26) Khu Vui Chơi
+  booths: (s) => Object.values(s.fun?.plays || {}).reduce((a, n) => a + n, 0),
+  rides: (s) => Object.values(s.fun?.rides || {}).reduce((a, n) => a + n, 0),
+  snacks: (s) => s.fun?.sold || 0,
 };
 // bộ đếm có dấu ':' (vd 'made:tea_jasmine', 'sold:tea_jasmine', 'gather:honey') đọc thẳng từ save.craft.count
 const counterOf = (key) => COUNTERS[key] || (String(key).includes(':') ? (s) => craftCount(s, key) : () => 0);

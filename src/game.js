@@ -90,6 +90,16 @@ import { villagerInfo, VILLAGER_IDS } from './systems/village.js';
 import { EN_PEOPLE, CO_PEOPLE } from '../data/muien.js';
 const HG_PEOPLE = ['ba_nhai', 'sen', 'ong_que', 'chi_tra', 'be_mat'];
 import { ISLAND_ZONES } from '../data/island.js';
+// (GĐ26) Lễ Hội Đảo Mây: tủ đồ, thú cưng, Khu Vui Chơi, Sổ thưởng mùa
+import * as wardrobe from './systems/wardrobe.js';
+import * as petsSys from './systems/pets.js';
+import * as funSys from './systems/fun.js';
+import * as passSys from './systems/pass.js';
+import { PetView } from './render/petView.js';
+import { FunPark } from './render/funPark.js';
+import { PET_SPECIES, EGGS, PET_RULES } from '../data/pets.js';
+import { RIDES, BOOTHS, SNACKS, PANTRY, FUN_RULES } from '../data/fun.js';
+import { WARDROBE } from '../data/wardrobe.js';
 import { VARIANTS } from '../data/variants.js';
 import { TICKET_SOURCES } from '../data/luck.js';
 
@@ -105,7 +115,7 @@ const FX = { till: 'dirt', plant: 'seed', water: 'water', fertilize: 'fert', har
 
 /** Vật chạm được ưu tiên hơn nhà / dân làng / khách / ô đất khi nằm trùng tia chạm */
 const ALL_KNOWN = new Proxy({}, { get: () => true }); // (GĐ25) nhân viên bán hàng giỏi biết hết ý nghĩa hoa
-const PRIORITY_PICKS = new Set(['party', 'branch', 'trader', 'home', 'story', 'mo', 'buds', 'sail', 'diep', 'fishspot', 'fishstall', 'fogwall', 'gather', 'hgshop', 'hgbridge']);
+const PRIORITY_PICKS = new Set(['pet', 'nest', 'ride', 'booth', 'snack', 'prize', 'fungate', 'party', 'branch', 'trader', 'home', 'story', 'mo', 'buds', 'sail', 'diep', 'fishspot', 'fishstall', 'fogwall', 'gather', 'hgshop', 'hgbridge']);
 
 export const TUTORIAL = [
   { text: 'Chọn 🪏 Xẻng rồi chạm vào ô đất để xới đất (hoặc chạm ô đất bằng ✋ để xem).', done: (a) => a === 'till' },
@@ -134,7 +144,7 @@ export class Game {
     this.farmView = new FarmView(stage.scene);
     this.farmView.build(this.save);
     const start = PLOT_SLOTS[0].clone().add(new THREE.Vector3(2.6, 0, 1.2));
-    this.player = new Player(stage.scene, this.save.player.avatar, start);
+    this.player = new Player(stage.scene, wardrobe.lookOf(this.save), start); // (GĐ26) mặc đồ trong tủ
     this.particles = new Particles(stage.scene);
     // 🐛 sâu trên luống (GĐ16) — chỉ có lúc đang chơi, không lưu vào save
     this.bugView = new BugView(stage.scene);
@@ -170,6 +180,8 @@ export class Game {
     this.conlang = new ConLangView(stage.scene); // GĐ22: Cồn Lặng + các điểm câu cá
     this.huong = new HuongView(stage.scene); // GĐ23: Đảo Ngàn Hương + Tiệm Hương Nhài
     this.manage = new ManageView(stage.scene); // GĐ25: đồ trang trí tiệc, quầy chi nhánh, thuyền buôn
+    this.funPark = new FunPark(stage.scene); // GĐ26: Khu Vui Chơi
+    this.petView = new PetView(stage.scene, ISLAND_ZONES.home.at); // GĐ26: thú cưng + ổ ấp
     this.syncStoryWorld();
     this.cine = false;
     this.storyTrig = [];
@@ -207,6 +219,7 @@ export class Game {
     this.updateLockedSlots();
     this.applyShopLevel();
     this.applyShopDisplay();
+    this.syncPets(); // (GĐ26)
     // GĐ18: thành tựu chờ nhận & sự kiện tuần (để báo khi có cái mới)
     this.achSeen = goals.claimableAch(this.save);
     this.goalCheckT = 0;
@@ -273,6 +286,8 @@ export class Game {
       this.runStaff(to, offline);
       // 🏪 chi nhánh: thuyền cập bến, quầy tự bán (GĐ25)
       this.branchTick(from, to, offline);
+      // 🐾🎡 thú cưng & Khu Vui Chơi (GĐ26)
+      this.festivalTick(from, to, offline);
       // 🐛 sâu & 📦 đơn hàng (GĐ16)
       if (!offline) this.bugTick(to);
       for (const e of orders.ordersTick(s, to, Math.random, { offline, dMin: step })) this.onOrderEvent(e, offline);
@@ -344,6 +359,7 @@ export class Game {
       this.applyWeatherVisuals();
       this.emitter.emit('weather');
       // trả lương nhân viên + nhiệm vụ mới
+      petsSys.newDay(this.save, e.day); // (GĐ26) thú không được chăm thì bớt thân
       const paid = automation.payWages(this.save);
       if (!offline) for (const w of paid) {
         if (w.quit) this.toast(`😢 ${w.name} nợ lương lâu quá nên đã nghỉ hẳn.`, 'bad');
@@ -489,6 +505,9 @@ export class Game {
     this.conlang.update(dt, { night: this.dayNight.night || 0, hide: this.cine });
     this.huong.update(dt, { night: this.dayNight.night || 0, hide: this.cine });
     this.manage.update(dt);
+    this.funPark.update(dt, { night: this.dayNight.night || 0, cine: this.cine });
+    this.petView.root.visible = !this.visit && !this.cine;
+    this.petView.update(dt, this.player.root.position, this.player.phase === 'walk');
     this.world.home.update(dt, this.dayNight.night || 0);
     this.world.forest.update(dt, { snow: this.weatherDetail.snow, wind: this.farmView.wind || 0 });
     // 🎵 nhạc riêng Mũi Én: máy quay ở Mũi Én (hoặc đang chiếu cảnh truyện ở đó) thì phát nhạc đảo
@@ -590,6 +609,9 @@ export class Game {
     if (pick.kind === 'sail') { this.select(null); this.sail(); return; }
     if (pick.kind === 'home') { this.select(null); this.emitter.emit('home'); return; }
     if (pick.kind === 'party') { this.select(null); this.emitter.emit('manage', { tab: 'party', slot: pick.slot }); return; }
+    if (pick.kind === 'pet') { this.select(null); this.petPat(pick.id); return; }
+    if (pick.kind === 'nest') { this.select(null); this.emitter.emit('style', { tab: 'eggs' }); return; }
+    if (['fungate', 'ride', 'booth', 'snack', 'prize'].includes(pick.kind)) { this.select(null); this.tapFun(pick); return; }
     if (pick.kind === 'branch') { this.select(null); this.emitter.emit('manage', { tab: 'branch', id: pick.id }); return; }
     if (pick.kind === 'trader') { this.select(null); this.emitter.emit('manage', { tab: 'today' }); return; }
     if (pick.kind === 'gather') { this.select(null); this.emitter.emit('gather', { id: pick.id }); return; }
@@ -907,7 +929,7 @@ export class Game {
       g.visible = !plots.some((p) => p.parcel === id);
       return g.visible && !this.visit;
     }).map(([, g]) => g);
-    this.pickRoots = this.decorMode ? [this.decorView.root] : [this.bugView.root, this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, this.world.home.root, ...locked, ...parcels, this.villagers.root, ...this.villagers.housePick(), this.storyView.root, this.dreamWorld.root, this.muien.root, this.conlang.root, this.huong.root, this.manage.root];
+    this.pickRoots = this.decorMode ? [this.decorView.root] : [this.bugView.root, this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, this.world.home.root, ...locked, ...parcels, this.villagers.root, ...this.villagers.housePick(), this.storyView.root, this.dreamWorld.root, this.muien.root, this.conlang.root, this.huong.root, this.manage.root, this.funPark.root, this.petView.root];
   }
 
   /** Vị trí lô thứ pi (lô của dân làng nằm ở mảnh đất riêng) */
@@ -1068,6 +1090,10 @@ export class Game {
 
   // ---------------- nhiệm vụ (GĐ8) ----------------
   questEvent(event, amount = 1) {
+    // (GĐ26) điểm Sổ thưởng mùa + trứng thú cưng khi câu cá
+    const PK = { harvest: 'harvest', serve: 'serve', order: 'order', fish: 'fish', help: 'favor' };
+    if (PK[event] && !this.visit) this.passAdd(PK[event], amount);
+    if (event === 'fish') this.maybeEgg('fish');
     const done = quests.questProgress(this.save, event, amount);
     for (const d of done) this.toast(`📋 Hoàn thành nhiệm vụ: ${d.template.text.replace('{n}', d.quest.n)}! Vào 📋 để nhận thưởng`, 'good');
     this.emitter.emit('quests');
@@ -1821,6 +1847,7 @@ export class Game {
       if (rw.coins) this.save.player.coins += rw.coins;
       if (rw.luck || rw.gold) luck.grantTickets(this.save, { luck: rw.luck || 0, gold: rw.gold || 0 });
       if (rw.xp) this.gainXp(rw.xp);
+      if (rw.outfit && wardrobe.grant(this.save, rw.outfit)) this.emitter.emit('style'); // (GĐ26) quà trang phục
       this.particles.spawn('sparkle', this.player.root.position.clone().setY(1.2));
       this.audio?.sfx?.chime?.(6);
       this.emitter.emit('story-chapter', { ch: res.chapterDone, reward: rw, next: res.next, ending: story.ending(this.save) });
@@ -1889,8 +1916,10 @@ export class Game {
       s.player.coins += t.T.reward.coins;
       this.gainXp(t.T.reward.xp);
       this.toast(`✅ Kế hoạch: ${t.text} (+${t.T.reward.coins} 💰)`, 'good');
+      this.passAdd('planTask');
     }
     if (done.bonus) {
+      this.passAdd('planAll');
       s.player.coins += PLAN_RULES.allDone.coins;
       if (PLAN_RULES.allDone.luck) { luck.grantTickets(s, { luck: PLAN_RULES.allDone.luck }); this.emitter.emit('luck'); }
       setTimeout(() => this.toast(`🌟 Xong hết kế hoạch hôm nay! +${PLAN_RULES.allDone.coins} 💰 +${PLAN_RULES.allDone.luck} 🎟️`, 'good'), 1200);
@@ -1968,6 +1997,7 @@ export class Game {
     this.audio?.sfx?.chime?.(r.score >= 80 ? 7 : 4);
     this.toast(`🎉 ${name}: “${r.line}” — ${r.score} điểm · +${r.coins.toLocaleString('vi-VN')} 💰 +${r.rep} 💗 +${r.fp} ❤️`, r.score >= 50 ? 'good' : 'warn');
     this.eventPts('favor');
+    this.passAdd('party');
     this.hgProgress(); // bước truyện đếm số tiệc / đám cưới
     this.saveMgr.markDirty();
     this.saveMgr.saveNow('manual');
@@ -2033,6 +2063,257 @@ export class Game {
     this.saveMgr.markDirty();
     this.bSync = (this.bSync || 0) + 1;
     if (this.bSync % 4 === 0 || r.arrived.length) { this.syncManage(); this.emitter.emit('manage'); }
+  }
+
+  // =============================================================
+  //  🎆 (GĐ26) LỄ HỘI ĐẢO MÂY: tủ đồ, thú cưng & trứng, Khu Vui Chơi, Sổ thưởng mùa & điểm danh
+  // =============================================================
+  /** Mặc lại nhân vật theo tủ đồ */
+  applyLook() { this.player.setAvatar(wardrobe.lookOf(this.save)); this.emitter.emit('xp'); }
+  wearItem(id) {
+    const r = wardrobe.wear(this.save, id);
+    if (!r.ok) { this.toast(r.msg, 'warn'); return r; }
+    this.applyLook();
+    this.particles.spawn('sparkle', this.player.root.position.clone().setY(1.2));
+    this.saveMgr.markDirty();
+    this.emitter.emit('style');
+    return r;
+  }
+  buyOutfit(id) {
+    const r = wardrobe.buy(this.save, id);
+    this.toast(r.msg, r.ok ? 'good' : 'warn');
+    if (r.ok) { this.wearItem(id); this.emitter.emit('inventory'); }
+    return r;
+  }
+  setHairColor(c) { wardrobe.setHairColor(this.save, c); this.applyLook(); this.saveMgr.markDirty(); this.emitter.emit('style'); }
+
+  // ----- 🐾 thú cưng -----
+  syncPets() {
+    const p = petsSys.PS(this.save);
+    this.petView.sync({ list: p.list, active: p.active, eggs: p.eggs, incubators: p.incubators, visible: !this.visit });
+  }
+  /** Có thể rơi trứng (câu cá, hái, mở gói Vận May) */
+  maybeEgg(src, delay = 0) {
+    if (this.visit || this.save.player.level < PET_RULES.unlockLevel) return;
+    if (Math.random() >= (PET_RULES.drops[src] || 0)) return;
+    const kind = src === 'luckGold' ? 'rare' : 'common';
+    petsSys.addEgg(this.save, kind);
+    setTimeout(() => this.toast(`${EGGS[kind].icon} Nhặt được ${EGGS[kind].name}! Mang về ổ ấp ở nhà (🎀 › Trứng)`, 'good'), 900 + delay);
+    this.syncPets();
+    this.saveMgr.markDirty();
+    this.emitter.emit('style');
+  }
+  claimStarterEgg() {
+    const r = petsSys.claimStarter(this.save);
+    this.toast(r.msg, r.ok ? 'good' : 'warn');
+    if (r.ok) { this.syncPets(); this.saveMgr.markDirty(); this.emitter.emit('style'); }
+    return r;
+  }
+  incubateEgg(id) {
+    const r = petsSys.incubate(this.save, id, this.now);
+    this.toast(r.msg, r.ok ? 'good' : 'warn');
+    if (r.ok) { this.syncPets(); this.saveMgr.markDirty(); this.emitter.emit('style'); }
+    return r;
+  }
+  buyIncubator() {
+    const r = petsSys.buyIncubator(this.save);
+    this.toast(r.msg, r.ok ? 'good' : 'warn');
+    if (r.ok) { this.syncPets(); this.saveMgr.markDirty(); this.emitter.emit('style'); this.emitter.emit('inventory'); }
+    return r;
+  }
+  /** Cho ăn: ưu tiên món ăn vặt (XP ×2), không có thì 1 bông hoa ít giá trị nhất */
+  petFeed(id) {
+    const s = this.save, pet = petsSys.petOf(s, id);
+    if (!pet) return null;
+    if (pet.feedDay === this.today) { this.toast(`${pet.name} no rồi, mai cho ăn tiếp nhé!`, 'info'); return null; }
+    let snack = funSys.takeSnack(s), what = '';
+    if (snack) what = SNACKS[snack.split('|')[0]].name;
+    else {
+      const keys = Object.keys(s.inventory.flowers).filter((k) => s.inventory.flowers[k] > 0 && !FLOWERS[variants.parseFlowerKey(k).species]?.luck).sort((a, b) => shop.wholesalePrice(a) - shop.wholesalePrice(b));
+      if (!keys.length) { this.toast('Kho không có hoa hay món ăn vặt nào để cho ăn', 'warn'); return null; }
+      s.inventory.flowers[keys[0]] -= 1; if (!s.inventory.flowers[keys[0]]) delete s.inventory.flowers[keys[0]];
+      what = FLOWERS[variants.parseFlowerKey(keys[0]).species].name.toLowerCase();
+    }
+    const r = petsSys.feed(s, id, this.today, !!snack);
+    this.toast(`${r.msg} (ăn ${what})${r.up ? ` · ⬆️ lên cấp ${pet.lvl}!` : ''}`, 'good');
+    this.afterPet(id, r);
+    return r;
+  }
+  petPat(id) {
+    const r = petsSys.pat(this.save, id, this.today);
+    if (!r.ok) return r;
+    const pos = this.petView.posOf(id);
+    if (pos) { this.particles.spawn('sparkle', pos); this.emitter.emit('float', { pos: pos.clone().setY(1.2), text: '💕' }); }
+    this.audio?.sfx?.chime?.(3);
+    if (!r.again) { this.toast(`${r.msg}${r.up ? ` · ⬆️ lên cấp ${petsSys.petOf(this.save, id).lvl}!` : ''}`, 'good'); this.afterPet(id, r); }
+    return r;
+  }
+  afterPet(id, r) {
+    this.passAdd('petCare');
+    if (r.up) { const p = petsSys.petOf(this.save, id); const sk = Object.values(PET_RULES.skills).find((k) => k.level === p.lvl); if (sk) setTimeout(() => this.toast(`🐾 ${p.name} học được kỹ năng mới: ${sk.icon} ${sk.name}!`, 'good'), 1200); }
+    this.syncPets();
+    this.saveMgr.markDirty();
+    this.emitter.emit('style');
+    this.emitter.emit('inventory');
+  }
+  petSetActive(id) { petsSys.setActive(this.save, id); this.syncPets(); this.saveMgr.markDirty(); this.emitter.emit('style'); }
+  petRename(id, name) { const r = petsSys.rename(this.save, id, name); this.toast(r.msg, r.ok ? 'good' : 'warn'); if (r.ok) { this.saveMgr.markDirty(); this.emitter.emit('style'); } return r; }
+
+  /** Thời gian trôi: trứng nở, thú đi theo làm việc, quầy ăn vặt bán hàng */
+  festivalTick(from, to, offline) {
+    const s = this.save;
+    // 🥚 trứng nở
+    const born = petsSys.hatchTick(s, to);
+    for (const pet of born) if (!offline) setTimeout(() => this.toast(`🐣 Trứng nở rồi! Chào ${PET_SPECIES[pet.sp].icon} ${pet.name} (${PET_SPECIES[pet.sp].name})!`, 'good'), 600);
+    if (born.length) { this.syncPets(); this.emitter.emit('style'); this.saveMgr.markDirty(); }
+    // 🐾 thú đi theo làm việc (chỉ khi đang chơi)
+    if (!offline && !this.visit) {
+      const seeds = this.unlockedFlowers().filter((id) => !FLOWERS[id].greenhouseOnly && !FLOWERS[id].salt).map((id) => variants.vkey(id));
+      for (const ev of petsSys.walkTick(s, from, to, { seeds, day: dayOf(to) })) {
+        const pet = ev.pet, ic = PET_SPECIES[pet.sp].icon;
+        if (ev.kind === 'dig') { s.inventory.seeds[ev.seed] = (s.inventory.seeds[ev.seed] || 0) + 1; this.toast(`${ic} ${pet.name} đào được 1 hạt ${FLOWERS[ev.seed.split(':')[0]].name}!`, 'good'); }
+        if (ev.kind === 'egg') { petsSys.addEgg(s, ev.egg); this.toast(`${ic} ${pet.name} tìm thấy ${EGGS[ev.egg].icon} ${EGGS[ev.egg].name} trong bụi cỏ!`, 'good'); this.syncPets(); }
+        if (ev.kind === 'mail') { s.player.coins += ev.coins; const who = this.knownVillagers(); const n = who.length ? villagerInfo(who[Math.floor(Math.random() * who.length)])?.name : 'dân làng'; this.toast(`💌 ${pet.name} mang thư của ${n}: “Gửi chút quà cảm ơn tiệm nhé!” +${ev.coins} 💰`, 'good'); }
+        if (ev.kind === 'level') { this.toast(`⬆️ ${pet.name} đi dạo cùng bạn nên lên cấp ${pet.lvl}!`, 'good'); this.syncPets(); }
+        this.emitter.emit('inventory');
+        this.saveMgr.markDirty();
+      }
+    }
+    // 🍡 quầy ăn vặt
+    const sold = funSys.snackTick(s, from, to, { open: this.funOpen(), offline, saturdayNight: (m) => this.isFestivalAt(m) });
+    if (sold.length) {
+      const coins = sold.reduce((a, x) => a + x.coins, 0);
+      if (!offline) this.toast(`🍡 Khách đi chơi mua ${sold.map((x) => SNACKS[x.id].icon).join('')} ở quầy ăn vặt: +${coins.toLocaleString('vi-VN')} 💰`, 'good');
+      this.passAdd('snack', sold.length);
+      this.hgProgress();
+    }
+  }
+
+  // ----- 🎡 Khu Vui Chơi -----
+  funOpen() { return story.has(this.save, 'fun_open'); }
+  /** Đang lễ hội tối Thứ Bảy (18–22h) không */
+  isFestivalAt(m) { const h = (m % 1440) / 60; return this.funOpen() && planSys.weekdayOf(dayOf(m)).name === 'Thứ Bảy' && h >= 18 && h < 22; }
+  syncFun() {
+    const h = this.clock?.hourFloat ?? 12;
+    this.funPark.sync({ open: this.funOpen(), hours: funSys.isOpenHour(h), festival: this.isFestivalAt(this.now) });
+  }
+  tapFun(pick) {
+    if (!this.funOpen()) {
+      const t = !pick.nav && story.triggers(this.save, {}).find((x) => x.scene === 'f1_gate');
+      if (t) { this.playTrigger('f1_gate'); return; }
+      this.toast(this.save.player.level < FUN_RULES.storyNeed.level ? `🚧 Khu Vui Chơi đang sửa. Đạt cấp ${FUN_RULES.storyNeed.level} rồi hỏi Ông Ba nhé!` : '🚧 Khu Vui Chơi đang sửa. Hỏi Ông Ba xem sao.', 'info');
+      return;
+    }
+    if (!funSys.isOpenHour(this.clock.hourFloat) && pick.kind !== 'snack' && pick.kind !== 'prize') { this.toast('🌙 Khu Vui Chơi mở cửa 8:00 – 22:00', 'info'); return; }
+    const tab = { fungate: 'rides', ride: 'rides', booth: 'booths', snack: 'snacks', prize: 'prizes' }[pick.kind];
+    this.emitter.emit('fun', { tab, id: pick.id });
+  }
+  goFun() {
+    const [x, z] = ISLAND_ZONES.fun.at;
+    this.controls.focusOn(new THREE.Vector3(x, 0, z), 0.95);
+  }
+  /** Đi 1 trò chơi lớn */
+  rideGo(id) {
+    const R = RIDES[id];
+    if (!this.funOpen()) return null;
+    const r = funSys.ride(this.save, id);
+    if (!r.ok) { this.toast(r.msg, 'warn'); return r; }
+    const pos = this.funPark.worldPos(R.at);
+    this.funPark.rideFx(id, R.seconds);
+    this.player.clearQueue();
+    this.player.root.position.set(pos.x - 2.4, 0, pos.z + 2.4);
+    this.controls.focusOn(pos.clone(), id === 'wheel' ? 0.8 : 1.15);
+    this.toast(`${R.icon} ${{ wheel: 'Lên cao rồi! Nhìn kìa, cả quần đảo!', carousel: 'Leng keng leng keng~', coaster: 'Áaaaa! Vui quá!', mirror: 'Ơ, mình thành người khổng lồ!' }[id]}`, 'good');
+    const pet = petsSys.activePet(this.save);
+    if (pet) pet.love = Math.min(100, pet.love + 4);
+    this.gainXp(6);
+    this.passAdd('ride');
+    this.audio?.sfx?.chime?.(5);
+    setTimeout(() => { this.particles.spawn('sparkle', pos.clone().setY(2)); if (pet) this.toast(`${PET_SPECIES[pet.sp].icon} ${pet.name} vui lắm! (+thân thiết)`, 'info'); }, R.seconds * 1000);
+    this.hgProgress();
+    this.saveMgr.markDirty();
+    this.emitter.emit('inventory');
+    return r;
+  }
+  /** Trả tiền 1 lượt quầy trò chơi (UI chạy mini game rồi gọi boothResult) */
+  boothPay(id) {
+    const r = funSys.payBooth(this.save, id);
+    if (!r.ok) this.toast(r.msg, 'warn');
+    else { this.emitter.emit('inventory'); this.saveMgr.markDirty(); }
+    return r;
+  }
+  boothResult(id, stars, combo = 0) {
+    const s = this.save, B = BOOTHS[id];
+    favors.recordMiniGame(s, B.game, stars, combo);
+    const r = funSys.finishBooth(s, id, stars);
+    this.toast(`${B.icon} ${B.name}: ${'⭐'.repeat(r.stars) || 'chưa được sao nào'} · +${r.xu} 🪙 Xu Vui${r.best ? ' · 🏆 kỷ lục mới!' : ''}`, r.stars ? 'good' : 'info');
+    if (r.stars) { this.gainXp(4 + r.stars * 2); this.passAdd('booth', r.stars); }
+    this.hgProgress();
+    this.saveMgr.markDirty();
+    this.emitter.emit('inventory');
+    return r;
+  }
+  prizeHas(kind, ref) { return kind === 'outfit' && wardrobe.owns(this.save, ref); }
+  exchangePrize(prizeId) {
+    const s = this.save;
+    const r = funSys.exchange(s, prizeId, (k, ref) => this.prizeHas(k, ref));
+    if (!r.ok) { this.toast(r.msg, 'warn'); return r; }
+    this.grantReward({ [r.P.kind === 'luck' ? 'luck' : r.P.kind]: r.P.ref }, '🎁 Đổi quà');
+    this.saveMgr.markDirty();
+    return r;
+  }
+  snackBuy(id, n = 5) { const r = funSys.buyPantry(this.save, id, n); this.toast(r.msg, r.ok ? 'good' : 'warn'); if (r.ok) { this.saveMgr.markDirty(); this.emitter.emit('inventory'); } return r; }
+  snackMake(id, stars) {
+    const r = funSys.makeSnack(this.save, id, stars);
+    this.toast(r.msg, r.ok ? 'good' : 'warn');
+    if (r.ok) { this.gainXp(3 + stars); this.saveMgr.markDirty(); this.emitter.emit('inventory'); }
+    return r;
+  }
+
+  // ----- 🎁 quà chung (Sổ thưởng, điểm danh, đổi quà) -----
+  /** rw: { coins, xu, luck, gold, seeds (số hạt ngẫu nhiên), egg, outfit, decor } */
+  grantReward(rw, label = '🎁') {
+    const s = this.save, parts = [];
+    if (rw.coins) { s.player.coins += rw.coins; parts.push(`+${rw.coins.toLocaleString('vi-VN')} 💰`); }
+    if (rw.xu) { funSys.F(s).xu += rw.xu; parts.push(`+${rw.xu} 🪙`); }
+    if (rw.luck || rw.gold) { luck.grantTickets(s, { luck: rw.luck || 0, gold: rw.gold || 0 }); this.emitter.emit('luck'); if (rw.luck) parts.push(`+${rw.luck} 🎟️`); if (rw.gold) parts.push(`+${rw.gold} 🎫`); }
+    if (rw.seeds) {
+      const ids = this.unlockedFlowers().filter((id) => !FLOWERS[id].salt);
+      for (let i = 0; i < rw.seeds; i++) { const k = variants.vkey(ids[Math.floor(Math.random() * ids.length)]); s.inventory.seeds[k] = (s.inventory.seeds[k] || 0) + 1; }
+      parts.push(`+${rw.seeds} 🌱 hạt`);
+    }
+    if (rw.egg) { petsSys.addEgg(s, rw.egg); this.syncPets(); parts.push(`${EGGS[rw.egg].icon} ${EGGS[rw.egg].name}`); }
+    if (rw.outfit) { const isNew = wardrobe.grant(s, rw.outfit); parts.push(`👗 ${WARDROBE[rw.outfit].name}${isNew ? '' : ' (đã có)'}`); }
+    if (rw.decor) { s.decor.owned[rw.decor] = (s.decor.owned[rw.decor] || 0) + 1; parts.push(`${DECOR[rw.decor].icon} ${DECOR[rw.decor].name} (vào 🎨 để đặt)`); }
+    if (parts.length) this.toast(`${label}: ${parts.join(', ')}`, 'good');
+    this.audio?.sfx?.chime?.(5);
+    this.emitter.emit('inventory');
+    this.emitter.emit('style');
+    this.emitter.emit('manage');
+  }
+
+  // ----- 📖 Sổ thưởng mùa & điểm danh -----
+  passAdd(kind, n = 1) {
+    if (this.visit) return;
+    const r = passSys.add(this.save, kind, n);
+    if (r.tierUp) { this.toast(`📖 Sổ thưởng mùa lên bậc ${r.tierUp}! Vào 🗓️ › Sổ mùa để nhận quà`, 'good'); this.emitter.emit('manage'); }
+  }
+  passClaim(t) {
+    const r = passSys.claim(this.save, t);
+    if (!r.ok) { this.toast(r.msg, 'warn'); return r; }
+    this.grantReward(r.rw, `📖 Quà bậc ${t}`);
+    this.saveMgr.markDirty();
+    return r;
+  }
+  doCheckin() {
+    const r = passSys.checkin(this.save);
+    if (!r.ok) { this.toast(r.msg, 'info'); return r; }
+    this.grantReward(r.rw, `📅 Điểm danh ngày ${r.day}`);
+    if (r.mile) setTimeout(() => this.grantReward(r.mile, `🎉 Mốc ${r.mile.days} ngày điểm danh`), 1400);
+    this.passAdd('checkin');
+    this.saveMgr.markDirty();
+    this.saveMgr.saveNow('manual');
+    return r;
   }
 
   // ---------------- 🌱 Nụ Mộng (GĐ20B) ----------------
@@ -2143,6 +2424,7 @@ export class Game {
     favors.recordMiniGame(s, g.game, stars, combo);
     const res = craft.gather(s, spotId, stars, { day: this.today });
     if (stars > 0) this.gainXp(CRAFT_RULES.xpGather + stars);
+    if (stars > 0) this.maybeEgg('gather');
     const got = Object.entries(res.got || {});
     this.toast(got.length ? `${g.icon} Hái được: ${got.map(([k, n]) => `${INGREDIENTS[k].icon} ${INGREDIENTS[k].name} ×${n}`).join(', ')}` : `${g.icon} ${res.msg}`, got.length ? 'good' : 'info');
     this.hgProgress(before);
@@ -2416,6 +2698,12 @@ export class Game {
   checkGoals() {
     const s = this.save;
     this.manageTick(); // (GĐ25) kế hoạch hôm nay, hợp đồng tiệc mới
+    this.syncFun(); // (GĐ26) Khu Vui Chơi: mở cửa / lễ hội tối Thứ Bảy
+    if (!this.visit && passSys.canCheckin(this.save) && this.checkinNote !== passSys.vnDate() && this.save.player.level >= 2) {
+      this.checkinNote = passSys.vnDate();
+      setTimeout(() => this.toast('📅 Hôm nay chưa điểm danh! Vào 🗓️ › 📖 Sổ mùa để nhận quà', 'info'), 3500);
+      this.emitter.emit('manage');
+    }
     this.refreshAutoDisplay(); // (0.26.1) tự treo hoa theo kho
     const { changed, theme } = goals.ensureEvent(s);
     if (changed) {
@@ -2505,6 +2793,7 @@ export class Game {
     if (!res.ok) { this.toast(res.msg, 'warn'); return res; }
     const rw = res.reward;
     if (rw.type === 'upgrade') this.applyUpgradeEffects();
+    this.maybeEgg(packId === 'gold' ? 'luckGold' : 'luckNormal', 1600); // (GĐ26) trứng thú cưng kèm gói
     if (rw.luckFlower && rw.isNew) this.emitter.emit('book');
     this.saveMgr.markDirty();
     this.saveMgr.saveNow('manual');

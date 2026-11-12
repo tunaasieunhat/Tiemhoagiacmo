@@ -12,6 +12,10 @@ import * as branchSys from '../systems/branch.js';
 import * as relations from '../systems/relations.js';
 import { villagerInfo } from '../systems/village.js';
 import { variantName, parseVkey } from '../systems/variants.js';
+import * as passSys from '../systems/pass.js';
+import { PASS_RULES, CHECKIN_WEEK, CHECKIN_MILESTONES } from '../../data/pass.js';
+import { WARDROBE } from '../../data/wardrobe.js';
+import { EGGS } from '../../data/pets.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const money = (n) => Math.round(n).toLocaleString('vi-VN');
@@ -25,6 +29,7 @@ const TABS = [
   { id: 'party', label: '🎉 Tiệc' },
   { id: 'branch', label: '🏪 Chi nhánh' },
   { id: 'staff', label: '👥 Nhân viên' },
+  { id: 'pass', label: '📖 Sổ mùa' },
 ];
 
 export class ManagePanel {
@@ -53,7 +58,7 @@ export class ManagePanel {
     const s = this.save;
     const head = `<div class="mk-wallet"><span>💰 <b>${money(s.player.coins)}</b></span><span>💗 <b>${s.player.reputation}</b></span></div>`;
     const tabs = `<div class="mk-tabs" role="tablist">${TABS.map((t) => `<button class="${t.id === this.tab ? 'on' : ''}" data-ql="tab" data-id="${t.id}" role="tab">${t.label}</button>`).join('')}</div>`;
-    const body = { today: () => this.today(), party: () => this.party(), branch: () => this.branches(), staff: () => this.staff() }[this.tab]();
+    const body = { today: () => this.today(), party: () => this.party(), branch: () => this.branches(), staff: () => this.staff(), pass: () => this.pass() }[this.tab]();
     this.hud.openModal('manage', `<h2>🗓️ Sổ quản lý</h2>${head}${tabs}<div class="mk-body ql-body">${body}</div>`, 'wide');
     // ô chọn (select) dùng sự kiện change
     for (const el of this.hud.root.querySelectorAll('.m-manage select[data-ql]')) el.addEventListener('change', () => this.onAction(el.dataset.ql, el));
@@ -213,6 +218,36 @@ export class ManagePanel {
     return `<details class="ql-plans" open><summary>🌱 Kế hoạch gieo của từng lô</summary>${rows}<p class="muted small">Tay nghề 3+: tự bón phân · 5+: tự chữa bệnh (cần có phân/thuốc trong kho). Người làm vườn còn tưới ô khô và bắt sâu giúp.</p></details>`;
   }
 
+  // ---------------- 📖 Sổ thưởng mùa & điểm danh (GĐ26) ----------------
+  pass() {
+    const s = this.save;
+    const rwText = (rw) => [rw.coins && `${money(rw.coins)} 💰`, rw.xu && `${rw.xu} 🪙`, rw.luck && `${rw.luck} 🎟️`, rw.gold && `${rw.gold} 🎫`, rw.seeds && `${rw.seeds} 🌱`, rw.egg && `${EGGS[rw.egg].icon} ${EGGS[rw.egg].name}`, rw.outfit && `${WARDROBE[rw.outfit]?.icon} ${WARDROBE[rw.outfit]?.name}`].filter(Boolean).join(' + ');
+    const rwIcon = (rw) => (rw.outfit ? WARDROBE[rw.outfit]?.icon : rw.egg ? EGGS[rw.egg].icon : rw.gold ? '🎫' : rw.luck ? '🎟️' : rw.xu ? '🪙' : rw.seeds ? '🌱' : '💰');
+    // điểm danh
+    const c = passSys.C(s), can = passSys.canCheckin(s);
+    const pos = c.n % 7;
+    const week = CHECKIN_WEEK.map((rw, i) => {
+      const done = can ? i < pos : i <= (c.n - 1) % 7;
+      const today = can && i === pos;
+      return `<div class="ps-day ${done ? 'done' : ''} ${today ? 'today' : ''}"><small>Ngày ${i + 1}</small><span>${done ? '✅' : rwIcon(rw)}</span><i>${esc(rwText(rw))}</i></div>`;
+    }).join('');
+    const miles = CHECKIN_MILESTONES.map((m) => `<span class="${c.n >= m.days ? 'good' : ''}">${c.n >= m.days ? '✅' : '🎁'} ${m.days} ngày: ${esc(rwText(m))}</span>`).join(' · ');
+    const check = `<div class="ps-check"><div class="ps-week">${week}</div>
+      <div class="ql-actions"><button class="btn ${can ? 'primary' : 'disabled'}" data-ql="checkin">${can ? '📅 Điểm danh hôm nay' : '✔ Hôm nay đã điểm danh'}</button><small class="muted">Đã điểm danh ${c.n}/28 ngày · ${miles}</small></div></div>`;
+    // sổ thưởng
+    const se = passSys.seasonOf(), p = passSys.P(s), tier = passSys.tierOf(s);
+    const inTier = tier >= PASS_RULES.tiers ? PASS_RULES.perTier : p.pts % PASS_RULES.perTier;
+    const tiers = Array.from({ length: PASS_RULES.tiers }, (_, i) => {
+      const t = i + 1, rw = passSys.rewardOf(t), got = p.claimed.includes(t), ready = tier >= t && !got;
+      return `<button class="ps-tier ${got ? 'got' : ready ? 'ready' : ''} ${rw.outfit ? 'big' : ''}" data-ql="pclaim" data-id="${t}" title="${esc(rwText(rw))}"><small>${t}</small><span>${got ? '✅' : rwIcon(rw)}</span><i>${esc(rwText(rw))}</i></button>`;
+    }).join('');
+    return `<h3>📅 Điểm danh mỗi ngày</h3>${check}
+      <h3>${se.theme.icon} Sổ thưởng: ${esc(se.theme.name)} <small class="muted">· còn ${se.daysLeft} ngày</small></h3>
+      <div class="ps-head"><b>Bậc ${tier}/${PASS_RULES.tiers}</b>${bar(inTier, PASS_RULES.perTier, '#ffd36e')}<small>${p.pts} ⭐ · hôm nay ${p.dayPts}/${PASS_RULES.dailyCap} ⭐</small></div>
+      <p class="muted small">Miễn phí! Kiếm ⭐ bằng: điểm danh, xong việc trong Kế hoạch hôm nay, chơi Khu Vui Chơi, bán ăn vặt, làm tiệc, giao đơn, phục vụ khách, thu hoạch, câu cá, chăm thú cưng, giúp dân làng. Bậc 10 / 20 / 30 có trang phục riêng của mùa.</p>
+      <div class="ps-grid">${tiers}</div>`;
+  }
+
   // ---------------- xử lý bấm ----------------
   onAction(act, el) {
     const g = this.game;
@@ -226,6 +261,8 @@ export class ManagePanel {
     switch (act) {
       case 'tab': this.tab = id; this.shipTo = null; this.render(); return;
       case 'trader': g.buyTrader(id); break;
+      case 'checkin': g.doCheckin(); break;
+      case 'pclaim': g.passClaim(+id); break;
       case 'accept': g.partyAccept(+id); break;
       case 'slot': g.partySet(+el.dataset.i, el.value || null); break;
       case 'look': this.hud.closeModal(); g.partyLook(); return;

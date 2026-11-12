@@ -2,6 +2,7 @@
 // lựa chọn giữa màn hình, tranh minh họa, hồi ức màu nâu, Bỏ qua / Tự chạy / Nhật ký thoại.
 // Kịch bản nằm ở data/story.js; phần 3D (máy quay, diễn viên) gọi qua game.director.
 import { CAST, SCENES, STORY_RULES, CG_TEXT } from '../../data/story.js';
+import { lookOf } from '../systems/wardrobe.js';
 import { villagerInfo } from '../systems/village.js';
 import * as storySys from '../systems/story.js';
 
@@ -157,7 +158,7 @@ export class Cinema {
   }
 
   lookOf(who) {
-    if (who === 'you') return this.game.save.player.avatar;
+    if (who === 'you') return lookOf(this.game.save); // (GĐ26) chân dung mặc đúng trang phục
     return CAST[who]?.look || villagerInfo(who)?.look || { skin: '#ffe0c7', hair: '#6b4433', outfit: '#ddd' };
   }
 

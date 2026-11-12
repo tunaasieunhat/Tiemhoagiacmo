@@ -173,7 +173,7 @@ export class MarketPanel {
           : '<span class="maxed">🍁 Mùa Thu</span>',
       });
     };
-    const normal = Object.entries(DECOR).filter(([, d]) => !d.event && !d.luck && !d.weekly);
+    const normal = Object.entries(DECOR).filter(([, d]) => !d.event && !d.luck && !d.weekly && !d.fun);
     const events = Object.entries(DECOR_EVENTS).map(([eid, ev]) => {
       const items = Object.entries(DECOR).filter(([, d]) => d.event === eid);
       const open = eventOpen(eid, season);
