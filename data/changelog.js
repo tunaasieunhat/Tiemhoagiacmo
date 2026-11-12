@@ -4,6 +4,13 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.25.1',
+    notes: [
+      '🌈 Cầu vồng giờ là cầu vồng thật bắc ngang đảo (một chân ở Khu vui chơi, một chân ở rừng tây nam): kéo bản đồ thì nó đứng yên tại chỗ, cây và nhà phía trước che được nó — không còn dính vào màn hình',
+      '🌠 Sao băng rơi thật trên trời đảo thay vì vẽ đè lên màn hình',
+    ],
+  },
+  {
     version: '0.25.0',
     notes: [
       '🏝️ ĐẢO CHÍNH MỚI: to gần gấp đôi, nhiều mũi đất uốn lượn, chia khu rõ ràng — Nông trại + Tiệm hoa + Nhà bạn ở giữa, Công viên phía tây, Khu vui chơi phía đông bắc (🚧 sắp khai trương), Khu mua bán phía đông có cầu tàu, Làng Hoa phía nam',

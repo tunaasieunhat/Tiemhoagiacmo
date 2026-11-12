@@ -61,23 +61,27 @@ export class WeatherFx {
     // sao băng: vài vệt sáng dài trên trời
     const tg = new THREE.BufferGeometry();
     tg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(8 * 6), 3));
-    this.trails = new THREE.LineSegments(tg, new THREE.LineBasicMaterial({ color: '#fff6d0', transparent: true, opacity: 0.9, depthWrite: false, depthTest: false }));
+    this.trails = new THREE.LineSegments(tg, new THREE.LineBasicMaterial({ color: '#fff6d0', transparent: true, opacity: 0.9, depthWrite: false }));
     this.trails.renderOrder = 21;
     this.trails.frustumCulled = false;
     // vị trí sao băng tính theo khung màn hình (u, v: -0.5..0.5), vì camera trực giao không thấy bầu trời
     this.meteors = Array.from({ length: 8 }, () => ({ t: -Math.random() * 2, u: Math.random() * 0.7 - 0.3, v: Math.random() * 0.3 }));
     const hg = new THREE.BufferGeometry();
     hg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(8 * 3), 3));
-    this.heads = new THREE.Points(hg, new THREE.PointsMaterial({ color: '#fffbe6', size: 11, sizeAttenuation: false, map: dotTexture(true), transparent: true, depthWrite: false, depthTest: false }));
+    this.heads = new THREE.Points(hg, new THREE.PointsMaterial({ color: '#fffbe6', size: 11, sizeAttenuation: false, map: dotTexture(true), transparent: true, depthWrite: false }));
     this.heads.frustumCulled = false;
     this.heads.renderOrder = 22;
     // cầu vồng: 7 dải cung tròn
     this.arc = new THREE.Group();
     ['#ff6b6b', '#ffa94d', '#ffe066', '#8ce99a', '#74c0fc', '#748ffc', '#b197fc'].forEach((col, i) => {
-      const m = new THREE.Mesh(new THREE.TorusGeometry(15 - i * 0.55, 0.3, 4, 48, Math.PI), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0, depthWrite: false, depthTest: false, fog: false }));
-      m.renderOrder = 20;
+      const m = new THREE.Mesh(new THREE.TorusGeometry(15 - i * 0.55, 0.3, 4, 48, Math.PI), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0, depthWrite: false, fog: false }));
+      m.renderOrder = 4;
       this.arc.add(m);
     });
+    // (0.25.1) cầu vồng là vật thể THẬT đứng trên đảo: một chân ở Khu vui chơi, một chân ở rừng tây nam; cây và nhà phía trước che được nó
+    this.arc.position.set(2, -0.4, 0);
+    this.arc.rotation.y = Math.PI / 4; // mặt cung quay về phía máy quay
+    this.arc.scale.setScalar(1.6);
     scene.add(this.rain, this.flakes, this.mist, this.trails, this.heads, this.arc);
     this.drops = Array.from({ length: N }, () => ({ x: (Math.random() - 0.5) * AREA, y: Math.random() * TOP, z: (Math.random() - 0.5) * AREA, s: 0.7 + Math.random() * 0.6, ph: Math.random() * 6 }));
     this.mode = 'none';
@@ -183,34 +187,23 @@ export class WeatherFx {
           m.t = -0.4 - Math.random() * 2.2;
           m.u = Math.random() * 0.7 - 0.3; m.v = Math.random() * 0.3;
         }
-        const cam = this.camera;
-        if (m.t < 0 || !cam?.isOrthographicCamera) { arr.fill(-50, i * 6, i * 6 + 6); continue; }
-        const w = (cam.right - cam.left) / cam.zoom, h = (cam.top - cam.bottom) / cam.zoom;
-        const P = (u, v) => new THREE.Vector3(u * w, v * h, -(cam.near + 2)).applyQuaternion(cam.quaternion).add(cam.position);
-        const k = m.t * 0.45; // bay chéo xuống bên trái
-        const hu = m.u - k, hv = m.v - k * 0.5;
-        const tail = Math.min(1, m.t * 4) * 0.12;
-        const A = P(hu, hv), B = P(hu + tail, hv + tail * 0.5);
+        if (m.t < 0) { arr.fill(-50, i * 6, i * 6 + 6); continue; }
+        // (0.25.1) sao băng rơi thật trên trời đảo: bay chéo xuống rồi tắt trước khi chạm đất
+        const k = m.t / 0.9;
+        const sx = center.x + m.u * 60, sz = center.z + (m.v - 0.15) * 80;
+        const A = new THREE.Vector3(sx - k * 14, 24 - k * 16, sz + k * 5);
+        const tail = Math.min(1, m.t * 4) * 4.5;
+        const B = new THREE.Vector3(A.x + tail * 0.64, A.y + tail * 0.73, A.z - tail * 0.23);
         arr.set([A.x, A.y, A.z, B.x, B.y, B.z], i * 6);
         ha.set([A.x, A.y, A.z], i * 3);
       }
       this.trails.geometry.attributes.position.needsUpdate = true;
       this.heads.geometry.attributes.position.needsUpdate = true;
     }
-    // cầu vồng: vẽ nổi mờ ngay trước camera (camera trực giao nhìn xuống nên không thấy trời), chỉ ban ngày
+    // cầu vồng: cung thật đứng trên đảo (vị trí đặt trong constructor), chỉ hiện ban ngày
     if (this.arc.visible) {
       const day = hourFloat >= 6.5 && hourFloat <= 18;
-      this.arc.children.forEach((m) => { m.material.opacity += ((day ? 0.26 : 0) - m.material.opacity) * Math.min(1, dt * 2); });
-      const cam = this.camera;
-      if (cam?.isOrthographicCamera) {
-        const w = (cam.right - cam.left) / cam.zoom, h = (cam.top - cam.bottom) / cam.zoom;
-        const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion);
-        const up = new THREE.Vector3(0, 1, 0).applyQuaternion(cam.quaternion);
-        const right = new THREE.Vector3(1, 0, 0).applyQuaternion(cam.quaternion);
-        this.arc.position.copy(cam.position).addScaledVector(fwd, cam.near + 2).addScaledVector(up, -h * 0.08).addScaledVector(right, w * 0.12);
-        this.arc.quaternion.copy(cam.quaternion);
-        this.arc.scale.setScalar((Math.min(w, h * 1.6) * 0.42) / 15);
-      }
+      this.arc.children.forEach((m) => { m.material.opacity += ((day ? 0.5 : 0) - m.material.opacity) * Math.min(1, dt * 2); });
     }
   }
 }
