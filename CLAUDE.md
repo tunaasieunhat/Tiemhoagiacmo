@@ -226,6 +226,11 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   làm vườn bắt trong `bugTick`. Truyện: `data/storyVan.js` (mạch `van` v1–v6, gộp cuối `data/story.js`), bộ đếm `parties|branches|shipped|wedding`
   trong `src/systems/story.js`; dấu `party_open`, `branch_open`, `wedding_offer`, `party_great`/`wed_good` (game đặt khi tiệc ≥ 80 điểm), kết
   `van_win|van_join|van_home` (join/home ⇒ chi nhánh ×1,2).
+- **Bán hoa dễ thở** (0.26.1): số liệu `SMART` trong `data/shop.js`. A: `generateRequest` nhận `ctx.stock/growing` (`shop.stockInfo(save)`), ưu tiên loài trong kho
+  + giới hạn sao/màu/số cành theo kho (`capToStock`). B: `displayedFlowers` tự treo (`isAutoDisplay`, `autoDisplayList`; `shop.autoDisp=false` = bán mọi loài;
+  `game.refreshAutoDisplay` mỗi 3 giây vẽ lại giỏ). C: `evaluateDelivery` trả `exact/subOk/sub` (`ok = exact || sub`, sub chỉ khi `sel.sub`), `subPick`,
+  `canServe` → 'yes'|'sub'|'no'; khách quen không nhận hoa thay thế. D: `save.shop.upcoming` (`ensureUpcoming`, `spawnCustomer` lấy khách đã báo trước),
+  hết kiên nhẫn mà `canServe === 'no'` ⇒ đơn đặt trước (`comeBack`) / không trừ uy tín; nút "📝 Hẹn mai" = `game.promiseLater`.
 - **Ưu tiên chạm cốt truyện** (0.23): `game.pickAt` dò `storyView.pickNear` (theo khoảng cách trên màn hình, bán kính 46px) trước, rồi
   `PRIORITY_PICKS` (story, mo, buds, sail, diep, fishspot, fishstall, fogwall) trước nhà/dân làng. `game.focusStory(scene)` = nút Chỉ đường.
 - **Vùng camera** (0.22): `controls.regions` nhận hình tròn `{x,z,r}` hoặc hành lang thuôn `{x,z,r,x2,z2,r2}`; đảo chính ↔ làng và

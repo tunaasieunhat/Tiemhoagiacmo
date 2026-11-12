@@ -3,7 +3,7 @@
 //  -> có thể chạy lại trên máy chủ để kiểm tra gian lận sau này
 // =============================================================
 import { FLOWERS } from '../../data/flowers.js';
-import { SHOP, DISPLAY, REP_TIERS, REQUEST_MIX, REQUEST_SIZE, QUALITY_DEMAND, TONES, OCCASIONS, MEANING_DEMAND, COLOR_DEMAND } from '../../data/shop.js';
+import { SHOP, DISPLAY, REP_TIERS, REQUEST_MIX, REQUEST_SIZE, QUALITY_DEMAND, TONES, OCCASIONS, MEANING_DEMAND, COLOR_DEMAND, SMART } from '../../data/shop.js';
 import { MEANINGS } from '../../data/variants.js';
 import { REGULARS } from '../../data/regulars.js';
 import { parseFlowerKey, variantName, rarityOf, tonesOf, DEFAULT_VARIANT } from './variants.js';
@@ -35,10 +35,35 @@ export function createShopState() {
 /** Số móc treo hoa của tiệm (tăng theo quy mô tiệm) */
 export const displaySlots = (save) => DISPLAY.baseSlots + DISPLAY.perShopLevel * (save.shopLevel || 0);
 
-/** Các loài đang treo (chỉ tính loài còn hợp lệ trong danh sách cho phép) */
+/** Các loài đang treo (chỉ tính loài còn hợp lệ trong danh sách cho phép).
+ *  (0.26.1) Chưa tự treo loài nào ⇒ tiệm TỰ TREO các loài nhiều hàng nhất trong kho, rồi tới loài đang trồng */
 export function displayedFlowers(save, flowerIds) {
   const d = save.shop?.display || [];
-  return d.filter((id) => flowerIds.includes(id)).slice(0, displaySlots(save));
+  if (d.length || !isAutoDisplay(save)) return d.filter((id) => flowerIds.includes(id)).slice(0, displaySlots(save));
+  return autoDisplayList(save, flowerIds);
+}
+export const isAutoDisplay = (save) => SMART.autoDisplay && !(save.shop?.display || []).length && save.shop?.autoDisp !== false;
+export function autoDisplayList(save, flowerIds) {
+  const { stock, growing } = stockInfo(save);
+  const list = Object.keys(stock).filter((id) => flowerIds.includes(id)).sort((a, b) => stock[b].n - stock[a].n);
+  for (const id of growing) if (flowerIds.includes(id) && !list.includes(id)) list.push(id);
+  return list.slice(0, displaySlots(save));
+}
+
+/** Kho & ruộng đang có gì: { stock: { loài: { n, bestQ, variants: [màu] } }, growing: [loài đang trồng / chờ thu] } */
+export function stockInfo(save) {
+  const stock = {};
+  for (const [k, n] of Object.entries(save.inventory?.flowers || {})) {
+    if (!(n > 0)) continue;
+    const f = parseFlowerKey(k);
+    if (!FLOWERS[f.species] || FLOWERS[f.species].luck) continue;
+    const st = stock[f.species] || (stock[f.species] = { n: 0, bestQ: 0, variants: [] });
+    st.n += n; st.bestQ = Math.max(st.bestQ, f.q);
+    if (!st.variants.includes(f.variant)) st.variants.push(f.variant);
+  }
+  const growing = [];
+  for (const p of save.farm?.plots || []) for (const t of p.tiles) if (t.flower && (t.state === 'growing' || t.state === 'ready') && !growing.includes(t.flower)) growing.push(t.flower);
+  return { stock, growing };
 }
 
 /** Treo / gỡ 1 loài. Trả về { ok, on, msg } */
@@ -83,7 +108,13 @@ export function generateRequest(rng, tier, flowerIds, ctx = {}) {
   const type = r < mix[0] ? 'single' : r < mix[0] + mix[1] ? 'multi' : 'bouquet';
   const festFlowers = fest ? fest.flowers.filter((f) => flowerIds.includes(f)) : [];
   const seasonal = (ctx.seasonal || []).filter((f) => flowerIds.includes(f));
+  // (0.26.1) A: khách ưu tiên loài bạn đang có trong kho, rồi tới loài đang trồng
+  const stock = ctx.stock || {};
+  const inStock = Object.keys(stock).filter((f) => flowerIds.includes(f));
+  const grow = (ctx.growing || []).filter((f) => flowerIds.includes(f));
   const pickFlower = () => {
+    if (inStock.length && rng() < SMART.stockBias) return pick(rng, inStock);
+    if (grow.length && rng() < SMART.growingBias) return pick(rng, grow);
     if (festFlowers.length && rng() < 0.65) return pick(rng, festFlowers);
     if (seasonal.length && rng() < 0.5) return pick(rng, seasonal);
     return pick(rng, flowerIds);
@@ -96,8 +127,20 @@ export function generateRequest(rng, tier, flowerIds, ctx = {}) {
     else if (rng() < MEANING_DEMAND[Math.min(tier, MEANING_DEMAND.length - 1)]) req.meaning = occ.meaning;
   } else {
     // đặt đúng màu (chỉ những màu người chơi đã từng trồng ra)
-    const colors = (ctx.found || []).filter((k) => k.startsWith(req.flower + ':') && !k.endsWith(':' + DEFAULT_VARIANT[req.flower]));
+    let colors = (ctx.found || []).filter((k) => k.startsWith(req.flower + ':') && !k.endsWith(':' + DEFAULT_VARIANT[req.flower]));
+    const st = stock[req.flower];
+    // loài đang có: thường chỉ đòi màu bạn đang có
+    if (st && rng() < SMART.capToStock) colors = colors.filter((k) => st.variants.includes(k.split(':')[1]));
     if (colors.length && rng() < COLOR_DEMAND) req.variant = pick(rng, colors).split(':')[1];
+    // loài đang có: thường không đòi nhiều sao / nhiều cành hơn thứ trong kho
+    if (st && rng() < SMART.capToStock) {
+      req.minQuality = Math.max(1, Math.min(req.minQuality || 1, st.bestQ));
+      if (req.type === 'multi' && st.n >= 2) req.count = Math.max(2, Math.min(req.count, st.n));
+    }
+  }
+  if (req.type === 'bouquet' && inStock.length && rng() < SMART.capToStock) {
+    const best = Math.max(...inStock.map((f) => stock[f].bestQ));
+    req.minQuality = Math.max(1, Math.min(req.minQuality || 1, best));
   }
   return Object.assign(req, extra);
 }
@@ -119,20 +162,37 @@ function makeRequest(rng, tier, type, pickFlower, fest) {
   return req;
 }
 
+/** Yêu cầu còn hợp với danh sách loài đang bán không */
+const reqFits = (req, flowerIds) => (req.type === 'bouquet' ? !req.mustInclude || flowerIds.includes(req.mustInclude.flower) : flowerIds.includes(req.flower));
+
+/** (0.26.1) D: giữ sẵn danh sách khách sắp tới để báo trước cho người chơi chuẩn bị. Trả về danh sách */
+export function ensureUpcoming(save, rng, flowerIds, ctx = {}) {
+  const sh = save.shop;
+  const tier = tierOf(save.player.reputation);
+  sh.upcoming = (sh.upcoming || []).filter((u) => u && u.request && reqFits(u.request, flowerIds));
+  const full = { ...stockInfo(save), ...ctx };
+  while (sh.upcoming.length < SMART.upcoming) sh.upcoming.push({ npc: pick(rng, CUSTOMERS).id, request: generateRequest(rng, tier, flowerIds, full) });
+  return sh.upcoming;
+}
+
 export function spawnCustomer(save, rng, flowerIds, ctx = {}) {
   const sh = save.shop;
   const tier = tierOf(save.player.reputation);
   const busy = new Set(sh.customers.map((c) => c.npc));
   const pool = CUSTOMERS.filter((c) => !busy.has(c.id));
-  const npc = pick(rng, pool.length ? pool : CUSTOMERS);
   const used = new Set(sh.customers.map((c) => c.spot));
   let spot = 0;
   while (used.has(spot)) spot++;
+  // lấy khách đã báo trước (nếu còn hợp với loài đang bán), rồi bổ sung danh sách
+  ensureUpcoming(save, rng, flowerIds, ctx);
+  const next = sh.upcoming.shift();
+  ensureUpcoming(save, rng, flowerIds, ctx);
+  const npc = !busy.has(next.npc) ? npcOf(next.npc) : pick(rng, pool.length ? pool : CUSTOMERS);
   const c = {
     id: sh.nextId++,
     npc: npc.id,
     spot,
-    request: generateRequest(rng, tier, flowerIds, ctx),
+    request: { ...next.request },
     arrivedAt: save.time.gameMinutes,
     patience: Math.round(randRange(rng, SHOP.patience) * (1 + tier * SHOP.patienceBonusPerTier) * (save.upgrades ? upgradeValue(save, 'sign') : 1)),
   };
@@ -173,12 +233,16 @@ export function shopTick(save, { offline = false, rng = Math.random, hourFloat, 
   for (const c of [...sh.customers]) {
     if (now - c.arrivedAt > c.patience) {
       sh.customers.splice(sh.customers.indexOf(c), 1);
-      if (!offline && !c.regular) save.player.reputation = Math.max(0, save.player.reputation + SHOP.rep.timeout);
-      events.push({ type: 'timeout', customer: c, silent: offline });
+      // (0.26.1) D: kho không có gì đưa được ⇒ khách hẹn mai quay lại (đơn đặt trước), không mất uy tín
+      const nothing = SMART.comeBack && !c.regular && canServe(c.request, save.inventory) === 'no';
+      const back = nothing && c.request.type !== 'bouquet' && preorder ? preorder(c.npc, c.request.flower) : null;
+      if (!offline && !c.regular && !nothing) save.player.reputation = Math.max(0, save.player.reputation + SHOP.rep.timeout);
+      events.push({ type: 'timeout', customer: c, silent: offline, comeBack: back, excused: nothing });
     }
   }
   const ready = save.stats.harvested > 0 && sh.open && isOpenHour(hourFloat);
   if (!ready) return events;
+  if (!offline) ensureUpcoming(save, rng, displayedFlowers(save, flowerIds).length ? displayedFlowers(save, flowerIds) : flowerIds, { festival, seasonal, found: Object.keys(save.book?.found || {}) });
   const tier = tierOf(save.player.reputation);
   if (sh.nextSpawnAt == null) sh.nextSpawnAt = now + SHOP.firstCustomerDelay;
   if (offline) {
@@ -206,7 +270,7 @@ export function shopTick(save, { offline = false, rng = Math.random, hourFloat, 
     }
     const customer = isReg
       ? spawnRegular(save, pick(rng, regs))
-      : spawnCustomer(save, rng, shown.length ? shown : flowerIds, { festival, seasonal, found: Object.keys(save.book?.found || {}) });
+      : spawnCustomer(save, rng, shown.length ? shown : flowerIds, { festival, seasonal, found: Object.keys(save.book?.found || {}), ...stockInfo(save) });
     events.push({ type: 'arrive', customer });
     sh.nextSpawnAt = now + randRange(rng, SHOP.spawnEvery) * (1 - SHOP.spawnFasterPerTier) ** tier * (festival ? festival.spawnMult : 1) * spawnMult * shopTierOf(save).spawnMult;
   } else if (now >= sh.nextSpawnAt) {
@@ -265,6 +329,9 @@ export function evaluateDelivery(req, sel) {
   }
   if (req.minQuality > 1) add(total > 0 && qOk, `Hoa từ ${req.minQuality}★ trở lên`);
   const ok = checks.every((c) => c.ok);
+  // (0.26.1) C: chưa đúng yêu cầu nhưng đưa được HOA THAY THẾ (khách vẫn mua, giá thấp hơn)
+  const subOk = !ok && subAcceptable(req, items, total, sel);
+  const sub = !ok && subOk && !!sel.sub;
 
   const qAvg = total ? items.reduce((a, it) => a + it.q * it.n, 0) / total : 1;
   let score, parts = {}, tips = [];
@@ -279,17 +346,66 @@ export function evaluateDelivery(req, sel) {
 
   let base = items.reduce((a, it) => a + FLOWERS[it.species].basePrice * SHOP.qualityMult[it.q] * rarityOf(it.species, it.variant).priceMult * it.n, 0);
   if (req.type === 'bouquet') base = base * SHOP.bouquetMult + (PAPERS[sel.paper]?.price || 0) + (RIBBONS[sel.ribbon]?.price || 0);
-  const price = Math.round(base * (0.8 + 0.4 * (score / 100)) * (req.priceMult || 1));
+  let price = Math.round(base * (0.8 + 0.4 * (score / 100)) * (req.priceMult || 1));
 
   const S = SHOP.satisfaction;
-  const mood = score >= S.perfect ? 'perfect' : score >= S.good ? 'good' : score >= S.ok ? 'ok' : 'bad';
-  return { ok, checks, score, parts, tips, price, mood, repDelta: SHOP.rep[mood], qAvg, items };
+  let mood = score >= S.perfect ? 'perfect' : score >= S.good ? 'good' : score >= S.ok ? 'ok' : 'bad';
+  let repDelta = SHOP.rep[mood];
+  if (sub) {
+    price = Math.round(price * SMART.sub.priceMult);
+    const order = ['bad', 'ok', 'good', 'perfect'];
+    if (order.indexOf(mood) > order.indexOf(SMART.sub.maxMood)) mood = SMART.sub.maxMood;
+    repDelta = SMART.sub.rep;
+  }
+  return { ok: ok || sub, exact: ok, sub, subOk, checks, score, parts, tips, price, mood, repDelta, qAvg, items };
 }
 
 export function tipAmount(rng, tier, ev) {
   const chance = SHOP.tip.baseChance + tier * SHOP.tip.chancePerTier + (ev.mood === 'perfect' ? SHOP.tip.happyBonus : 0);
   if (ev.mood === 'bad' || rng() >= chance) return 0;
   return Math.max(1, Math.round(ev.price * randRange(rng, SHOP.tip.pct)));
+}
+
+// ------------------- 🔁 hoa thay thế (0.26.1) -------------------
+const reqTones = (req) => (req.type === 'bouquet' ? [req.tone] : tonesOf(req.flower, req.variant || DEFAULT_VARIANT[req.flower]) || []);
+const reqMeans = (req) => (req.type === 'bouquet' ? (req.meaning ? [req.meaning] : []) : VARIANTS_MEANINGS[`${req.flower}:${req.variant || DEFAULT_VARIANT[req.flower]}`] || []);
+/** 1 cành có dùng thay được không: cùng loài (khác màu / ít sao hơn), hoặc loài khác cùng tông màu / cùng ý nghĩa (không mang ý nghĩa buồn) */
+function subItemOk(req, it) {
+  if (it.species === req.flower) return true;
+  const ms = VARIANTS_MEANINGS[`${it.species}:${it.variant}`] || [];
+  if (ms.some((m) => MEANINGS[m]?.negative)) return false;
+  return (tonesOf(it.species, it.variant) || []).some((t) => reqTones(req).includes(t)) || ms.some((m) => reqMeans(req).includes(m));
+}
+function subAcceptable(req, items, total, sel) {
+  if (!total) return false;
+  if (req.type !== 'bouquet') return total === req.count && items.every((it) => subItemOk(req, it));
+  // bó hoa: chỉ nới "phải có loài X" và "đủ sao"; số cành, giấy, ruy băng vẫn phải đúng
+  return total >= req.min && total <= req.max && !!PAPERS[sel.paper] && !!RIBBONS[sel.ribbon];
+}
+
+/** Gợi ý hoa thay thế tốt nhất trong kho. Trả về sel (có sub: true) hoặc null */
+export function subPick(req, inventory, known = null) {
+  if (req.type === 'bouquet') {
+    const p = autoPick({ ...req, minQuality: 1, mustInclude: null }, inventory, known);
+    const n = Object.values(p.items).reduce((a, b) => a + b, 0);
+    return n >= req.min ? { ...p, sub: true } : null;
+  }
+  const stacks = Object.entries(inventory.flowers).filter(([, n]) => n > 0).map(([k, n]) => { const f = parseFlowerKey(k); return { k, n, it: { species: f.species, variant: f.variant, q: f.q } }; })
+    .filter((x) => !FLOWERS[x.it.species]?.luck && subItemOk(req, x.it))
+    // cùng loài trước, rồi nhiều sao trước
+    .sort((a, b) => (b.it.species === req.flower) - (a.it.species === req.flower) || b.it.q - a.it.q);
+  const items = {};
+  let need = req.count;
+  for (const x of stacks) { if (!need) break; const t = Math.min(need, x.n); items[x.k] = t; need -= t; }
+  return need ? null : { items, sub: true };
+}
+
+/** Kho đáp ứng được khách không: 'yes' (đúng yêu cầu) | 'sub' (chỉ hoa thay thế) | 'no' */
+export function canServe(req, inventory, known = null) {
+  const p = autoPick(req, inventory, known);
+  const sel = { ...p, paper: p.paper || 'kraft', ribbon: p.ribbon || 'twine' };
+  if (evaluateDelivery(req, sel).exact) return 'yes';
+  return subPick(req, inventory, known) ? 'sub' : 'no';
 }
 
 /** Ước tính tiền nhận được (để hiển thị trên thẻ khách) */

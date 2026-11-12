@@ -1,6 +1,6 @@
 // Quầy bán hoa: danh sách khách, chọn hoa / gói bó, giao hoa.
 import { FLOWERS } from '../../data/flowers.js';
-import { SHOP, DISPLAY } from '../../data/shop.js';
+import { SHOP, DISPLAY, SMART } from '../../data/shop.js';
 import { PAPERS, RIBBONS } from '../../data/wrapping.js';
 import * as shop from '../systems/shop.js';
 import { avatarSVG } from './avatar.js';
@@ -16,6 +16,9 @@ const meaningChip = (m) => `<span class="mchip ${MEANINGS[m]?.negative ? 'neg' :
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const stars = (q) => '★'.repeat(q);
+// (0.26.1) kho có đáp ứng được khách không
+const SERVE = { yes: ['ok', '✅ Kho có hoa'], sub: ['sub', '🔁 Có hoa thay thế'], no: ['no', '❌ Kho chưa có'] };
+const serveTag = (st) => `<span class="serve ${SERVE[st][0]}">${SERVE[st][1]}</span>`;
 const MOOD = { perfect: ['😍', 'Cực kỳ hài lòng'], good: ['😊', 'Hài lòng'], ok: ['🙂', 'Tạm được'], bad: ['😕', 'Chưa ưng'] };
 
 export class ShopPanel {
@@ -91,16 +94,19 @@ export class ShopPanel {
       const typeLabel = { single: '1 cành', multi: 'Nhiều cành', bouquet: 'Bó hoa' }[c.request.type];
       const reg = c.regular ? REGULARS[c.regular] : null;
       const hearts = reg ? '❤️'.repeat(s.regulars[c.regular].hearts) + '🤍'.repeat(reg.chapters.length - s.regulars[c.regular].hearts) : '';
+      const st = shop.canServe(c.request, s.inventory, s.book?.meanings);
+      const later = st === 'no' && !reg && c.request.type !== 'bouquet';
       return `<div class="cust ${reg ? 'regular' : ''}">
         <div class="cust-av">${avatarSVG(npc.look, 52)}</div>
         <div class="cust-body">
           <div class="cust-top"><b>${esc(npc.name)}</b>${c.vip ? '<span class="tag vip">👑 VIP</span>' : ''}${reg ? `<span class="tag reg">Khách quen ${hearts}</span>` : `<span class="tag">${typeLabel}</span>`}<span class="reward">~${shop.estimateReward(c.request)} 💰</span></div>
           ${reg ? `<p class="story-snip">${esc(regularChapter(c.regular, s).intro)}</p>` : ''}
           <p>“${esc(shop.requestText(c.request, c.npc))}”</p>
-          ${c.request.meaning ? `<div class="chips">${meaningChip(c.request.meaning)}</div>` : ''}
+          <div class="chips">${c.request.meaning ? meaningChip(c.request.meaning) : ''}${serveTag(reg && st === 'sub' ? 'no' : st)}</div>
           <div class="track sm"><i data-pbar="${c.id}" style="width:${f * 100}%;background:${f > 0.5 ? '#7cc27f' : f > 0.25 ? '#f6c84a' : '#ec6b6b'}"></i></div>
           <div class="cust-btns">
             <button class="btn primary" data-sp="compose" data-id="${c.id}">${c.request.type === 'bouquet' ? '💐 Gói hoa' : '🌸 Chọn hoa'}</button>
+            ${later ? `<button class="btn" data-sp="later" data-id="${c.id}">📝 Hẹn mai</button>` : ''}
             <button class="btn" data-sp="decline" data-id="${c.id}">Từ chối</button>
           </div>
         </div></div>`;
@@ -121,11 +127,23 @@ export class ShopPanel {
       <p class="shop-status">${status}</p>
       ${this.displayRow()}
       <div class="cust-list">${cards}</div>
+      ${this.upcomingHtml()}
       <h3>Hoa trong kho</h3><div class="chips">${stock}</div>
       <div class="row-btns" style="margin-top:12px">
         <button class="btn" data-sp="toggle-open">${s.shop.open ? '🔒 Tạm đóng cửa' : '🔓 Mở cửa đón khách'}</button>
       </div>
       <p class="muted small">Uy tín cao: khách đến đông hơn, kiên nhẫn hơn, hay cho tiền bo và đặt bó lớn hơn. Để khách chờ quá lâu hoặc từ chối sẽ mất uy tín.</p>`;
+  }
+
+  /** (0.26.1) D: khách sắp tới muốn gì — để chuẩn bị trước */
+  upcomingHtml() {
+    const s = this.save;
+    const list = (s.shop.upcoming || []).slice(0, SMART.upcoming);
+    if (!list.length || !s.stats.harvested) return '';
+    const rows = list.map((u) => `<div class="up-row"><span class="up-av">${avatarSVG(shop.npcOf(u.npc).look, 30)}</span>
+        <span>“${esc(shop.requestText(u.request, u.npc))}”</span>${serveTag(shop.canServe(u.request, s.inventory, s.book?.meanings))}</div>`).join('');
+    return `<h3>🔜 Khách sắp tới</h3><div class="up-list">${rows}</div>
+      <p class="muted small">Chuẩn bị trước nhé: thu hoạch, trồng thêm hoặc treo đúng loài. ❌ thì khách sẽ hẹn mai quay lại, không mất uy tín.</p>`;
   }
 
   // ---------------- 🪴 treo hoa (0.20) ----------------
@@ -135,7 +153,8 @@ export class ShopPanel {
     const shown = shop.displayedFlowers(s, g.unlockedFlowers());
     const slots = shop.displaySlots(s);
     const chips = shown.map((id) => `<span class="chip-s">${FLOWERS[id].icon} ${esc(FLOWERS[id].name)}</span>`).join('');
-    return `<div class="disp-row"><div class="disp-info"><b>🪴 Hoa đang treo bán <small>${shown.length}/${slots}</small></b>
+    const auto = shop.isAutoDisplay(s);
+    return `<div class="disp-row"><div class="disp-info"><b>🪴 Hoa đang treo bán <small>${shown.length}/${slots}${auto && shown.length ? ' · ✨ tự treo theo kho' : ''}</small></b>
         <div class="chips">${chips || '<span class="muted small">Chưa treo loài nào — khách hỏi mua bất kỳ loài nào</span>'}</div></div>
       <button class="btn ${shown.length ? '' : 'primary'}" data-sp="display">🪴 Treo hoa</button></div>`;
   }
@@ -159,10 +178,14 @@ export class ShopPanel {
     return `
       <div class="comp-head"><button class="round sm" data-sp="back" aria-label="Quay lại">←</button>
         <div><b>🪴 Treo hoa để bán</b><p class="muted small">Đã treo ${shown.length}/${slots} móc${s.shopLevel < 3 ? ' · nâng quy mô tiệm để thêm móc' : ''}</p></div></div>
+      <div class="row-btns disp-mode">
+        <button class="btn ${shop.isAutoDisplay(s) ? 'primary' : ''}" data-sp="disp-auto">✨ Tự treo theo kho${shop.isAutoDisplay(s) ? ' (đang bật)' : ''}</button>
+        <button class="btn ${!s.shop.display?.length && s.shop.autoDisp === false ? 'primary' : ''}" data-sp="disp-all">🌼 Bán mọi loài</button>
+      </div>
       <div class="disp-grid">${cards}</div>
       <p class="muted small">Khách vào tiệm <b>chỉ hỏi mua những loài đang treo</b> (bó hoa cũng chỉ đòi loài đang treo), nên bạn chủ động trồng đúng thứ sẽ bán.
         Khách muốn loài khác sẽ để lại <b>📝 đơn đặt trước</b> ở 📋 Nhiệm vụ › Đơn hàng (tối đa ${DISPLAY.preorderMax} đơn, trả cao hơn ${Math.round((DISPLAY.preorderPayMult - 1) * 100)}%, hạn ${DISPLAY.preorderDueHours[0]}–${DISPLAY.preorderDueHours[1]} giờ game)${pre ? ` — đang có ${pre} đơn` : ''}.
-        Gỡ hết thì khách lại hỏi mua mọi loài như trước. Khách quen có câu chuyện riêng vẫn hỏi theo ý họ.</p>`;
+        <b>✨ Tự treo theo kho</b>: tiệm tự treo những loài bạn đang có nhiều nhất (rồi tới loài đang trồng), tự đổi khi kho đổi. Chạm 1 loài để tự chọn. Khách quen có câu chuyện riêng vẫn hỏi theo ý họ.</p>`;
   }
 
   // ---------------- chọn hoa / gói bó ----------------
@@ -212,6 +235,8 @@ export class ShopPanel {
     }).join('')}</div>${ev.tips.length ? `<ul class="tips">${ev.tips.slice(0, 3).map((t) => `<li>💡 ${esc(t)}</li>`).join('')}</ul>` : ''}` : '';
     const reg = c.regular ? REGULARS[c.regular] : null;
     const [mIcon, mText] = MOOD[ev.mood];
+    const subBtn = !reg && !ev.exact;
+    const deliverLabel = ev.sub ? `🔁 Giao hoa thay thế (${Math.round(SMART.sub.priceMult * 100)}% giá)` : req.type === 'bouquet' ? '💐 Gói & giao' : '🌸 Giao hoa';
     const total = items.reduce((a, b) => a + b.n, 0);
     return `
       <div class="comp-grid"><div class="comp-left">
@@ -228,6 +253,7 @@ export class ShopPanel {
         <div class="preview">${bouquetSVG({ items, paper: this.sel.paper, ribbon: this.sel.ribbon, type: req.type }, 140)}</div>
         <div class="comp-info">
           <ul class="checks">${checks}</ul>
+          ${ev.subOk && !ev.sub && !reg ? `<p class="sub-hint">🔁 Chưa đúng yêu cầu, nhưng khách nhận <b>hoa thay thế</b> này (${Math.round(SMART.sub.priceMult * 100)}% giá, không bo). Bấm “🔁 Hoa thay thế”.</p>` : ''}
           ${total ? `<div class="estimate"><span class="mood">${mIcon}</span><div><b>${mText}</b> <small>(${ev.score}/100)</small><br><small>Nhận ~${ev.price} 💰 · ${ev.repDelta >= 0 ? '+' : ''}${ev.repDelta} 💗</small></div></div>` : ''}
           ${partBars}
         </div>
@@ -239,7 +265,8 @@ export class ShopPanel {
       </div></div>
       <div class="comp-foot">
         <button class="btn" data-sp="auto">✨ Tự chọn</button>
-        <button class="btn primary ${ev.ok ? '' : 'disabled'}" data-sp="deliver">${req.type === 'bouquet' ? '💐 Gói & giao' : '🌸 Giao hoa'}</button>
+        ${subBtn ? '<button class="btn" data-sp="sub">🔁 Hoa thay thế</button>' : ''}
+        <button class="btn primary ${ev.ok ? '' : 'disabled'}" data-sp="deliver">${deliverLabel}</button>
       </div>`;
   }
 
@@ -252,6 +279,17 @@ export class ShopPanel {
       case 'back': this.view = 'list'; this.render(); break;
       case 'display': this.view = 'display'; this.render(); break;
       case 'disp-toggle': g.toggleDisplay(el.dataset.id); this.renderKeepScroll(); break;
+      case 'disp-auto': g.setAutoDisplay(true); this.renderKeepScroll(); break;
+      case 'disp-all': g.setAutoDisplay(false); this.renderKeepScroll(); break;
+      case 'later': g.promiseLater(+el.dataset.id); this.render(); break;
+      case 'sub': {
+        const req = this.customer().request;
+        const p = shop.subPick(req, s.inventory, s.book?.meanings);
+        if (!p) { this.hud.toast('Kho cũng chưa có hoa thay thế phù hợp — bấm “📝 Hẹn mai” để khách quay lại sau', 'warn'); return; }
+        this.sel = { items: p.items, paper: p.paper ?? this.sel.paper ?? 'kraft', ribbon: p.ribbon ?? this.sel.ribbon ?? 'twine', sub: true };
+        this.renderKeepScroll();
+        break;
+      }
       case 'decline':
         if (!el.dataset.armed) {
           el.dataset.armed = '1';
@@ -274,6 +312,7 @@ export class ShopPanel {
           if (total >= maxTotal) { this.hud.toast(`Khách chỉ cần tối đa ${maxTotal} cành`, 'warn'); return; }
           this.sel.items[k] = cur + 1;
         } else if (cur > 0) this.sel.items[k] = cur - 1;
+        if (!this.customer().regular) this.sel.sub = true; // chưa đúng yêu cầu mà hợp kiểu thay thế ⇒ vẫn giao được (giá thấp hơn)
         this.renderKeepScroll();
         break;
       }
@@ -290,7 +329,7 @@ export class ShopPanel {
         const req = this.customer().request;
         const p = shop.autoPick(req, s.inventory, s.book?.meanings);
         this.sel = { items: p.items, paper: p.paper ?? this.sel.paper, ribbon: p.ribbon ?? this.sel.ribbon };
-        if (!Object.keys(p.items).length) this.hud.toast('Kho chưa có hoa phù hợp yêu cầu này', 'warn');
+        if (!shop.evaluateDelivery(req, this.sel).exact) this.hud.toast(this.customer().regular ? 'Kho chưa có hoa phù hợp yêu cầu này' : 'Kho chưa có đúng hoa khách cần — thử “🔁 Hoa thay thế” hoặc “📝 Hẹn mai”', 'warn');
         this.renderKeepScroll();
         break;
       }

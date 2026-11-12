@@ -57,7 +57,7 @@ import { BugView } from './render/bugs.js';
 import * as goals from './systems/goals.js';
 import { shopUpgrades } from './models/environment.js';
 import { shopDisplayBaskets, swayBaskets } from './models/shopDisplay.js';
-import { DISPLAY } from '../data/shop.js';
+import { DISPLAY, SMART } from '../data/shop.js';
 import * as story from './systems/story.js';
 import { StoryView } from './render/storyView.js';
 import { Director } from './render/director.js';
@@ -309,6 +309,11 @@ export class Game {
           if (e.customer.regular) {
             regulars.finishRegularVisit(s, e.customer.regular, false, day);
             if (!e.silent) this.toast(`${npc.name} phải về rồi, hôm khác ${npc.self} sẽ ghé lại nhé.`, 'info');
+          } else if (e.comeBack) {
+            if (!e.silent) this.toast(`📝 ${npc.name}: “Tiệm chưa có hoa cô cần. Mai cô quay lại lấy ${e.comeBack.items[0].n} cành ${FLOWERS[e.comeBack.items[0].sp].name.toLowerCase()} nhé!” (xem 📋 › Đơn hàng)`, 'info');
+            this.emitter.emit('quests');
+          } else if (e.excused) {
+            if (!e.silent) this.toast(`🙂 ${npc.name}: “Tiệm chưa có hoa cô cần, hôm khác cô ghé.” (không mất uy tín)`, 'info');
           } else if (!e.silent) this.toast(`😤 ${npc.name} chờ lâu quá nên đã bỏ đi (${shop.reactionText('timeout', e.customer.npc)})`, 'bad');
           ev.left = (ev.left || 0) + 1;
         }
@@ -734,6 +739,7 @@ export class Game {
     if (!c) return { ok: false, msg: 'Khách đã rời đi' };
     const ev = shop.evaluateDelivery(c.request, sel);
     if (!ev.ok) return { ok: false, msg: 'Chưa đúng yêu cầu của khách' };
+    if (ev.sub && c.regular) return { ok: false, msg: 'Khách quen đang chờ đúng loài hoa của câu chuyện, không đổi hoa khác được' };
     // kiểm tra kho
     for (const [k, n] of Object.entries(sel.items)) if (n > 0 && !((s.inventory.flowers[k] || 0) >= n)) return { ok: false, msg: 'Không đủ hoa trong kho' };
     const bouquet = c.request.type === 'bouquet';
@@ -749,7 +755,7 @@ export class Game {
       if (!RIBBONS[sel.ribbon].free) s.inventory.ribbons[sel.ribbon] -= 1;
     }
     const tier = shop.tierOf(s.player.reputation);
-    const tip = Math.round(shop.tipAmount(Math.random, tier, ev) * planSys.effect(dayOf(this.now), 'tips')); // Thứ Bảy chợ đêm
+    const tip = ev.sub ? 0 : Math.round(shop.tipAmount(Math.random, tier, ev) * planSys.effect(dayOf(this.now), 'tips')); // Thứ Bảy chợ đêm · hoa thay thế: không bo
     s.player.coins += ev.price + tip;
     const oldTier = tier;
     const vipHappy = c.vip && (ev.mood === 'perfect' || ev.mood === 'good');
@@ -782,7 +788,7 @@ export class Game {
     }
     this.particles.spawn(ev.mood === 'bad' ? 'leaf' : 'sparkle', pos.clone().setY(0.5));
     this.emitter.emit('float', { pos, text: `+${ev.price + tip} 💰  ${ev.repDelta >= 0 ? '+' : ''}${ev.repDelta} 💗` });
-    this.toast(`${npc.name}: “${shop.reactionText(ev.mood, c.npc)}”`, ev.mood === 'bad' ? 'warn' : 'good');
+    this.toast(ev.sub ? `🔁 ${npc.name}: “Không có đúng loài cô cần, nhưng hoa này cũng xinh. Cô lấy nhé!” (hoa thay thế: ${Math.round(SMART.sub.priceMult * 100)}% giá)` : `${npc.name}: “${shop.reactionText(ev.mood, c.npc)}”`, ev.mood === 'bad' ? 'warn' : 'good');
     if (tip) setTimeout(() => this.toast(`💝 ${npc.name} cho thêm ${tip} 💰 tiền bo!`, 'good'), 900);
     const newTier = shop.tierOf(s.player.reputation);
     if (newTier > oldTier) setTimeout(() => this.toast(`🎉 Tiệm lên bậc "${shop.tierInfo(s.player.reputation).name}"! Khách sẽ đến đông hơn.`, 'good'), 1800);
@@ -1141,12 +1147,15 @@ export class Game {
         if (c.request.type === 'bouquet' && ck.skill < 3) continue;
         const sel = shop.autoPick(c.request, s.inventory, ck.skill >= 4 ? ALL_KNOWN : s.book?.meanings); // tay nghề 4+ rành ngôn ngữ loài hoa
         if (c.request.type === 'bouquet') { sel.paper = sel.paper || 'kraft'; sel.ribbon = sel.ribbon || 'twine'; }
-        if (!shop.evaluateDelivery(c.request, sel).ok) {
+        let use = sel;
+        if (!shop.evaluateDelivery(c.request, sel).ok && ck.skill >= SMART.clerkSubSkill) use = shop.subPick(c.request, s.inventory, ALL_KNOWN) || sel; // tay nghề 5+: biết đưa hoa thay thế
+        if (use.sub && use.paper == null && c.request.type === 'bouquet') { use.paper = 'kraft'; use.ribbon = 'twine'; }
+        if (!shop.evaluateDelivery(c.request, use).ok) {
           // kho không có hoa hợp ý ⇒ báo chủ tiệm 1 lần cho mỗi khách (để biết vì sao nhân viên đứng yên)
           if (!c.clerkNote) { c.clerkNote = 1; this.toast(`👩‍💼 ${ck.name}: “Kho không có hoa hợp ý ${shop.npcOf(c.npc).name}${c.request.type === 'bouquet' && ck.skill < 3 ? '' : c.request.minQuality > 1 ? ` (khách cần hoa ${c.request.minQuality}★ trở lên)` : ''}, chủ tiệm xem giúp nhé!”`, 'info'); }
           continue;
         }
-        const r = this.deliverToCustomer(c.id, sel);
+        const r = this.deliverToCustomer(c.id, use);
         if (!r.ok) continue;
         served++;
         ck.today.earned = (ck.today.earned || 0) + r.ev.price + (r.tip || 0);
@@ -2342,6 +2351,8 @@ export class Game {
   // ---------------- 🪴 treo hoa (0.20) ----------------
   /** Treo / gỡ 1 loài ở tiệm */
   toggleDisplay(id) {
+    // đang tự treo ⇒ bắt đầu chỉnh từ danh sách tự treo hiện tại
+    if (shop.isAutoDisplay(this.save)) this.save.shop.display = shop.autoDisplayList(this.save, this.unlockedFlowers());
     const res = shop.toggleDisplay(this.save, id, this.unlockedFlowers());
     if (!res.ok) { this.toast(res.msg, 'warn'); return res; }
     this.applyShopDisplay();
@@ -2352,9 +2363,44 @@ export class Game {
 
   /** Vẽ các giỏ hoa đang treo dưới mái hiên tiệm */
   applyShopDisplay() {
+    const list = shop.displayedFlowers(this.save, this.unlockedFlowers());
+    this.shopDispKey = list.join(',');
     if (this.shopDisp) this.world.shop.remove(this.shopDisp);
-    this.shopDisp = shopDisplayBaskets(shop.displayedFlowers(this.save, this.unlockedFlowers()));
+    this.shopDisp = shopDisplayBaskets(list);
     this.world.shop.add(this.shopDisp);
+  }
+
+  /** (0.26.1) Tự treo theo kho: kho đổi thì giỏ hoa trước tiệm đổi theo */
+  refreshAutoDisplay() {
+    if (!shop.isAutoDisplay(this.save)) return;
+    if (shop.displayedFlowers(this.save, this.unlockedFlowers()).join(',') !== this.shopDispKey) { this.applyShopDisplay(); this.emitter.emit('shop'); }
+  }
+
+  /** Bật lại "tự treo theo kho" (gỡ hết loài tự chọn) hoặc tắt hẳn (bán mọi loài) */
+  setAutoDisplay(on) {
+    const sh = this.save.shop;
+    sh.display = [];
+    sh.autoDisp = !!on;
+    sh.upcoming = [];
+    this.applyShopDisplay();
+    this.saveMgr.markDirty();
+    this.emitter.emit('shop');
+    this.toast(on ? '✨ Tiệm tự treo những loài đang có nhiều trong kho' : '🌼 Bán mọi loài: khách hỏi bất kỳ loài nào đã mở', 'info');
+  }
+
+  /** (0.26.1) Hẹn khách mai quay lại: khách để lại đơn đặt trước, không mất uy tín */
+  promiseLater(customerId) {
+    const s = this.save;
+    const c = s.shop.customers.find((x) => x.id === customerId);
+    if (!c) return;
+    const order = c.request.type !== 'bouquet' ? orders.makePreorder(s, this.now, Math.random, c.npc, c.request.flower) : null;
+    if (!order) { this.toast(`Đã đủ ${DISPLAY.preorderMax} đơn đặt trước (hoặc khách muốn bó hoa) — chỉ còn cách từ chối`, 'warn'); return; }
+    s.shop.customers.splice(s.shop.customers.indexOf(c), 1);
+    this.customers.leave(c.id, 'happy');
+    this.toast(`📝 ${shop.npcOf(c.npc).name}: “Được, mai cô quay lại lấy ${order.items[0].n} cành ${FLOWERS[order.items[0].sp].name.toLowerCase()}!” (xem 📋 › Đơn hàng)`, 'good');
+    this.saveMgr.markDirty();
+    this.emitter.emit('shop');
+    this.emitter.emit('quests');
   }
 
   // ---------------- GĐ18: thành tựu, sự kiện tuần, quy mô tiệm ----------------
@@ -2370,6 +2416,7 @@ export class Game {
   checkGoals() {
     const s = this.save;
     this.manageTick(); // (GĐ25) kế hoạch hôm nay, hợp đồng tiệc mới
+    this.refreshAutoDisplay(); // (0.26.1) tự treo hoa theo kho
     const { changed, theme } = goals.ensureEvent(s);
     if (changed) {
       this.saveMgr.markDirty();

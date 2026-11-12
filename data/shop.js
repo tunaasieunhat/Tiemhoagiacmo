@@ -36,7 +36,7 @@ export const DISPLAY = {
   baseSlots: 3,            // số móc treo lúc đầu
   perShopLevel: 1,         // mỗi bậc quy mô tiệm thêm 1 móc
   preorderChance: 0.28,    // 28% lượt khách muốn mua loài tiệm KHÔNG treo ⇒ để lại đơn đặt trước
-  preorderMax: 3,          // tối đa bao nhiêu đơn đặt trước cùng lúc
+  preorderMax: 5,          // tối đa bao nhiêu đơn đặt trước cùng lúc (0.26.1: 3 → 5 vì khách hẹn mai cũng thành đơn đặt trước)
   preorderSize: [2, 5],    // số cành mỗi đơn đặt trước
   preorderDueHours: [20, 36], // hạn giao (giờ game)
   preorderPayMult: 1.35,   // tiền = giá bán lẻ × 1,35 (khách chịu chờ nên trả thêm)
@@ -102,3 +102,19 @@ export const OCCASIONS = [
 export const MEANING_DEMAND = [0.5, 0.65, 0.8, 0.9, 1];
 // Tỉ lệ khách đặt đúng màu cụ thể (chỉ với màu bạn đã từng trồng)
 export const COLOR_DEMAND = 0.3;
+
+// 🛍️ BÁN HOA DỄ THỞ HƠN (0.26.1) — góp ý "khách toàn hỏi hoa mình không có"
+export const SMART = {
+  // A. Khách ưu tiên hoa bạn đang có
+  stockBias: 0.7,          // 70% khách hỏi loài đang có trong kho
+  growingBias: 0.5,        // loài trong kho không hợp ⇒ 50% hỏi loài đang trồng sắp nở
+  capToStock: 0.75,        // hỏi loài có sẵn: 75% không đòi nhiều sao / nhiều cành / màu khác hơn thứ bạn đang có
+  // B. Tự treo hoa: chưa tự chọn loài nào thì tiệm tự treo các loài nhiều hàng nhất (rồi tới loài đang trồng)
+  autoDisplay: true,
+  // C. Hoa thay thế: không có đúng loài / đủ sao ⇒ đưa hoa cùng loài khác màu/ít sao hơn, hoặc loài khác cùng tông màu / ý nghĩa
+  sub: { priceMult: 0.7, maxMood: 'ok', rep: 0 },   // khách vẫn mua: trả 70% giá, không cho tiền bo, uy tín không đổi
+  clerkSubSkill: 5,        // nhân viên bán hàng tay nghề 5+ biết đưa hoa thay thế
+  // D. Báo trước & hẹn mai
+  upcoming: 3,             // số khách sắp tới được báo trước (xem trong bảng Tiệm hoa)
+  comeBack: true,          // kho không có gì đưa được ⇒ khách hẹn mai quay lại (đơn đặt trước) thay vì giận bỏ đi, không mất uy tín
+};

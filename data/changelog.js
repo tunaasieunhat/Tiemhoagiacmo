@@ -4,6 +4,16 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.26.1',
+    notes: [
+      '🛍️ Bán hoa dễ thở hơn: khách giờ ưu tiên hỏi những loài bạn ĐANG CÓ trong kho (rồi tới loài đang trồng), thường không đòi nhiều sao hay màu khác hơn thứ bạn có',
+      '🪴 Tự treo hoa: chưa tự chọn thì tiệm tự treo những loài bạn có nhiều nhất và tự đổi khi kho đổi. Muốn tự chọn: chạm 🪴 Treo hoa (có nút “✨ Tự treo theo kho” và “🌼 Bán mọi loài”)',
+      '🔁 Hoa thay thế: không có đúng loài / đủ sao thì đưa hoa cùng loài khác màu, ít sao hơn, hoặc loài khác cùng tông màu / ý nghĩa — khách vẫn mua (70% giá, không bo, không mất uy tín). Nhân viên bán hàng tay nghề 5+ cũng biết làm vậy',
+      '🔜 Khách sắp tới: bảng Tiệm hoa báo trước 3 khách kế tiếp muốn gì để bạn chuẩn bị; mỗi khách có nhãn ✅ Kho có hoa / 🔁 Có hoa thay thế / ❌ Kho chưa có',
+      '📝 Hẹn mai: khách muốn hoa bạn chưa có thì bấm “Hẹn mai” (hoặc để khách tự hẹn) — khách để lại đơn đặt trước thay vì giận bỏ đi, không mất uy tín. Tối đa 5 đơn đặt trước',
+    ],
+  },
+  {
     version: '0.26.0',
     notes: [
       '🗓️ SỔ QUẢN LÝ mới (nút 🗓️ bên trái): Kế hoạch hôm nay, Tiệc, Chi nhánh, Nhân viên',
