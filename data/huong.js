@@ -21,7 +21,7 @@ export const HG = {
     { id: 'banyan', x: -36, z: -62, r: 11, name: 'Suối & Cây Đa Cổ', sub: 'Đoán hương dưới gốc đa', grass: '#bfe0a0' },
   ],
   // cây cầu gỗ: từ mép đảo chính (tây bắc) sang Bến Hương
-  bridge: { from: [-17.2, -16.6], to: [-29.6, -26.4] },
+  bridge: { from: [-21.4, -19.9], to: [-29.6, -26.4] }, // (GĐ24) đầu cầu ở mép công viên của đảo chính mới
   shop: [-38.4, -32.6],       // Tiệm Hương Nhài (cửa hướng về phía cầu)
   workshop: [-41.6, -35.6],   // Xưởng Hương sau tiệm
   fair: [-47, -40],           // quảng trường chợ phiên

@@ -11,8 +11,10 @@ const TARGETS = [
 
 export class SeasonVisuals {
   constructor() {
-    this.items = TARGETS.map(([base, key]) => ({ m: mat(base), base: new THREE.Color(base), key, to: new THREE.Color(base) }));
+    this.items = TARGETS.map(([base, key]) => ({ m: mat(base), base: new THREE.Color(base), key, to: new THREE.Color(base), cur: new THREE.Color(base) }));
     this.season = -1;
+    this.wet = 0; this.snow = 0; // (GĐ24) đất ướt sẫm màu · tuyết phủ trắng
+    this.white = new THREE.Color('#f4f8fb');
   }
 
   set(seasonIndex, instant = false) {
@@ -25,12 +27,18 @@ export class SeasonVisuals {
       const shift = new THREE.Color(s[it.key]).sub(new THREE.Color(spring[it.key]));
       it.to.copy(it.base).add(shift);
       it.to.r = THREE.MathUtils.clamp(it.to.r, 0, 1); it.to.g = THREE.MathUtils.clamp(it.to.g, 0, 1); it.to.b = THREE.MathUtils.clamp(it.to.b, 0, 1);
-      if (instant) it.m.color.copy(it.to);
+      if (instant) { it.cur.copy(it.to); it.m.color.copy(it.to); }
     }
   }
 
+  /** (GĐ24) wet 0..1: cỏ sẫm lại khi mưa · snow 0..1: phủ trắng khi tuyết / sương giá */
+  setOverlay(wet, snow) { this.wet = wet; this.snow = snow; }
+
   update(dt) {
     const k = 1 - Math.exp(-dt * 0.8);
-    for (const it of this.items) it.m.color.lerp(it.to, k);
+    for (const it of this.items) {
+      it.cur.lerp(it.to, k);
+      it.m.color.copy(it.cur).multiplyScalar(1 - this.wet * 0.2).lerp(this.white, this.snow * (it.key === 'grass' || it.key === 'farm' ? 0.82 : 0.6));
+    }
   }
 }

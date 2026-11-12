@@ -7,6 +7,7 @@
 //  => Người chơi cũ không bị mất tiến độ.
 // =============================================================
 import { createCraftState } from '../systems/craft.js';
+import { createHomeState } from '../systems/home.js';
 import { legacyToPlaced } from '../systems/decor.js';
 import { createVillageState, initVillageFromRegulars } from '../systems/relations.js';
 import { STARTER, TIME, FARM } from '../../data/config.js';
@@ -99,6 +100,7 @@ export function createNewSave() {
     event: createEventState(),       // 📅 sự kiện tuần thật (GĐ18)
     shopLevel: 0,                    // 🏪 quy mô tiệm 0..3 (GĐ18)
     story: createStoryState(),       // 📜 cốt truyện chính: cảnh đã xem, dấu lựa chọn, chương đã xong (GĐ20)
+    home: createHomeState(),         // 🏡 nhà của bạn: màu tường/mái/cửa, vật phẩm trang trí (GĐ24, tự bổ sung bằng fillDefaults)
     craft: createCraftState(),       // 🌸 Tiệm Hương Nhài: nguyên liệu, hàng trên kệ, Sổ Hương (GĐ23, tự bổ sung bằng fillDefaults)
     fish: createFishState(),         // 🎣 câu cá: mồi, cần, giỏ cá, Sổ cá (GĐ22, tự bổ sung bằng fillDefaults)
     mg: {},                          // 🎮 kỷ lục mini game { kind: { plays, best, perfect, combo } } (GĐ17, tự bổ sung bằng fillDefaults)

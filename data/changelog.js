@@ -4,6 +4,17 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.25.0',
+    notes: [
+      '🏝️ ĐẢO CHÍNH MỚI: to gần gấp đôi, nhiều mũi đất uốn lượn, chia khu rõ ràng — Nông trại + Tiệm hoa + Nhà bạn ở giữa, Công viên phía tây, Khu vui chơi phía đông bắc (🚧 sắp khai trương), Khu mua bán phía đông có cầu tàu, Làng Hoa phía nam',
+      '🌲 Rừng bao quanh đảo đổi theo mùa: xuân hoa anh đào hồng, hạ xanh rậm, thu cam đỏ, đông trụi lá phủ tuyết; gió lớn thì cây nghiêng ngả',
+      '🏡 Nhà của bạn: chạm vào nhà để đổi màu tường, mái, cửa và gắn 14 vật phẩm (hộp thư, bồn hoa, đèn hiên, ống khói, hàng rào, cổng hoa, dây đèn, xích đu, mèo mướp…)',
+      '🌳 Công viên có đài phun nước, chòi nghỉ, bồn hoa, ghế đá và rất nhiều chỗ trống để đặt đồ trang trí',
+      '🌦️ Thời tiết chi tiết hơn: đất ướt sẫm màu và đọng vũng khi mưa, bọt nước bắn trên mặt đất, bóng mây trôi qua đảo, bão có chớp sáng + tia sét + tiếng sấm, mưa đá nằm lại trên cỏ, tuyết phủ trắng dần cả đảo rồi tan, sương mù bay từng làn, sương giá trắng mờ buổi sáng, nắng nóng có vệt nắng lung linh, tiếng mưa rì rào',
+      '🎨 Đồ trang trí cũ được giữ nguyên chỗ; món nào vướng đường đi / công trình mới sẽ tự cất về kho để bạn đặt lại',
+    ],
+  },
+  {
     version: '0.24.0',
     notes: [
       '🌸 VÙNG ĐẤT MỚI: Đảo Ngàn Hương — hòn đảo lớn nhất từ trước tới giờ, phía tây bắc Đảo Mây, nối bằng cây cầu gỗ. 8 vùng: Bến Hương, Đồng Hoa Sương, Đồi Trà bậc thang, Rừng Ong, Đầm Sen, Vườn Quế & Cam, Suối & Cây Đa Cổ, quảng trường chợ phiên. Mở khi xong chương 3 cốt truyện chính + cấp 12',

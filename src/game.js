@@ -65,6 +65,10 @@ import { DreamWorld } from './render/dreamWorld.js';
 import { MuiEnView } from './render/muien.js';
 import { ConLangView, CON } from './render/conlang.js';
 import { HuongView } from './render/huong.js';
+import * as homeSys from './systems/home.js';
+import { LOBES } from '../data/island.js';
+import { WeatherDetail } from './render/weatherDetail.js';
+import { ISLAND_SHAPES } from './render/world.js';
 import * as craft from './systems/craft.js';
 import { HG, GATHER, PRODUCTS, INGREDIENTS, CRAFT_RULES } from '../data/huong.js';
 import * as fishing from './systems/fishing.js';
@@ -88,7 +92,7 @@ const ACTIONS = {
 const FX = { till: 'dirt', plant: 'seed', water: 'water', fertilize: 'fert', harvest: 'sparkle', treat: 'spray' };
 
 /** Vật chạm được ưu tiên hơn nhà / dân làng / khách / ô đất khi nằm trùng tia chạm */
-const PRIORITY_PICKS = new Set(['story', 'mo', 'buds', 'sail', 'diep', 'fishspot', 'fishstall', 'fogwall', 'gather', 'hgshop', 'hgbridge']);
+const PRIORITY_PICKS = new Set(['home', 'story', 'mo', 'buds', 'sail', 'diep', 'fishspot', 'fishstall', 'fogwall', 'gather', 'hgshop', 'hgbridge']);
 
 export const TUTORIAL = [
   { text: 'Chọn 🪏 Xẻng rồi chạm vào ô đất để xới đất (hoặc chạm ô đất bằng ✋ để xem).', done: (a) => a === 'till' },
@@ -132,6 +136,9 @@ export class Game {
     this.dayNight = new DayNight(stage, world.lampLights);
     this.seasonVisuals = new SeasonVisuals();
     this.weatherFx = new WeatherFx(stage.scene, stage.camera);
+    // (GĐ24) thời tiết để lại dấu trên mặt đất: ướt, vũng nước, bọt nước, tuyết phủ, bóng mây, sét
+    this.weatherDetail = new WeatherDetail(stage.scene, [...ISLAND_SHAPES, { x: VILLAGE.center.x, z: VILLAGE.center.z, r: VILLAGE.radius }]);
+    this.weatherDetail.onThunder = () => { if (!this.visit) this.audio?.sfx?.thunder?.(); };
     weather.ensureWeather(this.save);
     this.applyWeatherVisuals(true);
     // GĐ8: trang trí, nhân viên, nhiệm vụ
@@ -151,7 +158,9 @@ export class Game {
     this.storyTrig = [];
     this.storyWho = new Set();
     this.storyKey = null;
+    this.fixDecorForNewIsland(); // (GĐ24) đảo mới: rừng chừa chỗ đồ cũ, đồ vướng đường mới thì cất vào kho
     this.decorView.sync(this.save.decor.placed);
+    this.applyHome();
     this.staffModels = {};
     for (const [id, st] of Object.entries(STAFF)) {
       const m = buildCharacter(st.look).root;
@@ -179,6 +188,8 @@ export class Game {
     this.syncStoryWorld(); // mở vùng camera Mũi Én nếu đã có thuyền
     // Đồi Mộng phía bắc + đoạn cầu nối
     this.controls.regions.push({ x: 0, z: 0, r: this.controls.regions[0].r, x2: STORY_RULES.hill[0], z2: STORY_RULES.hill[1] + 1, r2: 6.5 });
+    // (GĐ24) các mũi đất của đảo chính mới: hành lang từ tâm đảo tới từng mũi (mép trơn, kéo không khựng)
+    for (const l of LOBES) this.controls.regions.push({ x: 0, z: 0, r: this.controls.regions[0].r, x2: l.x, z2: l.z, r2: Math.max(5, l.r - 3) });
     // camera bắt đầu nhìn vào lô đất đầu tiên; điện thoại dọc thì zoom gần hơn
     const portrait = innerWidth < innerHeight;
     this.controls.target.copy(PLOT_SLOTS[0]).add(portrait ? new THREE.Vector3(0.7, 0, 0.7) : new THREE.Vector3(1.5, 0, -1));
@@ -370,8 +381,14 @@ export class Game {
     const w = weather.ensureWeather(this.save);
     const c = calendar.calendarOf(dayOf(this.save.time.gameMinutes));
     this.seasonVisuals.set(c.seasonIndex, instant);
+    this.world.forest.setSeason(c.seasonIndex, instant); // (GĐ24) rừng đổi màu theo mùa
     this.weatherFx.set(w.today.type, c.seasonIndex);
     this.dayNight.setWeather(w.today.type);
+    this.weatherDetail.set(w.today.type);
+    if (instant) { // mở game giữa ngày mưa / tuyết: mặt đất đã ướt / trắng sẵn
+      this.weatherDetail.wet = ['rain', 'storm', 'hail'].includes(w.today.type) ? 1 : 0;
+      this.weatherDetail.snow = w.today.type === 'snow' ? 1 : 0;
+    }
     this.farmView.wind = { storm: 1, wind: 0.85, hail: 0.5, rain: 0.25 }[w.today.type] || 0;
   }
 
@@ -432,8 +449,18 @@ export class Game {
     this.particles.update(dt);
     this.customers.update(dt);
     this.dayNight.update(c.hourFloat, this.controls.target, dt);
+    const wd = this.weatherDetail;
+    wd.update(dt, this.controls.target, this.clock.hourFloat, this.weatherFx.density);
+    if (wd.flash > 0) { // chớp: cả đảo lóe sáng một thoáng
+      this.stage.hemi.intensity *= 1 + wd.flash * 2.4;
+      this.stage.scene.background.lerp(new THREE.Color('#eef2ff'), wd.flash * 0.5);
+    }
+    this.seasonVisuals.setOverlay(wd.wet, wd.snow);
     this.seasonVisuals.update(dt);
     this.weatherFx.update(dt, this.controls.target, this.clock.hourFloat);
+    // tiếng mưa rì rào (to nhỏ theo độ mưa)
+    const rainVol = this.visit ? 0 : { storm: 1, rain: 0.6, hail: 0.7 }[this.save.weather?.today?.type] || 0;
+    this.audio?.sfx?.rain?.(rainVol);
     this.bugView.root.visible = !this.visit && !this.decorMode && !this.flash;
     this.storyView.root.visible = !this.visit && !this.decorMode;
     this.storyView.hideMarkers = this.cine;
@@ -442,6 +469,8 @@ export class Game {
     this.muien.update(dt, { night: this.dayNight.night || 0 });
     this.conlang.update(dt, { night: this.dayNight.night || 0, hide: this.cine });
     this.huong.update(dt, { night: this.dayNight.night || 0, hide: this.cine });
+    this.world.home.update(dt, this.dayNight.night || 0);
+    this.world.forest.update(dt, { snow: this.weatherDetail.snow, wind: this.farmView.wind || 0 });
     // 🎵 nhạc riêng Mũi Én: máy quay ở Mũi Én (hoặc đang chiếu cảnh truyện ở đó) thì phát nhạc đảo
     const area = !this.visit && this.atEn ? 'en' : 'main';
     if (area !== this.musicArea) { this.musicArea = area; this.audio?.music?.setArea?.(area); }
@@ -539,6 +568,7 @@ export class Game {
     if (pick.kind === 'fishstall') { this.select(null); this.emitter.emit('fishstall'); return; }
     if (pick.kind === 'fogwall') { this.select(null); this.toast('🌫️ Sương dày quá, không thấy đường vào. Hình như ngoài đó có một hòn cồn...', 'info'); return; }
     if (pick.kind === 'sail') { this.select(null); this.sail(); return; }
+    if (pick.kind === 'home') { this.select(null); this.emitter.emit('home'); return; }
     if (pick.kind === 'gather') { this.select(null); this.emitter.emit('gather', { id: pick.id }); return; }
     if (pick.kind === 'hgshop') { this.select(null); this.emitter.emit('hgshop'); return; }
     if (pick.kind === 'hgbridge') { this.select(null); this.toast('🌉 Cầu mục hết rồi, đi không được. Hỏi Ông Ba xem sao.', 'info'); return; }
@@ -853,7 +883,7 @@ export class Game {
       g.visible = !plots.some((p) => p.parcel === id);
       return g.visible && !this.visit;
     }).map(([, g]) => g);
-    this.pickRoots = this.decorMode ? [this.decorView.root] : [this.bugView.root, this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, ...locked, ...parcels, this.villagers.root, ...this.villagers.housePick(), this.storyView.root, this.dreamWorld.root, this.muien.root, this.conlang.root, this.huong.root];
+    this.pickRoots = this.decorMode ? [this.decorView.root] : [this.bugView.root, this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, this.world.home.root, ...locked, ...parcels, this.villagers.root, ...this.villagers.housePick(), this.storyView.root, this.dreamWorld.root, this.muien.root, this.conlang.root, this.huong.root];
   }
 
   /** Vị trí lô thứ pi (lô của dân làng nằm ở mảnh đất riêng) */
@@ -1747,6 +1777,39 @@ export class Game {
     }
     // mở vùng camera Mũi Én khi đã có thuyền
     if (f.boat_ready && this.controls && !this.enRegion) { this.enRegion = { x: EN.center[0], z: EN.center[1], r: EN.camRadius }; this.controls.regions.push(this.enRegion); }
+  }
+
+  // ---------------- 🏡 Nhà của bạn & đảo chính mới (GĐ24) ----------------
+  applyHome() { this.world.home.apply(homeSys.homeLook(this.save)); }
+
+  /** Đổi màu / mua / bật tắt vật phẩm nhà. what: { part, id } hoặc { item } */
+  homeAction(what) {
+    const res = what.item ? homeSys.toggleItem(this.save, what.item) : homeSys.setColor(this.save, what.part, what.id);
+    this.toast(res.msg, res.ok ? 'good' : 'warn');
+    if (res.ok) {
+      this.applyHome();
+      if (res.cost) { this.save.stats.spent = (this.save.stats.spent || 0) + res.cost; this.particles.spawn('sparkle', this.world.home.root.position.clone().setY(2.5)); }
+      this.saveMgr.markDirty();
+      this.emitter.emit('inventory');
+    }
+    return res;
+  }
+
+  /**
+   * (GĐ24) Đảo chính đổi hình dạng: cây rừng mới không mọc đè lên đồ trang trí người chơi đã đặt;
+   * đồ nào vướng công trình / đường mới thì cất lại vào kho (không mất).
+   */
+  fixDecorForNewIsland() {
+    const placed = this.save.decor.placed, map = this.world.decorMap;
+    const near = placed.map((p) => [p.x, p.z, decorSys.sizeOf(p.id) + 0.9]);
+    this.world.forest.hideNear(near);
+    map.circles = map.circles.filter((c) => c.name !== 'rừng' || !near.some(([x, z, r]) => Math.hypot(c.x - x, c.z - z) < r));
+    const bad = placed.filter((p) => !decorSys.checkPlace(placed, p.id, p.x, p.z, map, p.u).ok);
+    if (!bad.length) return;
+    for (const p of bad) this.save.decor.owned[p.id] = (this.save.decor.owned[p.id] || 0) + 1;
+    this.save.decor.placed = placed.filter((p) => !bad.includes(p));
+    this.saveMgr.markDirty();
+    setTimeout(() => this.toast(`🏝️ Đảo đã mở rộng! ${bad.length} món đồ trang trí vướng đường / công trình mới đã được cất vào kho 🎨, bạn đặt lại nhé.`, 'info'), 4000);
   }
 
   // ---------------- 🌸 Đảo Ngàn Hương (GĐ23) ----------------

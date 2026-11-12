@@ -188,6 +188,55 @@ export class Sfx {
     o.stop(t + 0.08);
   }
 
+  /** Bộ đệm tiếng ồn trắng (dùng cho mưa, sấm) */
+  noise(ctx) {
+    if (this.noiseBuf) return this.noiseBuf;
+    const b = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+    const d = b.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    this.noiseBuf = b;
+    return b;
+  }
+
+  /** (GĐ24) Tiếng mưa rì rào, gọi liên tục với level 0..1 (0 = tắt dần) */
+  rain(level = 0) {
+    const want = level * this.prefs.sfx;
+    if (!this.rainNode && want <= 0) return;
+    const ctx = this.ensure();
+    if (!ctx || ctx.state !== 'running') return;
+    if (!this.rainNode) {
+      const src = ctx.createBufferSource(); src.buffer = this.noise(ctx); src.loop = true;
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400;
+      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 300;
+      const g = ctx.createGain(); g.gain.value = 0;
+      src.connect(hp); hp.connect(lp); lp.connect(g); g.connect(ctx.destination);
+      src.start();
+      this.rainNode = { src, g };
+    }
+    const g = this.rainNode.g.gain;
+    g.setTargetAtTime(want * 0.09, ctx.currentTime, 1.2);
+    if (want <= 0 && g.value < 0.002) { try { this.rainNode.src.stop(); } catch { /* bỏ qua */ } this.rainNode = null; }
+  }
+
+  /** (GĐ24) Tiếng sấm: ồn trầm rền, tắt dần */
+  thunder() {
+    const vol = this.prefs.sfx;
+    if (vol <= 0) return;
+    const ctx = this.ensure();
+    if (!ctx || ctx.state !== 'running') return;
+    const t = ctx.currentTime;
+    const src = ctx.createBufferSource(); src.buffer = this.noise(ctx);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(900, t); lp.frequency.exponentialRampToValueAtTime(120, t + 2.5);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.5 * vol, t + 0.06);
+    g.gain.exponentialRampToValueAtTime(0.18 * vol, t + 0.6);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 3.2);
+    src.connect(lp); lp.connect(g); g.connect(ctx.destination);
+    src.start(t); src.stop(t + 3.3);
+  }
+
   tap(strength = 1) {
     const vol = this.prefs.sfx * strength;
     if (vol <= 0) return;

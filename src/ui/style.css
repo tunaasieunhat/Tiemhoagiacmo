@@ -1498,3 +1498,11 @@ body.cine-sepia #game canvas { filter: sepia(.85) saturate(.75) contrast(.95) br
 .hg-page b { display: block; font-family: 'Baloo 2', sans-serif; font-size: 16px; color: #8a4a5a; }
 .hg-page p { margin: 2px 0; font-size: 12.5px; font-style: italic; line-height: 1.45; }
 .hg-page.locked { background: #f4eef0; color: #a99; }
+/* (GĐ24) Nhà của bạn */
+.hm-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; margin-bottom: 8px; }
+.hm-sw { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 6px; border-radius: 12px; border: 2px solid var(--line, #f2d6cc); background: #fff; font: inherit; }
+.hm-sw i { width: 40px; height: 40px; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(0,0,0,.08); }
+.hm-sw b { font-size: 12.5px; }
+.hm-sw small { font-size: 11px; opacity: .75; }
+.hm-sw.on { border-color: #e0607e; box-shadow: 0 0 0 2px #ffd1dc; }
+.hm-sw.disabled { opacity: .5; }

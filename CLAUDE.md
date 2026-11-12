@@ -19,6 +19,8 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
   ✅ GĐ16 (0.17.0) chăm sóc có kỹ năng. ✅ GĐ18 (0.18.0) mục tiêu dài hạn. ✅ GĐ17 (0.19.0) mini game hay hơn.
   ✅ GĐ20A (0.20.0) cốt truyện chính chương 1–2 + hội thoại kiểu phim + treo hoa. ✅ GĐ20B (0.21.0) chương 3–7, Nụ Mộng,
   3 kết thúc — cốt truyện chính đã trọn bộ. ✅ GĐ21 (0.22.0) đảo Mũi Én + truyện "Cơn mưa đi lạc". ✅ GĐ22 (0.23.0) Cồn Lặng + truyện "Người giữ sương" + câu cá. ✅ GĐ23 (0.24.0) Đảo Ngàn Hương + truyện "Hương để nhớ" + Tiệm Hương Nhài chế biến.
+  ✅ GĐ24 (0.25.0) đảo chính mới 6 khu + rừng theo mùa + nhà người chơi + thời tiết chi tiết. Khu vui chơi: để phát triển sau.
+  Lồng tiếng: đã đề xuất miễn phí (Piper tạo sẵn trên GitHub Actions + "Phòng thu" tự thu), đang chờ người dùng chọn.
   Việc tiếp theo: hỏi người dùng.
   Đề xuất đã nêu: GĐ19 nuôi ong (một phần đã có ở GĐ23), điểm danh + sổ thưởng mùa, tùy biến nhân vật, hội làng (đánh số GĐ mới khi làm).
 - Đưa lên mạng: Netlify (`netlify.toml`, `docs/HUONG_DAN_DUA_LEN_MANG.md`) — trang thật: https://tiem-hoa-giac-mo.netlify.app
@@ -195,6 +197,18 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   lệnh `['ing', id, n]`, cg `hpage`/`note`, chữ điều kiện lồng nhau `{a?A|{b?B|C}}` (`fmt` thay từ trong ra). Dấu: `hg_bridge`, `hg_shop`
   (mở bán), `hg_kept`, `hg_fair`, `hg_told|hg_silent`, `hg_adv_stay|hg_adv_go`, `hg_tree`, `hg_f_*` (bông hoa chọn), kết `hg_stay|hg_go|hg_wed`
   (kết ẩn cần `hg_told&hg_allpages&hg_quefriend` — hai dấu sau do `game.hgAutoFlags` đặt). Chương 16: quá 2 ngày không mưa thì ép mai mưa.
+- **Đảo chính mới** (GĐ24): số liệu `data/island.js` (`LOBES` mũi đất mở rộng ra hướng trống — KHÔNG dời các đảo khác; `ISLAND_ZONES`
+  home/park/fun/market, `ISLAND_EXITS` lối ra không trồng rừng, `FOREST`, `WEATHER_FX`). `world.js`: `ISLAND_SHAPES` (tròn gốc r25 + mũi đất,
+  dùng cho `decorMap.islands`, camera, rừng); khu chợ dời sang mũi đông (`ZONES.market`), chỗ chợ cũ (`OLD_MARKET`) giờ là nhà bạn;
+  **cây cũ giữ nguyên chỗ** (chuỗi ngẫu nhiên & danh sách tránh cũ không đổi, `buildZones` dùng `rng` riêng, cây đè công trình mới thì bỏ qua);
+  `forestLayout` rải lưới dọc bờ + 2 khu rừng, chừa lối ra / đường / điểm cốt truyện / chỗ câu cá. Rừng: `src/render/forest.js` (InstancedMesh,
+  `setSeason`, `update({snow, wind})`, `hideNear` chừa chỗ đồ trang trí cũ). `game.fixDecorForNewIsland` chạy mỗi lần mở game: ẩn cây rừng đè
+  đồ đã đặt, đồ vướng đường/công trình mới thì cất về `decor.owned`. Camera: hành lang tâm đảo → từng mũi. Cầu Ngàn Hương bắt đầu từ mép công viên.
+  Nhà người chơi: `data/home.js` (HOME_COLORS wall/roof/door, HOME_ITEMS), logic `src/systems/home.js` (`save.home`, fillDefaults, không tăng
+  SAVE_VERSION), mô hình `src/models/home.js` (`HomeModel.apply(look)`, vật liệu riêng), pick `home` → `hud.openHome` (`data-hm`).
+  Thời tiết chi tiết: `src/render/weatherDetail.js` (`wet`, `snow`, `hailCover`, vũng nước cố định, bọt nước quanh camera, bóng mây, làn sương,
+  vệt nắng, `strike()` sét + `flash` làm sáng `stage.hemi`); `SeasonVisuals.setOverlay(wet, snow)` làm cỏ sẫm / trắng; `Sfx.rain(level)`, `Sfx.thunder()`.
+  Ảnh thử thời tiết: đổi ngày TRƯỚC rồi mới gán `save.weather.today.type` (sang ngày mới game tự gieo thời tiết khác).
 - **Ưu tiên chạm cốt truyện** (0.23): `game.pickAt` dò `storyView.pickNear` (theo khoảng cách trên màn hình, bán kính 46px) trước, rồi
   `PRIORITY_PICKS` (story, mo, buds, sail, diep, fishspot, fishstall, fogwall) trước nhà/dân làng. `game.focusStory(scene)` = nút Chỉ đường.
 - **Vùng camera** (0.22): `controls.regions` nhận hình tròn `{x,z,r}` hoặc hành lang thuôn `{x,z,r,x2,z2,r2}`; đảo chính ↔ làng và

@@ -50,6 +50,8 @@ import { Cinema } from './cinema.js';
 import { FishingUI } from './fishingGame.js';
 import * as fishSys from '../systems/fishing.js';
 import * as craft from '../systems/craft.js';
+import * as homeSys from '../systems/home.js';
+import { HOME_COLORS, HOME_ITEMS, HOME_PARTS } from '../../data/home.js';
 import { GATHER, PRODUCTS, INGREDIENTS, CRAFT_RULES, HG_GAME_NAMES } from '../../data/huong.js';
 import { CG_TEXT } from '../../data/story.js';
 import { FISH, FISH_RULES, FISH_SPOTS, BAITS, RODS, GEAR } from '../../data/fishing.js';
@@ -139,6 +141,8 @@ export class Hud {
     // GĐ23: Đảo Ngàn Hương
     em.on('gather', ({ id }) => this.openGather(id));
     em.on('hgshop', () => this.openHgShop());
+    // GĐ24: nhà của bạn
+    em.on('home', () => this.openHome());
     em.on('sync', (s) => this.updateSync(s));
     this.updateClock(game.clock);
     this.updateToolbar();
@@ -243,6 +247,8 @@ export class Hud {
     if (ld) { this.onLandAct(ld); return; }
     const fh = e.target.closest('[data-fh]');
     if (fh) { this.onFishStall(fh); return; }
+    const hm = e.target.closest('[data-hm]');
+    if (hm) { this.onHome(hm); return; }
     const hg = e.target.closest('[data-hg]');
     if (hg) { this.onHgShop(hg); return; }
     const bd = e.target.closest('[data-bd]');
@@ -605,6 +611,40 @@ export class Hud {
         : '<div class="empty-shop">🧺<p>Giỏ cá đang trống. Ra mép nước, chạm 🎣 để câu nhé!</p></div>';
     }
     this.openModal('fishstall', `<h2>🐟 Quầy cá của Nhum</h2><div class="mk-wallet">💰 ${s.player.coins.toLocaleString('vi-VN')}</div>${tabs}${body}`, 'wide');
+  }
+
+  // ---------- 🏡 Nhà của bạn (GĐ24) ----------
+  openHome(tab) {
+    const g = this.game, s = g.save, h = homeSys.H(s);
+    if (tab) this.homeTab = tab;
+    const cur = this.homeTab || 'color';
+    const tabs = `<div class="mk-tabs"><button class="${cur === 'color' ? 'on' : ''}" data-hm="tab" data-id="color">🎨 Màu sắc</button><button class="${cur === 'item' ? 'on' : ''}" data-hm="tab" data-id="item">🪴 Vật phẩm <span class="pill">${Object.keys(h.items).length}/${Object.keys(HOME_ITEMS).length}</span></button></div>`;
+    let body;
+    if (cur === 'color') {
+      body = Object.entries(HOME_PARTS).map(([part, label]) => `<h3>${label}</h3><div class="hm-swatches">${Object.entries(HOME_COLORS[part]).map(([id, c]) => {
+        const own = homeSys.ownsColor(s, part, id), on = h[part] === id, lock = !own && (c.level || 0) > s.player.level;
+        return `<button class="hm-sw ${on ? 'on' : ''} ${lock ? 'disabled' : ''}" data-hm="color" data-part="${part}" data-id="${id}"><i style="background:${c.color}"></i><b>${esc(c.name)}</b><small>${on ? '✔ Đang dùng' : own ? 'Đã có' : lock ? `🔒 Cấp ${c.level}` : `${c.price} 💰`}</small></button>`;
+      }).join('')}</div>`).join('');
+    } else {
+      body = `<div class="mk-body">${Object.entries(HOME_ITEMS).map(([id, it]) => {
+        const own = !!h.items[id], on = own && !h.off[id], lock = !own && (it.level || 0) > s.player.level;
+        return `<div class="mk-item ${on ? 'done' : ''}"><div class="mk-icon">${it.icon}</div><div class="mk-info"><b>${esc(it.name)}</b><small>${esc(it.desc)}</small></div>
+          <div class="mk-buy">${own ? `<button class="btn ${on ? '' : 'primary'}" data-hm="item" data-id="${id}">${on ? 'Cất đi' : 'Bày ra'}</button>` : lock ? `<span class="maxed">🔒 Cấp ${it.level}</span>` : `<span class="price">${it.price.toLocaleString('vi-VN')} 💰</span><button class="btn ${s.player.coins < it.price ? 'disabled' : 'primary'}" data-hm="item" data-id="${id}">Mua</button>`}</div></div>`;
+      }).join('')}</div>`;
+    }
+    this.openModal('home', `<h2>🏡 Nhà của bạn</h2><div class="mk-wallet">💰 ${s.player.coins.toLocaleString('vi-VN')}</div>${tabs}<p class="muted small">Đổi màu đã mua thì miễn phí. Đồ trang trí tự do (ghế, đèn, chậu…) vẫn đặt quanh nhà bằng nút 🎨.</p>${body}`, 'wide');
+  }
+
+  onHome(el) {
+    const g = this.game, id = el.dataset.id;
+    if (el.classList.contains('disabled')) { g.toast('Chưa đủ cấp hoặc không đủ tiền', 'warn'); return; }
+    const top = this.scrollBox()?.scrollTop || 0;
+    if (el.dataset.hm === 'tab') this.homeTab = id;
+    else if (el.dataset.hm === 'color') g.homeAction({ part: el.dataset.part, id });
+    else if (el.dataset.hm === 'item') g.homeAction({ item: id });
+    this.openHome();
+    const box = this.scrollBox();
+    if (box && el.dataset.hm !== 'tab') box.scrollTop = top;
   }
 
   // ---------- 🌸 Đảo Ngàn Hương (GĐ23) ----------
