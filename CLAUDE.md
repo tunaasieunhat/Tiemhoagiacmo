@@ -18,7 +18,8 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
   cùng bảng — muốn đổi phải thêm migration mới. Mô phỏng tiến độ: chạy thử với số liệu `data/*` (cấp 10 ≈ 3 giờ chơi chăm).
   ✅ GĐ16 (0.17.0) chăm sóc có kỹ năng. ✅ GĐ18 (0.18.0) mục tiêu dài hạn. ✅ GĐ17 (0.19.0) mini game hay hơn.
   ✅ GĐ20A (0.20.0) cốt truyện chính chương 1–2 + hội thoại kiểu phim + treo hoa. ✅ GĐ20B (0.21.0) chương 3–7, Nụ Mộng,
-  3 kết thúc — cốt truyện chính đã trọn bộ. ✅ GĐ21 (0.22.0) đảo Mũi Én + truyện "Cơn mưa đi lạc". Việc tiếp theo: hỏi người dùng.
+  3 kết thúc — cốt truyện chính đã trọn bộ. ✅ GĐ21 (0.22.0) đảo Mũi Én + truyện "Cơn mưa đi lạc". ✅ GĐ22 (0.23.0) Cồn Lặng + truyện "Người giữ sương" + câu cá.
+  Việc tiếp theo: hỏi người dùng.
   Đề xuất đã nêu: GĐ19 xưởng chế biến + nuôi ong, GĐ22 điểm danh + sổ thưởng mùa, GĐ23 tùy biến nhân vật, GĐ24 hội làng.
 - Đưa lên mạng: Netlify (`netlify.toml`, `docs/HUONG_DAN_DUA_LEN_MANG.md`) — trang thật: https://tiem-hoa-giac-mo.netlify.app
   (Netlify đang deploy nhánh `ccr-845954e0-2hh7a1`; `main` chỉ có commit đầu tiên). APK: Capacitor + GitHub Actions
@@ -168,6 +169,18 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   `en_off|en_on` (đèn hải đăng). 3D `src/render/muien.js` (`game.muien.sync` trong `syncStoryWorld`). `game.sail()` chỉ là lia camera
   (`game.atEn` = camera x > 40); nhân vật ở xa ô đất > 22 thì "có mặt" ngay cạnh lô (không lội biển).
   Sửa `flowers.js`/`variants.js` ở GĐ này ⇒ đã chạy `npm run build:functions` (người dùng cần dán lại Edge Function nếu chưa bật tự deploy).
+- **Cồn Lặng & câu cá** (GĐ22): số liệu `data/fishing.js` (FISH_RULES, FISH_SPOTS, BAITS, RODS, GEAR, 40 loài `FISH`, MONG, JUNK…).
+  Logic thuần `src/systems/fishing.js` (`cast` → `reelConfig` → `land`; `sellFish/tradeSeed/tradeFert`, `isLowTide`, `isFullMoon`,
+  `spotOpen`); save `save.fish` (fillDefaults tự bổ sung, KHÔNG tăng SAVE_VERSION). UI `src/ui/fishingGame.js` (`#fishing`, pha
+  prep → power → wait → reel → result; `window.__fishing` cho bài thử — bot đọc `phase/v/bite/tension/zc`), quầy `hud.openFishStall`
+  (`data-fh`), Sổ tay thẻ `fish`. 3D `src/render/conlang.js` (`CON` tâm [-41,6]; sương theo `fogAmt`, tường sương pick `fogwall`,
+  chỗ câu pick `fishspot`, quầy pick `fishstall`; `game.conlang.sync` trong `syncStoryWorld`). Mạch truyện `arc: 'lang'` (chương l1–l6,
+  mở khi `done.e3` + cấp 20); bộ đếm bước `bottles|caught|rare|mong`; chai thư = cảnh động `bottle_<n>` trong `story.sceneOf`
+  (**cinema phải lấy cảnh qua `storySys.sceneOf`, không tra thẳng `SCENES`**), xếp vào `story.queue`. Cá Mộng chỉ cắn ở `fogsea` đêm rằm
+  khi truyện đang cần. Dấu: `co_open`, `co_fish` (biết câu), `co_wreck`, `co_told|co_kept`, `rod_khoi`, `co_clear|co_stay`, `co_lamp`.
+  Kết `co_stay` ⇒ chú Lưới rời cồn (`GONE_WHEN` trong `data/village.js`). Dân cồn (`CO_PEOPLE`) ẩn trong Sổ tay tới khi xem `l1_path`.
+- **Ưu tiên chạm cốt truyện** (0.23): `game.pickAt` dò `storyView.pickNear` (theo khoảng cách trên màn hình, bán kính 46px) trước, rồi
+  `PRIORITY_PICKS` (story, mo, buds, sail, diep, fishspot, fishstall, fogwall) trước nhà/dân làng. `game.focusStory(scene)` = nút Chỉ đường.
 - **Vùng camera** (0.22): `controls.regions` nhận hình tròn `{x,z,r}` hoặc hành lang thuôn `{x,z,r,x2,z2,r2}`; đảo chính ↔ làng và
   đảo chính ↔ Đồi Mộng dùng hành lang để mép trơn (trước đây khe hở/góc lõm làm kéo bản đồ bị khựng).
 - **Treo hoa** (0.20): `save.shop.display = [loài]` (rỗng = bán tất cả), số móc `shop.displaySlots` = `DISPLAY.baseSlots` + quy mô tiệm.

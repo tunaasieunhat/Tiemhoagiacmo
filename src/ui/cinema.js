@@ -167,7 +167,7 @@ export class Cinema {
    * Trả về { done: true } khi xem hết.
    */
   async play(sceneId, { replay = false } = {}) {
-    const scene = SCENES[sceneId];
+    const scene = storySys.sceneOf(sceneId);
     if (!scene || this.active) return { done: false };
     const g = this.game, save = g.save, dir = g.director;
     const lines = scene.lines;

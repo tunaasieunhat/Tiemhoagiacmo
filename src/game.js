@@ -1750,7 +1750,7 @@ export class Game {
   afterFishTrade(res) {
     if (!res.ok) { if (res.msg) this.toast(res.msg, 'warn'); return res; }
     if (res.msg) this.toast(res.msg, 'good');
-    if (res.coins) { this.questEvent('earn', res.coins); this.toast(`🐟 Bán ${res.n} con cá: +${res.coins.toLocaleString('vi-VN')} 💰`, 'good'); }
+    if (res.coins) { this.toast(`🐟 Bán ${res.n} con cá: +${res.coins.toLocaleString('vi-VN')} 💰`, 'good'); }
     this.saveMgr.markDirty();
     this.emitter.emit('inventory');
     return res;

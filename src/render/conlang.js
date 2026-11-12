@@ -145,7 +145,8 @@ export class ConLangView {
     this.key = key;
     this.fogAmt = st.fog;
     this.wall.visible = !st.open;
-    this.label.visible = !!st.open;
+    this.isOpen = !!st.open;
+    this.label.visible = this.isOpen;
     this.stall.visible = !!st.open;
     this.wreck.visible = !!st.wreck;
     this.wreckFlower.visible = !!st.flower;
@@ -170,6 +171,7 @@ export class ConLangView {
   update(dt, { night = 0, hide = false } = {}) {
     this.t += dt;
     const t = this.t;
+    this.label.visible = !!this.isOpen && !hide; // đang chiếu phim thì ẩn biển tên cho khỏi che cảnh
     for (const f of this.fogs) {
       f.position.set(f.userData.x + Math.sin(t * 0.1 + f.userData.ph) * 1.8, f.userData.y, f.userData.z + Math.cos(t * 0.08 + f.userData.ph) * 1.4);
       f.material.opacity = (this.fogAmt ?? 1) * (0.82 + 0.18 * Math.sin(t * 0.25 + f.userData.ph));

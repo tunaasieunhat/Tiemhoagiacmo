@@ -62,7 +62,9 @@ export class FishingUI {
     const open = fishSys.spotOpen(s, this.spot, this.ctx());
     const now = fishSys.fishNow(this.spot, this.ctx());
     const got = now.filter((id) => st.book[id]?.n).length;
-    const chips = [`${WEATHER[e.weather]?.icon || '☀️'} ${esc(WEATHER[e.weather]?.name || 'Nắng đẹp')}`, e.night ? '🌙 Ban đêm' : '☀️ Ban ngày', e.lowTide ? '🌊 Triều xuống' : '🌊 Triều lên', e.moon ? '🌕 Đêm rằm' : ''].filter(Boolean);
+    // còn mấy ngày nữa tới đêm rằm (rằm = ngày chia hết cho moonEvery)
+    const moonIn = (FISH_RULES.moonEvery - (e.day % FISH_RULES.moonEvery)) % FISH_RULES.moonEvery;
+    const chips = [`${WEATHER[e.weather]?.icon || '☀️'} ${esc(WEATHER[e.weather]?.name || 'Nắng đẹp')}`, e.night ? '🌙 Ban đêm' : '☀️ Ban ngày', e.lowTide ? '🌊 Triều xuống' : '🌊 Triều lên', e.moon ? '🌕 Đêm rằm' : moonIn ? `🌕 Rằm: còn ${moonIn} ngày` : '🌕 Rằm: đêm nay'].filter(Boolean);
     const baits = Object.entries(BAITS).map(([id, b]) => `<button class="fs-bait ${st.baitSel === id ? 'on' : ''} ${st.bait[id] > 0 ? '' : 'empty'}" data-fs="bait" data-id="${id}" title="${esc(b.desc)}"><span>${b.icon}</span><b>${esc(b.name)}</b><small>×${st.bait[id] || 0}</small></button>`).join('');
     const rod = RODS[st.rod] || RODS.bamboo;
     const canCast = open.ok && st.bait[st.baitSel] > 0;
@@ -142,6 +144,7 @@ export class FishingUI {
   /** Chờ cắn câu: phao nhấp nhô, có thể nhử giả; phao chìm + ❗ thì chạm. Chạm sớm = cá chạy. */
   wait(cfg) {
     this.phase = 'wait';
+    window.__fishing = { phase: 'wait', bite: false };
     this.card.innerHTML = `<p class="fs-hint">Đợi phao chìm hẳn và hiện ❗ rồi chạm thật nhanh!</p>
       <div class="fs-water"><i class="fs-shadow"></i><i class="fs-bob">🔴</i><b class="fs-bang">❗</b></div>`;
     const water = this.card.querySelector('.fs-water');
@@ -160,7 +163,8 @@ export class FishingUI {
         window.__fishing = { phase: 'wait', bite: !!bite };
         requestAnimationFrame(tick);
       };
-      this.tap = () => end(!!bite);
+      // 0,4 giây đầu bỏ qua chạm (lỡ chạm đúp lúc quăng cần thì không bị tính là giật sớm)
+      this.tap = () => { if (!bite && performance.now() - t0 < 400) return; end(!!bite); };
       requestAnimationFrame(tick);
     });
   }
@@ -168,6 +172,7 @@ export class FishingUI {
   /** Kéo cá: giữ để căng dây, thả để chùng. Giữ kim trong vùng xanh cho đầy thanh tiến độ. */
   reel(c, cfg) {
     this.phase = 'reel';
+    window.__fishing = { phase: 'reel', tension: 30, zc: 50, zw: cfg.zone, progress: cfg.start };
     const mystery = c.kind === 'mong' ? 'Một cái bóng trắng khổng lồ...' : `Cá ${FISH_RULES.tierNames[c.tier].toLowerCase()} · ${MOVE_NAME[cfg.move]}`;
     this.card.innerHTML = `<p class="fs-hint"><b>Giữ</b> để kéo căng dây, <b>thả</b> để chùng. Giữ kim trong vùng xanh!</p>
       <p class="fs-kind" style="--tc:${FISH_RULES.tierColors[c.tier]}">${esc(mystery)}</p>

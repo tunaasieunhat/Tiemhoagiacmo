@@ -4,6 +4,19 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.23.0',
+    notes: [
+      '🌫️ VÙNG ĐẤT MỚI: Cồn Lặng — làng chài phủ sương ở phía tây Đảo Mây, đi bộ qua bãi đá. Mở sau khi xong truyện Mũi Én + cấp 20 (chưa mở thì cả cồn chìm trong sương)',
+      '📖 Cốt truyện mới "Người giữ sương" (6 chương, 2 kết thúc): chú Lưới ngày nào cũng quăng lưới xuống một vùng biển không có cá, những lá thư trong chai ký tên "K.", và thứ mà ông đã đem đổi lấy màn sương',
+      '🎣 CÂU CÁ: quăng cần (trúng vạch vàng = quăng xa, cá to) → chờ phao chìm ❗ → giữ/thả để giữ dây trong vùng xanh. 7 chỗ câu (ao nông trại, cầu tàu làng, Mũi Én, Cồn Lặng, đầm, rặng đá lúc triều xuống, Biển sương ban đêm)',
+      '🐟 40 loài cá 5 bậc (Thường → Huyền thoại), mỗi loài có giờ, thời tiết, mùa, chỗ câu và kiểu vùng vẫy riêng; có cá ✨ lấp lánh, rương, ngọc trai, đồ lạc và Sổ cá trong 📖 Sổ tay',
+      '🏪 Quầy cá của bé Nhum: mua mồi bằng tiền (5 loại), mua cần/dây/phao; cá đem BÁN lấy tiền, ĐỔI hạt giống, hoặc Ủ thành phân bón',
+      '👥 2 người bạn mới: chú Lưới và bé Nhum (trò chuyện, tặng hoa, nhờ việc, quà mốc tim); nhiệm vụ, thành tựu và sự kiện tuần có thêm phần câu cá; đồ trang trí Bể cá',
+      '🛠️ Sửa lỗi KHÔNG LÀM ĐƯỢC NHIỆM VỤ CỐT TRUYỆN: chạm điểm sáng ✨ (vd nhặt thư trước nhà) bị nhà / dân làng "giành" mất — giờ điểm sáng cốt truyện luôn được ưu tiên, vùng chạm rộng hơn',
+      '🧭 Sổ tay → Cốt truyện có nút "Chỉ đường" đưa camera tới đúng chỗ cần làm; bảng dân làng và bảng nhà có nút 📜 chiếu ngay cảnh truyện đang chờ',
+    ],
+  },
+  {
     version: '0.22.1',
     notes: [
       '🎵 Nhạc riêng cho Mũi Én: "Saltwater and Petals" và "Petals at First Light" — chỉ phát khi bạn ở Mũi Én, về Đảo Mây thì nhạc cũ trở lại (chuyển nhạc nhẹ nhàng, nhỏ dần rồi đổi bài)',
