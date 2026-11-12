@@ -111,8 +111,11 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   `farming.plant(..., { plot })` chặn hoa chỉ trồng nhà kính. Bệnh/thời tiết hoàn toàn theo trường số liệu trong `data/seasons.js`
   (`hour`, `onlyWeather`, `coverSafe`, `growMult`, `healthLoss`, `qPenalty`, `fertCures`, `waters`, `waterMult`, `tallOnly`,
   `blowsCover`, `spawnMult`, `bonusStarChance`, `giftHour`) — logic ở `src/systems/weather.js` / `farming.js`, không ghi cứng tên.
-  Hiệu ứng `src/render/weatherFx.js`: Points dùng `sizeAttenuation: false` (camera trực giao ⇒ kích thước tính bằng px);
-  cầu vồng & sao băng vẽ theo khung camera (`depthTest: false`) vì nhìn xuống không thấy trời.
+  Hiệu ứng `src/render/weatherFx.js` (viết lại 0.25.2 — người dùng chê "như lớp phủ"): **mọi thứ ở tọa độ thật của thế giới**, không bám
+  theo màn hình: mây 3D (`clouds`, mờ khi trôi qua giữa màn hình / khi phóng to), mưa-tuyết-đá sinh dưới mây (`cloudPoint`) và rơi tới
+  `groundY` (đất 0,05 · biển -1,25 qua `attach({shapes})`) rồi bắn bọt / nằm lại; cánh hoa-lá rụng từ ngọn cây rừng (`attach({trees})`);
+  sương = `scene.fog` (chiều sâu); cầu vồng là cung đứng trên đảo; sao băng bay trên trời đảo. Points dùng `sizeAttenuation: false`.
+  Thử hình ảnh thời tiết: quay video bằng cách chặn `requestAnimationFrame` rồi tự gọi `game.update(1/20)` + render + chụp từng khung.
 - **Vận May** (GĐ15): số liệu `data/luck.js` (PACKS odds/pity/cost/coins, REWARDS theo bậc common→legend, TICKET_SOURCES,
   DUP_SHARDS, SHARD_SHOP). Logic thuần `src/systems/luck.js` (openPack, rollTier có bảo hiểm, generateReward thử loại khác
   nếu hết đồ, oddsTable cho bảng tỉ lệ công khai, exchangeShards, claimDaily theo ngày thật giờ VN). Save `save.luck`

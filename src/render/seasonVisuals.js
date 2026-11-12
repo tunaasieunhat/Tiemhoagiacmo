@@ -5,7 +5,7 @@ import { SEASONS } from '../../data/seasons.js';
 
 // màu gốc (mùa xuân) -> thuộc tính màu trong SEASONS
 const TARGETS = [
-  ['#b5e39a', 'grass'], ['#a5d98a', 'farm'], ['#9ccf82', 'farm'],
+  ['#b5e39a', 'grass'], ['#a5d98a', 'farm'], ['#9ccf82', 'farm'], ['#a9d98c', 'farm'], // (0.25.2) cả nền đất của dân làng cũng phủ tuyết
   ['#8fd18b', 'leaf'], ['#7cc27f', 'leaf'], ['#93d48d', 'leaf'], ['#a6dd94', 'leaf2'],
 ];
 

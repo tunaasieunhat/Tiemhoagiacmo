@@ -58,7 +58,7 @@ export const WEATHER_FX = {
   snowDown: 0.006,    // tuyết tan dần
   frostMorning: 0.35, // sương giá: sáng sớm cỏ trắng mờ (tan dần tới trưa)
   lightning: [3.5, 9],// bão: chớp mỗi 3,5–9 giây
-  splashes: 90,       // số bọt nước khi mưa
+  splashes: 0,        // (0.25.2) bọt nước giờ bắn đúng chỗ hạt mưa rơi xuống (src/render/weatherFx.js)
   puddles: 60,        // số vũng nước rải trên đảo
-  clouds: 7,          // số đám mây trôi kéo bóng qua đảo
+  clouds: 0,          // (0.25.2) bóng mây giờ đi theo mây 3D thật (src/render/weatherFx.js)
 };

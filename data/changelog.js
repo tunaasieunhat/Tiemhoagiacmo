@@ -4,6 +4,17 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.25.2',
+    notes: [
+      '☁️ Thời tiết làm lại hoàn toàn trong thế giới 3D (không còn là lớp phủ màn hình): có mây bông thật trôi trên đảo, đổ bóng xuống đất',
+      '🌧️ Mưa, tuyết, mưa đá rơi từ dưới đám mây — chỗ có mây mới có mưa, thấy từng cột mưa trôi qua đảo. Hạt rơi chạm đất thì bắn bọt nước đúng chỗ đó, rơi xuống biển thành vòng gợn sóng; tuyết nằm lại trên cỏ; mưa đá nảy lên. Nhà và cây phía trước che được hạt phía sau',
+      '⚡ Bão: sét đánh xuống từ đúng đám mây bão, chớp chiếu sáng nhà cửa cây cối quanh đó',
+      '🌸 Cánh hoa (xuân) và lá (thu) rụng từ chính các ngọn cây, chao lượn rồi nằm trên cỏ; gió lớn cuốn lá bay theo từng cơn',
+      '🌫️ Sương mù / mưa có sương theo chiều sâu: chỗ xa mờ dần, chỗ gần vẫn rõ',
+      '☁️ Mây bay ngang chỗ bạn đang nhìn sẽ tự mờ đi để vẫn thấy ruộng và tiệm',
+    ],
+  },
+  {
     version: '0.25.1',
     notes: [
       '🌈 Cầu vồng giờ là cầu vồng thật bắc ngang đảo (một chân ở Khu vui chơi, một chân ở rừng tây nam): kéo bản đồ thì nó đứng yên tại chỗ, cây và nhà phía trước che được nó — không còn dính vào màn hình',

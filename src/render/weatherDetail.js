@@ -62,7 +62,7 @@ export class WeatherDetail {
     // ----- viên đá mưa đá nằm trên cỏ -----
     this.ice = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.07, 0), new THREE.MeshBasicMaterial({ color: '#f2f8ff' }), 220);
     this.ice.frustumCulled = false;
-    this.icePts = Array.from({ length: 220 }, () => ({ x: (rand() - 0.5) * 30, z: (rand() - 0.5) * 30, s: 0.6 + rand() * 0.8 }));
+    this.icePts = Array.from({ length: 220 }, () => ({ x: 1e4, z: 1e4, s: 0.6 + rand() * 0.8 })); // tọa độ thật trên đảo (không chạy theo máy quay)
     this.root.add(this.ice);
     // ----- bóng mây -----
     const shadowTex = softTex('rgba(20,30,50,0.9)', 'rgba(20,30,50,0.45)');
@@ -80,7 +80,7 @@ export class WeatherDetail {
     const fogTex = softTex('rgba(246,248,250,0.95)', 'rgba(240,244,246,0.5)');
     this.banks = Array.from({ length: 16 }, () => {
       const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: fogTex, transparent: true, opacity: 0, depthWrite: false }));
-      s.userData = { x: (rand() - 0.5) * 34, z: (rand() - 0.5) * 34, y: 0.6 + rand() * 1.6, v: 0.3 + rand() * 0.5, ph: rand() * 6 };
+      s.userData = { x: 1e4, z: 1e4, y: 0.6 + rand() * 1.6, v: 0.3 + rand() * 0.5, ph: rand() * 6 }; // tọa độ thật, trôi theo gió
       s.scale.set(9 + rand() * 6, 3 + rand() * 2, 1);
       s.renderOrder = 6;
       this.root.add(s);
@@ -90,7 +90,7 @@ export class WeatherDetail {
     const sunTex = softTex('rgba(255,236,170,0.9)', 'rgba(255,220,140,0.35)');
     this.rays = Array.from({ length: 8 }, () => {
       const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: sunTex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
-      s.userData = { x: (rand() - 0.5) * 26, z: (rand() - 0.5) * 26, ph: rand() * 6 };
+      s.userData = { x: 1e4, z: 1e4, ph: rand() * 6 };
       s.scale.set(5, 9, 1);
       this.root.add(s);
       return s;
@@ -102,6 +102,10 @@ export class WeatherDetail {
     this.bolt.frustumCulled = false; this.bolt.renderOrder = 23; this.bolt.visible = false;
     this.root.add(this.bolt);
     this.boltT = 0;
+    // ánh chớp thật: chiếu sáng nhà cửa cây cối quanh chỗ sét đánh
+    this.boltLight = new THREE.PointLight('#e6ecff', 0, 26, 1.4);
+    this.root.add(this.boltLight);
+    this.pickStrike = null; // game gắn: chọn điểm dưới đám mây bão
     this.onThunder = null; // game gắn tiếng sấm vào đây
   }
 
@@ -142,7 +146,7 @@ export class WeatherDetail {
     this.ice.visible = this.hailCover > 0.02;
     if (this.ice.visible) {
       const d = new THREE.Object3D(), show = Math.round(this.icePts.length * this.hailCover);
-      this.icePts.forEach((p, i) => { d.position.set(center.x + p.x, 0.07, center.z + p.z); const s = i < show && this.onLand(center.x + p.x, center.z + p.z, 0.5) ? p.s : 0.0001; d.scale.set(s, s, s); d.updateMatrix(); this.ice.setMatrixAt(i, d.matrix); });
+      this.icePts.forEach((p, i) => { if (Math.hypot(p.x - center.x, p.z - center.z) > 22) { p.x = center.x + (Math.random() - 0.5) * 36; p.z = center.z + (Math.random() - 0.5) * 36; } d.position.set(p.x, 0.07, p.z); const s = i < show && this.onLand(p.x, p.z, 0.5) ? p.s : 0.0001; d.scale.set(s, s, s); d.updateMatrix(); this.ice.setMatrixAt(i, d.matrix); });
       this.ice.instanceMatrix.needsUpdate = true;
     }
     // ---- bóng mây trôi ----
@@ -160,8 +164,9 @@ export class WeatherDetail {
     const fogAmt = ty === 'fog' ? 0.5 : ty === 'frost' && hour < 9 ? 0.25 : 0;
     for (const s of this.banks) {
       const u = s.userData;
-      u.x += u.v * dt; if (u.x > 18) u.x -= 36;
-      s.position.set(center.x + u.x, u.y + Math.sin(t * 0.3 + u.ph) * 0.2, center.z + u.z);
+      u.x += u.v * dt;
+      if (Math.abs(u.x - center.x) > 24 || Math.abs(u.z - center.z) > 24) { u.x = center.x - 20 + Math.random() * 40; u.z = center.z + (Math.random() - 0.5) * 40; s.material.opacity = 0; }
+      s.position.set(u.x, u.y + Math.sin(t * 0.3 + u.ph) * 0.2, u.z);
       s.material.opacity += (fogAmt * (0.6 + 0.4 * Math.sin(t * 0.2 + u.ph)) - s.material.opacity) * Math.min(1, dt * 0.6);
       s.visible = s.material.opacity > 0.01;
     }
@@ -169,12 +174,14 @@ export class WeatherDetail {
     const heat = ty === 'heat' && hour > 8 && hour < 17 ? 0.35 : 0;
     for (const r of this.rays) {
       const u = r.userData;
-      r.position.set(center.x + u.x, 3.5 + Math.sin(t * 0.5 + u.ph) * 0.3, center.z + u.z);
+      if (Math.hypot(u.x - center.x, u.z - center.z) > 22) { u.x = center.x + (Math.random() - 0.5) * 30; u.z = center.z + (Math.random() - 0.5) * 30; r.material.opacity = 0; }
+      r.position.set(u.x, 3.5 + Math.sin(t * 0.5 + u.ph) * 0.3, u.z);
       r.material.opacity += (heat * (0.5 + 0.5 * Math.sin(t * 0.8 + u.ph)) - r.material.opacity) * Math.min(1, dt * 1.2);
       r.visible = r.material.opacity > 0.01;
     }
     // ---- chớp & sét (bão) ----
     this.flash = Math.max(0, this.flash - dt * 3.2);
+    this.boltLight.intensity = this.flash * 90;
     if (this.boltT > 0) { this.boltT -= dt; this.bolt.material.opacity = Math.max(0, this.boltT / 0.25); if (this.boltT <= 0) this.bolt.visible = false; }
     if (ty === 'storm') {
       this.nextBolt -= dt;
@@ -188,11 +195,14 @@ export class WeatherDetail {
   /** Một tia sét: lóe sáng + vẽ tia + gọi tiếng sấm (trễ một chút) */
   strike(center) {
     this.flash = 1;
-    const x = center.x + (Math.random() - 0.5) * 22, z = center.z + (Math.random() - 0.5) * 22;
+    const q = this.pickStrike?.(center);
+    const x = q ? q.x : center.x + (Math.random() - 0.5) * 22, z = q ? q.z : center.z + (Math.random() - 0.5) * 22;
+    const top = q ? q.y : 28;
+    this.boltLight.position.set(x, 4, z);
     const arr = this.bolt.geometry.attributes.position.array;
     for (let i = 0; i < 14; i++) {
       const k = i / 13;
-      arr.set([x + (i ? (Math.random() - 0.5) * 1.6 : 0) + k * 0.5, 28 * (1 - k), z + (Math.random() - 0.5) * 0.8], i * 3);
+      arr.set([x + (i && i < 13 ? (Math.random() - 0.5) * 1.6 : 0) + k * 0.3, top * (1 - k), z + (i && i < 13 ? (Math.random() - 0.5) * 0.8 : 0)], i * 3);
     }
     this.bolt.geometry.attributes.position.needsUpdate = true;
     this.bolt.visible = true; this.boltT = 0.25;

@@ -139,6 +139,9 @@ export class Game {
     // (GĐ24) thời tiết để lại dấu trên mặt đất: ướt, vũng nước, bọt nước, tuyết phủ, bóng mây, sét
     this.weatherDetail = new WeatherDetail(stage.scene, [...ISLAND_SHAPES, { x: VILLAGE.center.x, z: VILLAGE.center.z, r: VILLAGE.radius }]);
     this.weatherDetail.onThunder = () => { if (!this.visit) this.audio?.sfx?.thunder?.(); };
+    this.weatherDetail.pickStrike = (c) => this.weatherFx.cloudPoint(c.x, c.z, 18); // sét đánh xuống từ đúng đám mây bão
+    // (0.25.2) hạt thời tiết rơi từ mây 3D, chạm đúng mặt đất / biển; cánh hoa rụng từ ngọn cây rừng
+    this.weatherFx.attach({ shapes: [...ISLAND_SHAPES, { x: VILLAGE.center.x, z: VILLAGE.center.z, r: VILLAGE.radius }], trees: world.forest.spots });
     weather.ensureWeather(this.save);
     this.applyWeatherVisuals(true);
     // GĐ8: trang trí, nhân viên, nhiệm vụ
