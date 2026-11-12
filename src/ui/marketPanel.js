@@ -155,17 +155,9 @@ export class MarketPanel {
       price: p.machines?.[k] ? null : m.price, lock: !p.machines?.[k] && lv < m.level ? m.level : 0,
       buttons: p.machines?.[k] ? '<span class="maxed">✔ Đang chạy</span>' : `<button class="btn ${s.player.coins < m.price ? 'disabled' : 'primary'}" data-mk="machine" data-kind="${k}" data-id="${i}">Lắp đặt</button>`,
     })).join('')).join('');
-    const staff = Object.entries(STAFF).map(([id, st]) => {
-      const cur = s.automation.staff[id];
-      const working = cur?.hired && cur.active;
-      const paused = cur?.hired && !cur.active;
-      return this.card({
-        icon: st.icon, name: st.name, desc: `${st.desc}<br>Lương <b>${st.wage} 💰 / ngày game</b>${paused ? ' · <b>đang tạm nghỉ vì chưa trả lương</b>' : ''}`,
-        price: working ? null : paused ? st.wage : st.hire, lock: !cur?.hired && lv < st.level ? st.level : 0,
-        buttons: working ? `<button class="btn" data-mk="fire" data-id="${id}">Cho nghỉ</button>` : `<button class="btn primary" data-mk="hire" data-id="${id}">${paused ? 'Gọi lại' : 'Thuê'}</button>`,
-      });
-    }).join('');
-    return `<p class="muted small">Máy móc làm việc cả khi bạn không chơi. Nhân viên nhận lương đầu mỗi ngày game; hết tiền thì tạm nghỉ.</p>${machines}<h3>👥 Nhân viên</h3>${staff}`;
+    // (GĐ25) nhân viên chuyển sang 🗓️ Sổ quản lý › Nhân viên (chọn ứng viên, lương theo năng lực)
+    const staff = `<div class="mk-item"><div class="mk-info"><b>👥 Nhân viên đã chuyển sang Sổ quản lý</b><small>Chọn trong 3 ứng viên mỗi tuần, tay nghề tăng dần, trả lương cứng hoặc theo hiệu suất.</small></div><button class="btn primary" data-act="manage" data-tab="staff">🗓️ Mở</button></div>`;
+    return `<p class="muted small">Máy móc làm việc cả khi bạn không chơi. Nhân viên: xem 🗓️ Sổ quản lý.</p>${machines}<h3>👥 Nhân viên</h3>${staff}`;
   }
 
   decor() {
@@ -248,11 +240,6 @@ export class MarketPanel {
       return;
     }
     if (act === 'machine') { g.buyMachine(el.dataset.kind, +el.dataset.id); this.render(true); return; }
-    if (act === 'hire') { g.hireStaff(el.dataset.id); this.render(true); return; }
-    if (act === 'fire') {
-      if (!el.dataset.armed) { el.dataset.armed = '1'; el.textContent = 'Chắc chưa?'; return; }
-      g.fireStaff(el.dataset.id); this.render(true); return;
-    }
     if (act === 'decor') { g.buyDecor(el.dataset.id); this.render(true); return; }
     if (act === 'sell1') {
       g.sellWholesale(el.dataset.k, 1);

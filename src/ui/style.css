@@ -1506,3 +1506,46 @@ body.cine-sepia #game canvas { filter: sepia(.85) saturate(.75) contrast(.95) br
 .hm-sw small { font-size: 11px; opacity: .75; }
 .hm-sw.on { border-color: #e0607e; box-shadow: 0 0 0 2px #ffd1dc; }
 .hm-sw.disabled { opacity: .5; }
+
+/* ---------- 🗓️ Sổ quản lý (GĐ25) ---------- */
+.ql-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 8px; }
+.ql-day { display: flex; flex-direction: column; align-items: center; background: #fff; border: 2px solid var(--line); border-radius: 12px; padding: 4px 2px; font-size: 18px; }
+.ql-day small { font-size: 11px; color: var(--ink-soft, #9b7b6c); }
+.ql-day.on { background: #fff1c4; border-color: #f2cf6b; transform: translateY(-2px); box-shadow: 0 3px 0 #f2cf6b; }
+.ql-theme { background: #fff6ec; border: 2px dashed var(--line); border-radius: 14px; padding: 6px 10px; margin: 0 0 8px; }
+.ql-task.done { opacity: .65; background: #f2fbef; }
+.ql-task .track, .ql-worker .track, .ql-cand .track { margin-top: 3px; }
+.ql-bonus { background: #fffbe6; border: 2px solid #f2cf6b; border-radius: 14px; padding: 6px 10px; margin: 8px 0; }
+.ql-bonus.done { background: #eaf8e6; border-color: #9fd38f; }
+.ql-brief { display: flex; flex-direction: column; gap: 2px; background: #fff6ec; border: 2px solid var(--line); border-radius: 16px; padding: 8px 10px; margin-bottom: 8px; }
+.ql-score { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; }
+.ql-total { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 74px; height: 74px; border-radius: 50%; background: linear-gradient(135deg, #fff1c4, #ffd6e0); border: 3px solid #f2b6a0; }
+.ql-total b { font-size: 26px; line-height: 1; }
+.ql-total small { font-size: 10px; }
+.ql-score ul { list-style: none; margin: 0; padding: 0; flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; font-size: 13px; }
+.ql-score li { display: grid; grid-template-columns: 1fr auto; }
+.ql-score li small { grid-column: 1 / -1; color: #9b7b6c; font-size: 11px; }
+.ql-score li.bad { color: #c94a4a; }
+.ql-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.ql-slot select, .ql-plan select { width: 100%; margin-top: 3px; padding: 5px 6px; border-radius: 10px; border: 2px solid var(--line); background: #fffdf9; font: inherit; font-size: 13px; }
+.ql-slot.filled { border-color: #f6a6b9; background: #fff6f8; }
+.ql-offer.story { border-color: #f2cf6b; background: #fffbe6; }
+.ql-bbtns { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+.ql-ship { background: #f4fbff; border: 2px solid #bfe0f2; border-radius: 16px; padding: 8px; margin: -4px 0 8px; grid-column: 1 / -1; }
+.ql-ship-row { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; align-items: center; padding: 3px 0; border-bottom: 1px dashed #d6e8f2; font-size: 13px; }
+.ql-qty { display: flex; align-items: center; gap: 3px; }
+.ql-qty b { min-width: 22px; text-align: center; }
+.ql-qty .btn.sm { padding: 2px 7px; min-height: 0; font-size: 12px; }
+.ql-pay { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; font-size: 13px; }
+.ql-plans { margin: 6px 0 12px; }
+.ql-plan { display: grid; grid-template-columns: 52px 1fr; gap: 6px; align-items: center; margin: 4px 0; font-size: 13px; }
+.m-manage .good { color: #3f9b6b; }
+.m-manage .bad { color: #c94a4a; }
+@media (max-height: 480px) {
+  .ql-week { gap: 2px; } .ql-day { font-size: 14px; padding: 2px; border-radius: 9px; }
+  .ql-total { width: 58px; height: 58px; } .ql-total b { font-size: 20px; }
+  .ql-score ul { grid-template-columns: 1fr; font-size: 12px; }
+  .ql-ship-row { grid-template-columns: 1fr auto; } .ql-ship-row > small { display: none; }
+}
+/* (GĐ25) thêm nút 🗓️: màn thấp (≤ 380px) xếp 3 cột để không tràn đáy màn hình */
+@media (max-height: 380px) { .nav-grid { grid-template-columns: repeat(3, 36px); } }

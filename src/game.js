@@ -78,6 +78,18 @@ import { BUDS, STORY_RULES, ARCS } from '../data/story.js';
 import { VIP } from '../data/shopTiers.js';
 import { EVENT_MILESTONES } from '../data/events.js';
 import { BUGS, HARVEST_FUN, FRESH } from '../data/care.js';
+// (GĐ25) Tiệm Hoa Của Quần Đảo: kế hoạch hôm nay, tiệc, chi nhánh
+import * as planSys from './systems/plan.js';
+import * as partySys from './systems/party.js';
+import * as branchSys from './systems/branch.js';
+import { ManageView } from './render/manageView.js';
+import { PLAN_RULES } from '../data/plan.js';
+import { BRANCHES } from '../data/branch.js';
+import { OCCASIONS } from '../data/party.js';
+import { villagerInfo, VILLAGER_IDS } from './systems/village.js';
+import { EN_PEOPLE, CO_PEOPLE } from '../data/muien.js';
+const HG_PEOPLE = ['ba_nhai', 'sen', 'ong_que', 'chi_tra', 'be_mat'];
+import { ISLAND_ZONES } from '../data/island.js';
 import { VARIANTS } from '../data/variants.js';
 import { TICKET_SOURCES } from '../data/luck.js';
 
@@ -92,7 +104,8 @@ const ACTIONS = {
 const FX = { till: 'dirt', plant: 'seed', water: 'water', fertilize: 'fert', harvest: 'sparkle', treat: 'spray' };
 
 /** Vật chạm được ưu tiên hơn nhà / dân làng / khách / ô đất khi nằm trùng tia chạm */
-const PRIORITY_PICKS = new Set(['home', 'story', 'mo', 'buds', 'sail', 'diep', 'fishspot', 'fishstall', 'fogwall', 'gather', 'hgshop', 'hgbridge']);
+const ALL_KNOWN = new Proxy({}, { get: () => true }); // (GĐ25) nhân viên bán hàng giỏi biết hết ý nghĩa hoa
+const PRIORITY_PICKS = new Set(['party', 'branch', 'trader', 'home', 'story', 'mo', 'buds', 'sail', 'diep', 'fishspot', 'fishstall', 'fogwall', 'gather', 'hgshop', 'hgbridge']);
 
 export const TUTORIAL = [
   { text: 'Chọn 🪏 Xẻng rồi chạm vào ô đất để xới đất (hoặc chạm ô đất bằng ✋ để xem).', done: (a) => a === 'till' },
@@ -156,6 +169,7 @@ export class Game {
     this.muien = new MuiEnView(stage.scene); // GĐ21: đảo Mũi Én
     this.conlang = new ConLangView(stage.scene); // GĐ22: Cồn Lặng + các điểm câu cá
     this.huong = new HuongView(stage.scene); // GĐ23: Đảo Ngàn Hương + Tiệm Hương Nhài
+    this.manage = new ManageView(stage.scene); // GĐ25: đồ trang trí tiệc, quầy chi nhánh, thuyền buôn
     this.syncStoryWorld();
     this.cine = false;
     this.storyTrig = [];
@@ -164,16 +178,8 @@ export class Game {
     this.fixDecorForNewIsland(); // (GĐ24) đảo mới: rừng chừa chỗ đồ cũ, đồ vướng đường mới thì cất vào kho
     this.decorView.sync(this.save.decor.placed);
     this.applyHome();
-    this.staffModels = {};
-    for (const [id, st] of Object.entries(STAFF)) {
-      const m = buildCharacter(st.look).root;
-      m.position.copy(id === 'gardener' ? new THREE.Vector3(-5.0, 0, 2.2) : new THREE.Vector3(9.3, 0, -3.8));
-      m.rotation.y = id === 'gardener' ? 1.2 : 0.4;
-      m.scale.setScalar(0.92);
-      m.visible = false;
-      stage.scene.add(m);
-      this.staffModels[id] = m;
-    }
+    this.staffModels = {}; // (GĐ25) dựng theo hình dáng người đang làm — xem updateStaffModels
+    automation.A(this.save); // chuyển nhân viên kiểu cũ sang kiểu mới
     quests.refreshQuests(this.save, dayOf(this.save.time.gameMinutes), { online: false });
     this.updateStaffModels();
     this.controls = new CameraControls(stage.camera, stage.renderer.domElement, {
@@ -265,6 +271,8 @@ export class Game {
       });
       // nhân viên
       this.runStaff(to, offline);
+      // 🏪 chi nhánh: thuyền cập bến, quầy tự bán (GĐ25)
+      this.branchTick(from, to, offline);
       // 🐛 sâu & 📦 đơn hàng (GĐ16)
       if (!offline) this.bugTick(to);
       for (const e of orders.ordersTick(s, to, Math.random, { offline, dMin: step })) this.onOrderEvent(e, offline);
@@ -280,7 +288,7 @@ export class Game {
       const shopEv = shop.shopTick(s, {
         offline, hourFloat: this.clock.hourFloat, flowerIds: this.unlockedFlowers(),
         festival: calendar.festivalOn(day), seasonal: calendar.seasonFlowers(day), day,
-        spawnMult: WEATHER[s.weather?.today?.type]?.spawnMult ?? 1,
+        spawnMult: (WEATHER[s.weather?.today?.type]?.spawnMult ?? 1) / planSys.effect(day, 'spawn'), // Chủ Nhật đông khách (hệ số này nhân vào khoảng cách giữa 2 khách)
         preorder: (npcId, flower) => orders.makePreorder(s, to, Math.random, npcId, flower),
       });
       for (const e of shopEv) {
@@ -331,9 +339,12 @@ export class Game {
       this.applyWeatherVisuals();
       this.emitter.emit('weather');
       // trả lương nhân viên + nhiệm vụ mới
-      for (const w of automation.payWages(this.save)) {
-        if (!w.paid && !offline) this.toast(`😢 Không đủ tiền trả lương, ${STAFF[w.id].name} tạm nghỉ. Vào Khu Chợ › Tự động để thuê lại`, 'warn');
+      const paid = automation.payWages(this.save);
+      if (!offline) for (const w of paid) {
+        if (w.quit) this.toast(`😢 ${w.name} nợ lương lâu quá nên đã nghỉ hẳn.`, 'bad');
+        else if (!w.paid) this.toast(`😢 Không đủ ${w.wage} 💰 trả lương, ${w.name} tạm nghỉ. Vào 🗓️ Sổ quản lý › Nhân viên để gọi lại`, 'warn');
       }
+      if (!offline && paid.some((w) => w.paid)) setTimeout(() => this.toast(`💵 Đã trả lương: ${paid.filter((w) => w.paid).map((w) => `${w.name} ${w.wage}`).join(', ')} 💰`, 'info'), 1800);
       if (quests.refreshQuests(this.save, e.day, { online: !!this.account?.session })) this.emitter.emit('quests');
       if (offline) return;
       const c = calendar.calendarOf(e.day);
@@ -472,6 +483,7 @@ export class Game {
     this.muien.update(dt, { night: this.dayNight.night || 0 });
     this.conlang.update(dt, { night: this.dayNight.night || 0, hide: this.cine });
     this.huong.update(dt, { night: this.dayNight.night || 0, hide: this.cine });
+    this.manage.update(dt);
     this.world.home.update(dt, this.dayNight.night || 0);
     this.world.forest.update(dt, { snow: this.weatherDetail.snow, wind: this.farmView.wind || 0 });
     // 🎵 nhạc riêng Mũi Én: máy quay ở Mũi Én (hoặc đang chiếu cảnh truyện ở đó) thì phát nhạc đảo
@@ -480,7 +492,7 @@ export class Game {
     this.bugView.update(dt);
     this.decorView.update(dt);
     this.villagers.update(dt, this.villageCtx());
-    for (const m of Object.values(this.staffModels)) if (m.visible) m.position.y = Math.abs(Math.sin(performance.now() / 400)) * 0.03;
+    for (const m of Object.values(this.staffModels)) if (m?.visible) m.position.y = Math.abs(Math.sin(performance.now() / 400)) * 0.03;
     if (this.labIcon.visible) this.labIcon.position.y = 4.6 + Math.sin(performance.now() / 300) * 0.12;
     this.fireflies.update(performance.now() / 1000, this.dayNight.night);
   }
@@ -572,6 +584,9 @@ export class Game {
     if (pick.kind === 'fogwall') { this.select(null); this.toast('🌫️ Sương dày quá, không thấy đường vào. Hình như ngoài đó có một hòn cồn...', 'info'); return; }
     if (pick.kind === 'sail') { this.select(null); this.sail(); return; }
     if (pick.kind === 'home') { this.select(null); this.emitter.emit('home'); return; }
+    if (pick.kind === 'party') { this.select(null); this.emitter.emit('manage', { tab: 'party', slot: pick.slot }); return; }
+    if (pick.kind === 'branch') { this.select(null); this.emitter.emit('manage', { tab: 'branch', id: pick.id }); return; }
+    if (pick.kind === 'trader') { this.select(null); this.emitter.emit('manage', { tab: 'today' }); return; }
     if (pick.kind === 'gather') { this.select(null); this.emitter.emit('gather', { id: pick.id }); return; }
     if (pick.kind === 'hgshop') { this.select(null); this.emitter.emit('hgshop'); return; }
     if (pick.kind === 'hgbridge') { this.select(null); this.toast('🌉 Cầu mục hết rồi, đi không được. Hỏi Ông Ba xem sao.', 'info'); return; }
@@ -734,7 +749,7 @@ export class Game {
       if (!RIBBONS[sel.ribbon].free) s.inventory.ribbons[sel.ribbon] -= 1;
     }
     const tier = shop.tierOf(s.player.reputation);
-    const tip = shop.tipAmount(Math.random, tier, ev);
+    const tip = Math.round(shop.tipAmount(Math.random, tier, ev) * planSys.effect(dayOf(this.now), 'tips')); // Thứ Bảy chợ đêm
     s.player.coins += ev.price + tip;
     const oldTier = tier;
     const vipHappy = c.vip && (ev.mood === 'perfect' || ev.mood === 'good');
@@ -806,7 +821,7 @@ export class Game {
     const n = Math.min(count, s.inventory.flowers[key] || 0);
     if (!n) return 0;
     const flower = variants.parseFlowerKey(key).species;
-    const total = shop.wholesalePrice(key) * n;
+    const total = Math.round(shop.wholesalePrice(key) * planSys.effect(dayOf(this.now), 'wholesale')) * n; // Thứ Hai chợ phiên
     s.inventory.flowers[key] -= n;
     if (!s.inventory.flowers[key]) delete s.inventory.flowers[key];
     s.player.coins += total;
@@ -886,7 +901,7 @@ export class Game {
       g.visible = !plots.some((p) => p.parcel === id);
       return g.visible && !this.visit;
     }).map(([, g]) => g);
-    this.pickRoots = this.decorMode ? [this.decorView.root] : [this.bugView.root, this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, this.world.home.root, ...locked, ...parcels, this.villagers.root, ...this.villagers.housePick(), this.storyView.root, this.dreamWorld.root, this.muien.root, this.conlang.root, this.huong.root];
+    this.pickRoots = this.decorMode ? [this.decorView.root] : [this.bugView.root, this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, this.world.home.root, ...locked, ...parcels, this.villagers.root, ...this.villagers.housePick(), this.storyView.root, this.dreamWorld.root, this.muien.root, this.conlang.root, this.huong.root, this.manage.root];
   }
 
   /** Vị trí lô thứ pi (lô của dân làng nằm ở mảnh đất riêng) */
@@ -1090,35 +1105,82 @@ export class Game {
     return r;
   }
 
-  // ---------------- tự động hóa (GĐ8) ----------------
+  // ---------------- tự động hóa (GĐ8) · nhân viên thông minh (GĐ25) ----------------
+  /** Gọi mỗi bước mô phỏng: người làm vườn, bán hàng, giao hàng tới lượt thì tự làm việc */
   runStaff(now, offline) {
     const s = this.save;
-    const g = automation.runGardener(s, now);
-    if (g && (g.harvested.length || g.planted || g.tilled)) {
+    const day = dayOf(now);
+    // 👨‍🌾 làm vườn: thu hoạch, xới, gieo theo kế hoạch, tưới, bón phân, chữa bệnh
+    const g = automation.runGardener(s, now, { cap: farming.waterCapacity(s), day, offline });
+    if (g) {
+      const w = automation.workerOf(s, 'gardener');
       for (const h of g.harvested) {
-        if (notebook.recordHarvest(s, h.flower, h.variant, h.quality, dayOf(now)) && !offline) this.toast(`📖 Màu hoa mới vào Sổ tay: ${variants.variantName(h.flower, h.variant)}!`, 'good');
+        if (notebook.recordHarvest(s, h.flower, h.variant, h.quality, day) && !offline) this.toast(`📖 Màu hoa mới vào Sổ tay: ${variants.variantName(h.flower, h.variant)}!`, 'good');
         this.gainXp(XP.harvestPerStar * h.quality);
         this.questEvent('harvest');
         if (h.quality === 3) this.questEvent('harvest3');
       }
-      if (!offline && (g.harvested.length || g.planted)) this.toast(`👨‍🌾 Bác Tâm: thu hoạch ${g.harvested.length} bông, gieo lại ${g.planted} hạt`, 'info');
-      this.refreshFarm();
-      this.emitter.emit('inventory');
-      this.saveMgr.markDirty();
+      const parts = [];
+      if (g.harvested.length) parts.push(`thu ${g.harvested.length} bông`);
+      if (g.planted) parts.push(`gieo ${g.planted} hạt`);
+      if (g.watered) parts.push(`tưới ${g.watered} ô`);
+      if (g.fed) parts.push(`bón ${g.fed} ô`);
+      if (g.cured) parts.push(`chữa ${g.cured} cây`);
+      if (!offline && (g.harvested.length || g.planted || g.cured)) this.toast(`👨‍🌾 ${w.name}: ${parts.join(', ')}`, 'info');
+      if (!offline && g.levelUp) this.toast(`⭐ ${w.name} lên tay nghề ${w.skill}! Làm nhanh hơn, giỏi hơn (lương cứng cũng tăng theo)`, 'good');
+      if (parts.length) { this.refreshFarm(); this.emitter.emit('inventory'); this.saveMgr.markDirty(); }
     }
-    // chị bán hàng: phục vụ khách mua cành lẻ
-    const ck = s.automation.staff.clerk;
-    if (!offline && ck?.hired && ck.active && now >= (ck.nextAt || 0)) {
-      ck.nextAt = now + STAFF.clerk.everyMinutes;
-      const c = s.shop.customers.find((x) => !x.regular && x.request.type !== 'bouquet' && now - x.arrivedAt > 5);
-      if (c) {
-        const sel = shop.autoPick(c.request, s.inventory, s.book?.meanings);
-        if (shop.evaluateDelivery(c.request, sel).ok) {
-          const r = this.deliverToCustomer(c.id, sel);
-          if (r.ok) this.toast(`👩‍💼 Chị Thu đã bán hoa cho ${shop.npcOf(c.npc).name}`, 'info');
+    if (offline) { this.runCourier(now, true); return; }
+    // 👩‍💼 bán hàng: phục vụ khách (tay nghề 3+ gói bó hoa, 6+ phục vụ 2 khách mỗi lượt)
+    const ck = automation.due(s, 'clerk', now);
+    if (ck) {
+      const per = ck.skill >= 6 ? 2 : 1;
+      let served = 0;
+      for (const c of s.shop.customers.filter((x) => !x.regular && now - x.arrivedAt > 3)) {
+        if (served >= per) break;
+        if (c.request.type === 'bouquet' && ck.skill < 3) continue;
+        const sel = shop.autoPick(c.request, s.inventory, ck.skill >= 4 ? ALL_KNOWN : s.book?.meanings); // tay nghề 4+ rành ngôn ngữ loài hoa
+        if (c.request.type === 'bouquet') { sel.paper = sel.paper || 'kraft'; sel.ribbon = sel.ribbon || 'twine'; }
+        if (!shop.evaluateDelivery(c.request, sel).ok) {
+          // kho không có hoa hợp ý ⇒ báo chủ tiệm 1 lần cho mỗi khách (để biết vì sao nhân viên đứng yên)
+          if (!c.clerkNote) { c.clerkNote = 1; this.toast(`👩‍💼 ${ck.name}: “Kho không có hoa hợp ý ${shop.npcOf(c.npc).name}${c.request.type === 'bouquet' && ck.skill < 3 ? '' : c.request.minQuality > 1 ? ` (khách cần hoa ${c.request.minQuality}★ trở lên)` : ''}, chủ tiệm xem giúp nhé!”`, 'info'); }
+          continue;
         }
+        const r = this.deliverToCustomer(c.id, sel);
+        if (!r.ok) continue;
+        served++;
+        ck.today.earned = (ck.today.earned || 0) + r.ev.price + (r.tip || 0);
+        if (automation.addJob(ck)) this.toast(`⭐ ${ck.name} lên tay nghề ${ck.skill}!${ck.skill === 3 ? ' Từ giờ biết gói bó hoa.' : ck.skill === 6 ? ' Từ giờ phục vụ 2 khách mỗi lượt.' : ''}`, 'good');
+        this.toast(`👩‍💼 ${ck.name} đã bán hoa cho ${shop.npcOf(c.npc).name} (+${r.ev.price + (r.tip || 0)} 💰)`, 'info');
       }
     }
+    this.runCourier(now, false);
+  }
+
+  /** 🚚 Người giao hàng: chi nhánh sắp hết hàng thì tự đóng gói & gửi thuyền */
+  runCourier(now, offline) {
+    const s = this.save;
+    const w = automation.due(s, 'courier', now);
+    if (!w) return;
+    for (const id of branchSys.BRANCH_IDS) {
+      const br = branchSys.branchOf(s, id);
+      if (!br?.open || branchSys.stockCount(br) + branchSys.onBoat(s, id) >= branchSys.BRANCH_RULES.autoBelow) continue;
+      const items = branchSys.autoPack(s, id, w.skill);
+      if (!items) continue;
+      const r = branchSys.ship(s, id, items, now, this.shipMult(now));
+      if (!r.ok) continue;
+      if (automation.addJob(w, 2) && !offline) this.toast(`⭐ ${w.name} lên tay nghề ${w.skill}!`, 'good');
+      if (!offline) { this.toast(`🚚 ${w.name} gửi ${r.total} món ra ${BRANCHES[id].name}`, 'info'); this.hgProgress(); }
+      this.emitter.emit('inventory');
+      this.saveMgr.markDirty();
+      break; // mỗi lượt 1 chuyến
+    }
+  }
+
+  /** Hệ số thời gian thuyền: Thứ Ba ×0,5, người giao hàng tay nghề cao đi nhanh hơn */
+  shipMult(now = this.now) {
+    const w = automation.workerOf(this.save, 'courier');
+    return planSys.effect(dayOf(now), 'shipTime') * (w?.active ? 1 - 0.04 * w.skill : 1);
   }
 
   buyMachine(kind, pi) {
@@ -1128,17 +1190,29 @@ export class Game {
     return r;
   }
 
-  hireStaff(id) {
-    const r = automation.hireStaff(this.save, id);
+  /** Thuê ứng viên số idx của tuần này cho vị trí role */
+  hireStaff(role, idx = 0) {
+    const r = automation.hireStaff(this.save, role, idx, this.staffWeek());
     this.toast(r.msg, r.ok ? 'good' : 'warn');
     if (r.ok) this.afterAutomation();
     return r;
   }
+  staffWeek() { return Math.floor((this.today - 1) / 7); }
 
-  fireStaff(id) {
-    const r = automation.fireStaff(this.save, id);
-    this.toast(r.msg, 'info');
-    this.afterAutomation();
+  /** Việc với nhân viên: fire | pay (fixed/perf) | bonus | rehire */
+  staffAction(role, act, arg) {
+    const s = this.save;
+    const r = act === 'fire' ? automation.fireStaff(s, role) : act === 'pay' ? automation.setPay(s, role, arg) : act === 'bonus' ? automation.bonus(s, role) : act === 'rehire' ? automation.rehire(s, role) : { ok: false, msg: 'Không rõ' };
+    this.toast(r.msg, r.ok ? (act === 'fire' ? 'info' : 'good') : 'warn');
+    if (r.ok) this.afterAutomation();
+    return r;
+  }
+  fireStaff(role) { return this.staffAction(role, 'fire'); }
+
+  /** Kế hoạch gieo cho lô pi: 'same' | 'auto' | 'loài:màu' */
+  setPlotPlan(pi, plan) {
+    automation.A(this.save).plan[pi] = plan;
+    this.saveMgr.markDirty();
   }
 
   afterAutomation() {
@@ -1146,10 +1220,29 @@ export class Game {
     this.saveMgr.markDirty();
     this.saveMgr.saveNow('manual');
     this.emitter.emit('inventory');
+    this.emitter.emit('manage');
   }
 
+  /** Nhân viên đứng ở chỗ làm (hình dáng theo người đang làm; dựng lại khi đổi người) */
   updateStaffModels() {
-    for (const [id, m] of Object.entries(this.staffModels)) m.visible = !this.visit && automation.staffActive(this.save, id);
+    const POS = { gardener: [-5.0, 2.2, 1.2], clerk: [9.3, -3.8, 0.4], courier: [40.6, 3.2, -0.6] };
+    for (const role of Object.keys(STAFF)) {
+      const w = automation.workerOf(this.save, role);
+      const key = w ? `${w.name}|${JSON.stringify(w.look)}` : '';
+      let m = this.staffModels[role];
+      if (m && m.userData.key !== key) { this.stage.scene.remove(m); m = this.staffModels[role] = null; }
+      if (!m && w) {
+        m = buildCharacter(w.look || STAFF[role].look).root;
+        const [x, z, ry] = POS[role];
+        m.position.set(x, 0, z);
+        m.rotation.y = ry;
+        m.scale.setScalar(0.92);
+        m.userData.key = key;
+        this.stage.scene.add(m);
+        this.staffModels[role] = m;
+      }
+      if (m) m.visible = !this.visit && automation.staffActive(this.save, role);
+    }
   }
 
   // ---------------- làng (GĐ11) ----------------
@@ -1230,6 +1323,9 @@ export class Game {
   talkChoose(id, talk, sceneIdx, optIdx) {
     const res = relations.chooseOption(this.save, id, talk, sceneIdx, optIdx, this.today);
     if (!res) return null;
+    // 💗 Thứ Năm: ngày của dân làng ⇒ thêm 50% tình thân
+    const tm = planSys.effect(this.today, 'talkFp');
+    if (tm > 1 && res.delta > 0) { const ex = relations.addFp(this.save, id, res.delta * (tm - 1)); res.after = ex.after; res.rewards = [...(res.rewards || []), ...ex.rewards]; }
     this.afterBond(id, res);
     if (talk.kind === 'event' && res.next == null) this.gainXp(15);
     return res;
@@ -1513,6 +1609,16 @@ export class Game {
   /** Thả sâu lên luống (chỉ lúc đang chơi trên nông trại của mình) */
   bugTick(now) {
     if (this.visit || this.decorMode) return;
+    // 👨‍🌾 (GĐ25) người làm vườn bắt sâu giúp (tay nghề càng cao bắt càng nhanh)
+    const gw = automation.workerOf(this.save, 'gardener');
+    if (gw?.active) for (const [id, b] of this.bugs) {
+      if (now - b.born < Math.max(3, 14 - gw.skill)) continue;
+      const pos = this.farmView.tileWorldPos(b.pi, b.ti).clone();
+      this.removeBug(id);
+      this.particles.spawn('leaf', pos);
+      this.emitter.emit('float', { pos: pos.setY(1.1), text: `👨‍🌾 ${gw.name} bắt sâu` });
+      if (automation.addJob(gw)) this.toast(`⭐ ${gw.name} lên tay nghề ${gw.skill}!`, 'good');
+    }
     // sâu không bắt kịp: gặm cây
     for (const [id, b] of this.bugs) {
       if (now - b.born < BUGS.lifeMinutes) continue;
@@ -1735,6 +1841,189 @@ export class Game {
       this.emitter.emit('inventory');
     }
     this.playScene(sceneId);
+  }
+
+  // =============================================================
+  //  🗓️ (GĐ25) TIỆM HOA CỦA QUẦN ĐẢO: kế hoạch hôm nay, hợp đồng tiệc, chi nhánh
+  // =============================================================
+  /** Dân làng đã quen (để giao việc / làm khách đặt tiệc) */
+  knownVillagers() {
+    const s = this.save, has = (k) => story.has(s, k);
+    return VILLAGER_IDS.filter((id) => (!EN_PEOPLE.includes(id) || has('e1_boat')) && (!CO_PEOPLE.includes(id) || has('l1_path')) && (!HG_PEOPLE.includes(id) || has('h2_shop')) && !(id === 'chu_luoi' && has('co_stay')) && villagerInfo(id));
+  }
+  villagerNames() { return Object.fromEntries(VILLAGER_IDS.map((id) => [id, villagerInfo(id)?.name || id])); }
+  partyOpen() { return story.has(this.save, 'party_open'); }
+  branchOpen() { return story.has(this.save, 'branch_open'); }
+
+  /** Mỗi 3 giây: lập kế hoạch ngày mới, làm mới hợp đồng tiệc, xét việc đã xong */
+  manageTick() {
+    const s = this.save, day = this.today;
+    const known = this.knownVillagers();
+    const trig = story.triggers(s, {});
+    const made = planSys.makePlan(s, day, {
+      level: s.player.level, villagers: known, birthday: known.find((id) => relations.isBirthday(id, day)) || null,
+      has: { orders: s.player.level >= 5, fishing: story.has(s, 'co_fish'), huong: story.has(s, 'hg_kept'), party: this.partyOpen(), branch: branchSys.openCount(s) > 0, story: trig.length > 0 },
+    });
+    if (made && s.player.level >= 2) {
+      const wd = planSys.weekdayOf(day);
+      setTimeout(() => this.toast(`🗓️ ${wd.name} · ${wd.icon} ${wd.theme}: ${wd.desc} Kế hoạch hôm nay đã sẵn sàng!`, 'info'), 2200);
+      this.emitter.emit('manage');
+    }
+    if (this.partyOpen()) {
+      const r = partySys.refresh(s, day, { clients: known.filter((id) => !CO_PEOPLE.includes(id)), extra: planSys.effect(day, 'party') > 1 ? 1 : 0 });
+      if (r.expired) this.toast(`😞 Hợp đồng ${OCCASIONS[r.expired.occ].name} đã quá hạn. ${villagerInfo(r.expired.client)?.name || ''} hơi buồn.`, 'warn');
+      if (story.has(s, 'wedding_offer') && s.party.story_wedding == null && partySys.addStoryOffer(s, day, { occ: 'wedding', client: 'co_mai', venue: 'beach', story: 'wedding' })) this.emitter.emit('manage');
+    }
+    // việc trong kế hoạch vừa xong ⇒ thưởng ngay
+    const done = planSys.check(s, day, this.villagerNames());
+    for (const t of done.tasks) {
+      s.player.coins += t.T.reward.coins;
+      this.gainXp(t.T.reward.xp);
+      this.toast(`✅ Kế hoạch: ${t.text} (+${t.T.reward.coins} 💰)`, 'good');
+    }
+    if (done.bonus) {
+      s.player.coins += PLAN_RULES.allDone.coins;
+      if (PLAN_RULES.allDone.luck) { luck.grantTickets(s, { luck: PLAN_RULES.allDone.luck }); this.emitter.emit('luck'); }
+      setTimeout(() => this.toast(`🌟 Xong hết kế hoạch hôm nay! +${PLAN_RULES.allDone.coins} 💰 +${PLAN_RULES.allDone.luck} 🎟️`, 'good'), 1200);
+      this.audio?.sfx?.chime?.(6);
+    }
+    if (done.tasks.length) { this.saveMgr.markDirty(); this.emitter.emit('inventory'); this.emitter.emit('manage'); }
+    this.syncManage();
+  }
+
+  /** Vẽ lại đồ tiệc, quầy chi nhánh, thuyền buôn */
+  syncManage() {
+    const s = this.save, day = this.today;
+    const p = partySys.PT(s);
+    const party = p.active ? { venue: p.active.venue, design: p.active.design, editing: true } : p.shown && p.shown.until >= day ? { venue: p.shown.venue, design: p.shown.design, editing: false } : null;
+    const has = (k) => story.has(s, k);
+    const branches = branchSys.BRANCH_IDS.map((id) => {
+      const br = branchSys.branchOf(s, id);
+      return { id, open: !!br?.open, lvl: br?.lvl || 1, stock: branchSys.stockCount(br), show: !!br?.open || (this.branchOpen() && (!BRANCHES[id].need || has(BRANCHES[id].need))) };
+    });
+    this.manage.sync({ party, colorsOf: partySys.colorsOf, branches, trader: !!planSys.effect(day, 'trader') && s.player.level >= 4, pier: ISLAND_ZONES.market.pier });
+  }
+
+  // ----- kế hoạch & thuyền buôn -----
+  planView() {
+    const day = this.today;
+    return { day, wd: planSys.weekdayOf(day), tasks: planSys.progress(this.save, day, this.villagerNames()), bonus: planSys.P(this.save).bonus, trader: planSys.effect(day, 'trader') ? planSys.traderOffers(this.save, day, this.save.player.level) : null };
+  }
+  buyTrader(vk) {
+    const r = planSys.buyTrader(this.save, this.today, vk, this.save.player.level);
+    this.toast(r.msg, r.ok ? 'good' : 'warn');
+    if (r.ok) { this.saveMgr.markDirty(); this.emitter.emit('inventory'); this.emitter.emit('manage'); }
+    return r;
+  }
+
+  // ----- 🎉 hợp đồng tiệc -----
+  partyAccept(id) {
+    const r = partySys.accept(this.save, id, this.today);
+    this.toast(r.msg, r.ok ? 'good' : 'warn');
+    if (r.ok) { this.saveMgr.markDirty(); this.syncManage(); this.emitter.emit('manage'); }
+    return r;
+  }
+  partyCancel() {
+    const r = partySys.cancel(this.save);
+    this.toast(r.msg, r.ok ? 'info' : 'warn');
+    this.saveMgr.markDirty(); this.syncManage(); this.emitter.emit('manage');
+    return r;
+  }
+  partySet(si, vk) {
+    const r = partySys.setSlot(this.save, si, vk);
+    if (!r.ok) this.toast(r.msg, 'warn');
+    else { this.saveMgr.markDirty(); this.syncManage(); this.emitter.emit('manage'); }
+    return r;
+  }
+  /** Lia máy quay tới nơi tổ chức tiệc đang làm */
+  partyLook() {
+    const a = partySys.PT(this.save).active || partySys.PT(this.save).shown;
+    if (!a) return;
+    const V = partySys.VENUES[a.venue];
+    this.controls.focusOn(new THREE.Vector3(V.center[0], 0, V.center[1]), 1.5);
+  }
+  partySubmit() {
+    const s = this.save;
+    const r = partySys.submit(s, this.today, { mult: planSys.effect(this.today, 'party') });
+    if (!r.ok) { this.toast(r.msg, 'warn'); return r; }
+    const name = villagerInfo(r.client)?.name || 'Khách';
+    const bond = relations.addFp(s, r.client, r.fp);
+    this.afterBond(r.client, bond);
+    this.gainXp(r.xp);
+    if (r.score >= 80) story.setFlag(s, 'party_great');
+    if (r.story === 'wedding' && r.score >= 80) story.setFlag(s, 'wed_good');
+    const V = partySys.VENUES[r.venue];
+    const pos = new THREE.Vector3(V.center[0], 1.5, V.center[1]);
+    this.particles.spawn('sparkle', pos);
+    this.particles.spawn('leaf', pos.clone().setY(2.5));
+    this.audio?.sfx?.chime?.(r.score >= 80 ? 7 : 4);
+    this.toast(`🎉 ${name}: “${r.line}” — ${r.score} điểm · +${r.coins.toLocaleString('vi-VN')} 💰 +${r.rep} 💗 +${r.fp} ❤️`, r.score >= 50 ? 'good' : 'warn');
+    this.eventPts('favor');
+    this.hgProgress(); // bước truyện đếm số tiệc / đám cưới
+    this.saveMgr.markDirty();
+    this.saveMgr.saveNow('manual');
+    this.syncManage();
+    this.emitter.emit('inventory');
+    this.emitter.emit('manage');
+    return r;
+  }
+
+  // ----- 🏪 chi nhánh -----
+  branchCtx() {
+    const s = this.save;
+    return { hearts: (id) => relations.heartsOf(s, id), has: (k) => story.has(s, k), flag: this.branchOpen() };
+  }
+  branchOpenAt(id) {
+    const r = branchSys.openBranch(this.save, id, this.branchCtx());
+    this.toast(r.msg, r.ok ? 'good' : 'warn');
+    if (r.ok) {
+      const [x, z] = BRANCHES[id].at;
+      this.particles.spawn('sparkle', new THREE.Vector3(x, 2, z));
+      this.audio?.sfx?.chime?.(6);
+      this.afterBranch();
+    }
+    return r;
+  }
+  branchUpgrade(id) {
+    const r = branchSys.upgrade(this.save, id);
+    this.toast(r.msg, r.ok ? 'good' : 'warn');
+    if (r.ok) this.afterBranch();
+    return r;
+  }
+  branchShip(id, items) {
+    const r = branchSys.ship(this.save, id, items, this.now, this.shipMult());
+    this.toast(r.msg, r.ok ? 'good' : 'warn');
+    if (r.ok) this.afterBranch();
+    return r;
+  }
+  branchCollect(id) {
+    const r = branchSys.collect(this.save, id);
+    this.toast(r.msg, r.ok ? 'good' : 'info');
+    if (r.ok) { this.questEvent('earn', r.coins); this.afterBranch(); }
+    return r;
+  }
+  branchLook(id) {
+    const [x, z] = BRANCHES[id].at;
+    this.controls.focusOn(new THREE.Vector3(x, 0, z), 1.5);
+  }
+  afterBranch() {
+    this.hgProgress(); // bước truyện đếm chi nhánh / chuyến hàng
+    this.saveMgr.markDirty();
+    this.syncManage();
+    this.emitter.emit('inventory');
+    this.emitter.emit('manage');
+  }
+  /** Thời gian trôi: thuyền cập bến + quầy tự bán */
+  branchTick(from, to, offline) {
+    const s = this.save;
+    if (!s.branch) return;
+    const join = story.has(s, 'van_join') || story.has(s, 'van_home');
+    const r = branchSys.tick(s, from, to, { hearts: (id) => relations.heartsOf(s, id), offline, join });
+    if (!r.arrived.length && !Object.keys(r.sold).length) return;
+    if (!offline) for (const a of r.arrived) this.toast(`⛵ Thuyền hàng đã tới ${BRANCHES[a.id].name} (${a.n} món)`, 'info');
+    this.saveMgr.markDirty();
+    this.bSync = (this.bSync || 0) + 1;
+    if (this.bSync % 4 === 0 || r.arrived.length) { this.syncManage(); this.emitter.emit('manage'); }
   }
 
   // ---------------- 🌱 Nụ Mộng (GĐ20B) ----------------
@@ -2080,6 +2369,7 @@ export class Game {
 
   checkGoals() {
     const s = this.save;
+    this.manageTick(); // (GĐ25) kế hoạch hôm nay, hợp đồng tiệc mới
     const { changed, theme } = goals.ensureEvent(s);
     if (changed) {
       this.saveMgr.markDirty();

@@ -20,6 +20,7 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
   ✅ GĐ20A (0.20.0) cốt truyện chính chương 1–2 + hội thoại kiểu phim + treo hoa. ✅ GĐ20B (0.21.0) chương 3–7, Nụ Mộng,
   3 kết thúc — cốt truyện chính đã trọn bộ. ✅ GĐ21 (0.22.0) đảo Mũi Én + truyện "Cơn mưa đi lạc". ✅ GĐ22 (0.23.0) Cồn Lặng + truyện "Người giữ sương" + câu cá. ✅ GĐ23 (0.24.0) Đảo Ngàn Hương + truyện "Hương để nhớ" + Tiệm Hương Nhài chế biến.
   ✅ GĐ24 (0.25.0) đảo chính mới 6 khu + rừng theo mùa + nhà người chơi + thời tiết chi tiết. Khu vui chơi: để phát triển sau.
+  ✅ GĐ25 (0.26.0) "Tiệm Hoa Của Quần Đảo": Sổ quản lý (kế hoạch hôm nay, lịch tuần, tiệc, chi nhánh, nhân viên thông minh) + truyện "Người mua đảo".
   Lồng tiếng: đã đề xuất miễn phí (Piper tạo sẵn trên GitHub Actions + "Phòng thu" tự thu), đang chờ người dùng chọn.
   Việc tiếp theo: hỏi người dùng.
   Đề xuất đã nêu: GĐ19 nuôi ong (một phần đã có ở GĐ23), điểm danh + sổ thưởng mùa, tùy biến nhân vật, hội làng (đánh số GĐ mới khi làm).
@@ -212,6 +213,19 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   Thời tiết chi tiết: `src/render/weatherDetail.js` (`wet`, `snow`, `hailCover`, vũng nước cố định, bọt nước quanh camera, bóng mây, làn sương,
   vệt nắng, `strike()` sét + `flash` làm sáng `stage.hemi`); `SeasonVisuals.setOverlay(wet, snow)` làm cỏ sẫm / trắng; `Sfx.rain(level)`, `Sfx.thunder()`.
   Ảnh thử thời tiết: đổi ngày TRƯỚC rồi mới gán `save.weather.today.type` (sang ngày mới game tự gieo thời tiết khác).
+- **Tiệm Hoa Của Quần Đảo** (GĐ25): nút 🗓️ = `src/ui/managePanel.js` (`data-ql`, thẻ today/party/branch/staff; ô `select[data-ql]` nghe `change`).
+  Kế hoạch: `data/plan.js` (PLAN_TASKS, WEEKDAYS theo `dayOfSeason` 1=Thứ Hai, TRADER), `src/systems/plan.js` (`save.plan`, tiến độ = bộ đếm − `base`
+  lúc lập kế hoạch; `effect(day, key)` dùng ở bán sỉ/tiền bo/khách (spawnMult CHIA vì là hệ số khoảng cách)/trò chuyện/tiệc/thuyền).
+  Tiệc: `data/party.js` (PARTY_ITEMS, VENUES slots `[kiểu,x,z,góc]`, OCCASIONS), `src/systems/party.js` (`save.party`, hoa chỉ trừ lúc `submit`,
+  `score` 6 phần + trừ hoa ghét lấy từ BONDS.gifts; hợp đồng truyện `story: 'wedding'` ⇒ `party.story_wedding`). Chi nhánh: `data/branch.js`,
+  `src/systems/branch.js` (`save.branch = { b, boats, ships }`, hàng chế biến mã `g:mã|sao`, `tick` bán theo giờ mở cửa). Tất cả fillDefaults/lazy,
+  KHÔNG tăng SAVE_VERSION. 3D: `src/render/manageView.js` (pick `party`/`branch`/`trader`, `game.syncManage()`), game: `manageTick` (gọi trong
+  `checkGoals` mỗi 3 giây), `branchTick` trong `advance`, `partySubmit`, `branch*`. Nhân viên: `data/automation.js` STAFF (gardener/clerk/courier,
+  base+perSkill, commission, every), `src/systems/automation.js` (`A(save)` tự chuyển kiểu cũ, `candidates` theo tuần, `payWages`, `runGardener`
+  theo `automation.plan[lô]` 'same'|'auto'|vkey, `due`); game `runStaff`/`runCourier`/`updateStaffModels` (mô hình theo `w.look`), sâu do người
+  làm vườn bắt trong `bugTick`. Truyện: `data/storyVan.js` (mạch `van` v1–v6, gộp cuối `data/story.js`), bộ đếm `parties|branches|shipped|wedding`
+  trong `src/systems/story.js`; dấu `party_open`, `branch_open`, `wedding_offer`, `party_great`/`wed_good` (game đặt khi tiệc ≥ 80 điểm), kết
+  `van_win|van_join|van_home` (join/home ⇒ chi nhánh ×1,2).
 - **Ưu tiên chạm cốt truyện** (0.23): `game.pickAt` dò `storyView.pickNear` (theo khoảng cách trên màn hình, bán kính 46px) trước, rồi
   `PRIORITY_PICKS` (story, mo, buds, sail, diep, fishspot, fishstall, fogwall) trước nhà/dân làng. `game.focusStory(scene)` = nút Chỉ đường.
 - **Vùng camera** (0.22): `controls.regions` nhận hình tròn `{x,z,r}` hoặc hành lang thuôn `{x,z,r,x2,z2,r2}`; đảo chính ↔ làng và

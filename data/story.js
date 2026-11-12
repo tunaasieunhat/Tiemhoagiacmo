@@ -28,6 +28,7 @@
 
 // ---- Diễn viên: tên hiện trên khung thoại, giọng "bíp" (pitch: số càng lớn giọng càng cao), hình dáng ----
 import { HG_CAST, HG_ARC, HG_CHAPTERS, HG_PAGES, HG_SCENES, HG_LINES, HG_MO_LINES } from './storyHuong.js';
+import { VAN_CAST, VAN_ARC, VAN_CHAPTERS, VAN_SCENES, VAN_LINES } from './storyVan.js';
 
 export const CAST = {
   you: { name: '{name}', pitch: 660 },
@@ -40,6 +41,7 @@ export const CAST = {
   me_su: { name: 'Mẹ bé Su', pitch: 600, look: { skin: '#fbe3d0', hair: '#4a3328', outfit: '#ffe9b8', hat: null, bun: true }, color: '#e0a86a' },
   ba_tu: { pitch: 330 }, ong_ba: { pitch: 240 }, co_mai: { pitch: 640 }, anh_duy: { pitch: 420 }, co_ngan: { pitch: 560 }, be_su: { pitch: 1040 },
   ...HG_CAST, // (GĐ23) Đảo Ngàn Hương — xem data/storyHuong.js
+  ...VAN_CAST, // (GĐ25) Người mua đảo — xem data/storyVan.js
 };
 
 // ---- Số liệu chung ----
@@ -287,6 +289,7 @@ export const ARCS = {
   en: { name: 'Mũi Én · Cơn mưa đi lạc', icon: '🌫️', desc: 'Hòn đảo phía đông ba mươi năm không mưa, và ngọn đèn chưa từng tắt.' },
   lang: { name: 'Cồn Lặng · Người giữ sương', icon: '🎣', desc: 'Khối sương phía tây Đảo Mây ba mươi năm không tan. Có người đang giữ nó lại.' },
   huong: HG_ARC,
+  van: VAN_ARC,
 };
 
 // =============================================================
@@ -1740,3 +1743,10 @@ Object.assign(SCENES, HG_SCENES);
 CG_TEXT.hpages = HG_PAGES;
 for (const [id, list] of Object.entries(HG_LINES)) STORY_LINES_B[id] = [...list, ...(STORY_LINES_B[id] || [])];
 MO_LINES.push(...HG_MO_LINES);
+
+// =============================================================
+//  (GĐ25) Gắn mạch truyện "Người mua đảo" (nội dung ở data/storyVan.js)
+// =============================================================
+CHAPTERS.push(...VAN_CHAPTERS);
+Object.assign(SCENES, VAN_SCENES);
+for (const [id, list] of Object.entries(VAN_LINES)) STORY_LINES_B[id] = [...list, ...(STORY_LINES_B[id] || [])];

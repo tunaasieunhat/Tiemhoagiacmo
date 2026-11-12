@@ -24,6 +24,7 @@ import { ONLINE } from '../../data/online.js';
 import { TUTORIAL } from '../game.js';
 import { ShopPanel } from './shopPanel.js';
 import { MarketPanel } from './marketPanel.js';
+import { ManagePanel } from './managePanel.js';
 import { LabPanel } from './labPanel.js';
 import { FriendsPanel, messagesHtml } from './friendsPanel.js';
 import { QuestsPanel } from './questsPanel.js';
@@ -151,6 +152,7 @@ export class Hud {
     this.updateSync({ status: game.account?.cloud?.status });
     this.shopPanel = new ShopPanel(this);
     this.marketPanel = new MarketPanel(this);
+    this.manage = new ManagePanel(this); // GĐ25: 🗓️ Sổ quản lý
     this.lab = new LabPanel(this);
     this.notebook = new NotebookPanel(this);
     this.friends = new FriendsPanel(this);
@@ -196,6 +198,7 @@ export class Hud {
         <button class="round hidden" data-act="go-en" aria-label="Ra khơi: Mũi Én / về Đảo Mây">⛵</button>
         <button class="round" data-act="friends" aria-label="Bạn bè">👥<span class="badge hidden fr-badge"></span></button>
         <button class="round" data-act="quests" aria-label="Nhiệm vụ">📋<span class="badge hidden q-badge"></span></button>
+        <button class="round" data-act="manage" aria-label="Sổ quản lý: kế hoạch hôm nay, tiệc, chi nhánh, nhân viên">🗓️</button>
         <button class="round" data-act="rank" aria-label="Xếp hạng và cuộc thi">🏆</button>
         <button class="round" data-act="decor-mode" aria-label="Trang trí">🎨</button>
         <button class="round" data-act="luck" aria-label="Vận May">🍀<span class="badge hidden lk-badge"></span></button>
@@ -263,6 +266,8 @@ export class Hud {
     if (lb) { this.lab.onAction(lb.dataset.lab, lb); return; }
     const nb = e.target.closest('[data-nb]');
     if (nb) { this.notebook.onAction(nb.dataset.nb, nb); return; }
+    const ql = e.target.closest('[data-ql]');
+    if (ql && ql.tagName !== 'SELECT') { this.manage.onAction(ql.dataset.ql, ql); return; }
     const mk = e.target.closest('[data-mk]');
     if (mk) { this.marketPanel.onAction(mk.dataset.mk, mk); return; }
     const sp = e.target.closest('[data-sp]');
@@ -310,6 +315,7 @@ export class Hud {
       case 'go-farm': g.controls.focusOn(PLOT_SLOTS[0].clone().add({ x: 1.2, y: 0, z: -0.6 })); this.closeModal(); break;
       case 'go-shop': this.openShop(); break;
       case 'go-market': this.openMarket(b.dataset.tab); break;
+      case 'manage': this.manage.open(b.dataset.tab || null); break;
       case 'forecast': this.openForecast(); break;
       case 'quality': g.setQuality(b.dataset.level); this.openSettings(); break;
       case 'music-next': {

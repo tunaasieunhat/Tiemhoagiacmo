@@ -4,6 +4,20 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.26.0',
+    notes: [
+      '🗓️ SỔ QUẢN LÝ mới (nút 🗓️ bên trái): Kế hoạch hôm nay, Tiệc, Chi nhánh, Nhân viên',
+      '📅 Kế hoạch hôm nay: mỗi ngày 5 việc gợi ý theo tình hình của bạn (trò chuyện, sinh nhật, thu hoạch, đơn hàng…), xong việc nào thưởng việc đó, xong cả 5 thưởng lớn + vé may mắn',
+      '🗓️ Lịch tuần: Thứ Hai chợ phiên (bán sỉ +30%) · Thứ Ba thuyền chở hàng nhanh gấp đôi · Thứ Tư thuyền buôn ghé bán hạt màu hiếm · Thứ Năm trò chuyện thêm 50% tình thân · Thứ Sáu ngày tiệc · Thứ Bảy chợ đêm (tiền bo ×1,5) · Chủ Nhật khách đông',
+      '🎉 Hợp đồng trang trí tiệc: sinh nhật, khai trương, kỷ niệm, tưởng niệm, hội làng ở Công Viên / Quảng trường / Bãi biển. Chọn hoa cho cổng hoa, lẵng, bàn tiệc, dây hoa, đèn, thảm cánh hoa — hoa hiện ra tại chỗ, chấm điểm theo tông màu, ý nghĩa, hoa khách thích',
+      '🏪 Chi nhánh trên 4 đảo (Làng Hoa, Mũi Én, Cồn Lặng, Ngàn Hương) do dân đảo thân với bạn đứng quầy. Gửi hàng bằng thuyền, quầy tự bán theo giờ, ghé thu tiền két, nâng cấp quầy',
+      '👥 Nhân viên thông minh hơn: chọn trong 3 ứng viên mỗi tuần, mỗi người có tay nghề 1–10 và tính cách riêng, làm càng nhiều càng giỏi. Lương theo năng lực: trả lương cứng (tăng theo tay nghề) hoặc theo hiệu suất (theo số việc làm được); thưởng nóng để nhân viên vui',
+      '👨‍🌾 Người làm vườn giờ tự làm hết: thu hoạch, xới, gieo theo kế hoạch từng lô (gieo lại loài cũ / tự chọn hạt đúng mùa / hạt bạn chọn), tưới ô khô, bắt sâu, bón phân (tay nghề 3+), chữa bệnh (tay nghề 5+)',
+      '👩‍💼 Người bán hàng tự gói bó hoa (tay nghề 3+), rành ý nghĩa hoa (4+), phục vụ 2 khách mỗi lượt (6+). 🚚 Vị trí mới: người giao hàng tự gửi hàng ra chi nhánh',
+      '🛥️ Cốt truyện mới “Người mua đảo” (6 chương, 3 kết thúc): con thuyền trắng của tập đoàn Vạn Phát, cô giám đốc tên Vân, và một lời hứa của cô bé tám tuổi ở Mũi Én. Có đám cưới Cô Mai trên bãi biển!',
+    ],
+  },
+  {
     version: '0.25.2',
     notes: [
       '☁️ Thời tiết làm lại hoàn toàn trong thế giới 3D (không còn là lớp phủ màn hình): có mây bông thật trôi trên đảo, đổ bóng xuống đất',
