@@ -7,7 +7,7 @@ export const VILLAGER_IDS = Object.keys(SCHEDULES);
 const BAD_WEATHER = new Set(BAD_WEATHER_LIST);
 
 export function homeOf(id) {
-  return Object.keys(HOUSES).find((h) => HOUSES[h].owner === id) || null;
+  return Object.keys(HOUSES).find((h) => HOUSES[h].owner === id) || Object.keys(HOUSES).find((h) => HOUSES[h].with?.includes(id)) || null;
 }
 
 export function villagerInfo(id) {

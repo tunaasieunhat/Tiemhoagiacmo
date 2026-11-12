@@ -1,3 +1,4 @@
+import { HG_GAMES, HG_LEVELS } from './huong.js';
 // =============================================================
 //  DÂN LÀNG NHỜ VIỆC & MINI GAME (GĐ12)
 //  Mỗi ngày game, mỗi người có thể nhờ bạn 1 việc (xác suất dailyChance). Nhận lời => chơi mini game mô phỏng việc đó.
@@ -32,6 +33,32 @@ export const FAVORS = {
     { id: 'luoi_hammer', game: 'hammer', title: 'Đóng lại ván cầu tàu', icon: '🔨',
       ask: 'Ván cầu tàu long hết đinh. Tay tao run, đóng trật. Mày đóng.',
       thanks: 'Được. Chắc đó.', fail: 'Đưa búa đây. Coi mà học.' },
+  ],
+  // (GĐ23) Đảo Ngàn Hương — dùng mini game hái / chế biến của đảo
+  ba_nhai: [
+    { id: 'nhai_guess', game: 'guess', title: 'Ngửi hương cùng bà', icon: '👃',
+      ask: 'Cháu ơi, bà ngửi mấy lọ này mà không nhớ tên. Cháu đoán giùm bà, bà nghe cho vui.',
+      thanks: 'Giỏi quá! Hồi xưa bà cũng đoán nhanh như cháu vậy đó.', fail: 'Không sao. Mùi hương nó cũng hay trốn lắm.' },
+  ],
+  sen: [
+    { id: 'sen_mold', game: 'mold', title: 'Đổ nến giúp Sen', icon: '🕯️',
+      ask: 'Mẻ nến này em đổ hoài không đều. Chị đổ giùm em mấy khuôn. Đừng để tràn.',
+      thanks: 'Đều tăm tắp. ...Cảm ơn chị.', fail: 'Thôi để em đổ lại. Không sao.' },
+  ],
+  ong_que: [
+    { id: 'que_smoke', game: 'smoke', title: 'Hun khói tổ ong', icon: '🐝',
+      ask: 'Tay tôi run rồi, thổi khói không đều. Cô hun giùm tôi cái tổ phía đông.',
+      thanks: 'Ong ngủ ngoan. Cô có tay nghề.', fail: 'Ong nó nóng. Để mai.' },
+  ],
+  chi_tra: [
+    { id: 'tra_pick', game: 'picktea', title: 'Hái trà phụ chị', icon: '🍃',
+      ask: 'Em ơi chị kẹt hái xong luống này trước trưa, phụ chị một tay nha. Nhớ: một tôm hai lá thôi!',
+      thanks: 'Đúng búp non hết trơn, giỏi nha em!', fail: 'Lá già lẫn nhiều quá, chị lựa lại vậy.' },
+  ],
+  be_mat: [
+    { id: 'mat_catch', game: 'catch', title: 'Hứng cam với bé Mật', icon: '🍊',
+      ask: 'Chị ơi em rung cây mà không hứng kịp! Chị cầm rổ giùm em nha!',
+      thanks: 'Đầy rổ luôn! Chị giỏi nhất!', fail: 'Rớt hết rồi... thôi mình lượm.' },
   ],
   nhum: [
     { id: 'nhum_math', game: 'math', title: 'Tính tiền quầy cá', icon: '🧮',
@@ -134,3 +161,7 @@ export const RHYMES = [
   ['Bà Tư đan chiếc khăn len', 'Tặng cho cháu nhỏ màu ___ dịu dàng', 'sen', ['đỏ', 'xanh']],
   ['Mưa rơi tí tách hiên nhà', 'Vườn hoa uống nước nở ___ thật xinh', 'ra', ['xong', 'hết']],
 ];
+
+// (GĐ23) mini game của Đảo Ngàn Hương — số liệu nằm ở data/huong.js
+Object.assign(MINIGAMES, HG_GAMES);
+Object.assign(MG_LEVELS, HG_LEVELS);

@@ -342,7 +342,7 @@ function distToSeg(x, z, a, b) {
  * Gộp các vật thể tĩnh cùng vật liệu thành 1 khối để giảm số lệnh vẽ (chạy mượt hơn trên điện thoại).
  * Bỏ qua những nhóm có thể chạm vào (userData.pick), chữ (sprite) và đèn.
  */
-function mergeStatic(world) {
+export function mergeStatic(world) {
   world.updateMatrixWorld(true);
   const buckets = new Map();
   const victims = [];

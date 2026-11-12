@@ -204,6 +204,7 @@ export class Cinema {
         else if (op === 'rod') { if (!replay && !ff) g.storyRod(ln[1]); }
         else if (op === 'plot') { if (!replay && !ff) g.storyPlot(ln[1]); }
         else if (op === 'seed') { if (!replay && !ff) g.storySeeds(ln[1], ln[2] || 1); }
+        else if (op === 'ing') { if (!replay && !ff) g.storyIng(ln[1], ln[2] || 1); }
         else if (op === 'title') { if (!ff) await this.title(ln[1], ln[2]); }
         else if (op === 'nar') { if (!ff) await this.say(null, 'normal', ln[1]); }
         else if (op === 'wait') { if (!ff && !this.skipping) await sleep(ln[1] * 1000); }
@@ -386,6 +387,12 @@ export class Cinema {
     } else if (kind === 'bottle') {
       const b = CG_TEXT.bottles[o.i || 0];
       html = `<div class="cg-paper letter bottle"><small>🍾 ${esc(b.year)}</small>${b.text.split('\n').map((l) => `<p>${esc(l)}</p>`).join('')}</div>`;
+    } else if (kind === 'hpage') {
+      // (GĐ23) trang Sổ Hương
+      const pg = CG_TEXT.hpages?.[o.i || 0] || {};
+      html = `<div class="cg-paper page hpage"><small>📖 Sổ Hương · trang ${(o.i || 0) + 1}/12 · ${esc(pg.year || '')}</small><b class="cg-h">${esc(pg.title || '')}</b>${String(pg.text || '').split('\n').map((l) => `<p>${esc(l) || '&nbsp;'}</p>`).join('')}</div>`;
+    } else if (kind === 'note') {
+      html = `<div class="cg-paper letter note">${o.h ? `<b class="cg-h">${esc(storySys.fmt(o.h, this.game.save))}</b>` : ''}${String(storySys.fmt(o.x || '', this.game.save)).split('\n').map((l) => `<p>${esc(l) || '&nbsp;'}</p>`).join('')}</div>`;
     } else if (kind === 'fade') {
       html = `<div class="cg-paper page fading"><p>${smudge(CG_TEXT.pages[0])}</p><b class="cg-sig">Diệp</b></div>`;
     }

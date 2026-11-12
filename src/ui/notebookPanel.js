@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 // Sổ tay thực vật: bộ sưu tập màu hoa, ngôn ngữ loài hoa, khách quen.
 import { FLOWERS, FLOWER_IDS } from '../../data/flowers.js';
 import { VARIANTS, MEANINGS, RARITY, BOOK_MILESTONES } from '../../data/variants.js';
@@ -13,6 +14,9 @@ import { runMiniGame } from './minigames.js';
 import * as storySys from '../systems/story.js';
 import { COMING_CHAPTERS, ARCS } from '../../data/story.js';
 import { EN_PEOPLE, EN_RULES, CO_PEOPLE } from '../../data/muien.js';
+import * as craft from '../systems/craft.js';
+import { HG_GAME_NAMES, GATHER } from '../../data/huong.js';
+const HG_PEOPLE = ['ba_nhai', 'sen', 'ong_que', 'chi_tra', 'be_mat'];
 import * as fishSys from '../systems/fishing.js';
 import { FISH_RULES } from '../../data/fishing.js';
 
@@ -24,6 +28,8 @@ const TABS = [['story', '📜 Cốt truyện'], ['flowers', '🌸 Bộ sưu tậ
 const GAME_INFO = (() => {
   const out = {};
   for (const [who, list] of Object.entries(FAVORS)) for (const f of list) if (!out[f.game]) out[f.game] = { title: f.title, icon: f.icon, who };
+  // (GĐ23) mini game của Đảo Ngàn Hương
+  for (const [k, [title, icon]] of Object.entries(HG_GAME_NAMES)) if (!out[k]) out[k] = { title, icon, who: null, place: 'Đảo Ngàn Hương' };
   return out;
 })();
 
@@ -77,6 +83,7 @@ export class NotebookPanel {
       ${storySys.BUD_IDS.some((id) => storySys.budOf(s, id)) ? `<div class="st-card st-wide"><div class="st-head"><b>🌱 Nụ Mộng</b><i>đã nở ${storySys.bloomCount(s)}/5 · đã trao ${storySys.givenCount(s)}/5</i></div><p class="small">Kệ Nụ Mộng nằm cạnh hiên tiệm.</p><button class="btn" data-nb="buds">Xem kệ Nụ Mộng</button></div>` : ''}
       ${enHead}${showEn ? arcHtml('en') : ''}
       ${s.story?.done?.e3 ? `<div class="st-arc st-wide"><b>${ARCS.lang.icon} ${esc(ARCS.lang.name)}</b><small>${esc(ARCS.lang.desc)}${storySys.has(s, 'co_fish') ? ` · 🍾 Chai thư: <b>${fishSys.F(s).bottles}</b> · 🐟 Đã câu: <b>${fishSys.F(s).caught}</b> con` : ''}</small></div>${arcHtml('lang')}` : ''}
+      ${s.story?.done?.c3 ? `<div class="st-arc st-wide"><b>${ARCS.huong.icon} ${esc(ARCS.huong.name)}</b><small>${esc(ARCS.huong.desc)}${storySys.has(s, 'hg_shop') ? ` · 📖 Sổ Hương: <b>${craft.pageCount(s)}</b>/12 trang` : ''}</small></div>${arcHtml('huong')}` : ''}
       ${coming ? `<div class="st-card later st-wide"><div class="st-head"><b>Sắp ra mắt</b></div><div class="chips">${coming}</div></div>` : ''}`;
   }
 
@@ -98,6 +105,14 @@ export class NotebookPanel {
   /** (0.23) Nút "📍 Chỉ đường" cho từng việc đang làm được của mạch truyện: lia máy quay tới đúng chỗ */
   guideBtns(arc) {
     const trig = this.game.storyTrig.filter((t) => t.arc === arc && !t.optional && !t.queued);
+    if (!trig.length && arc === 'huong') {
+      // (GĐ23) bước đếm của Đảo Ngàn Hương: chỉ tới chỗ hái / mở tiệm
+      const key = storySys.current(this.save, 'huong').step?.count?.buds || '';
+      const [kind, what] = key.split(':');
+      const spot = kind === 'gather' ? Object.keys(GATHER).find((g) => GATHER[g].give[what]) : kind === 'play' ? Object.keys(GATHER).find((g) => GATHER[g].game === what) : null;
+      if (spot) return `<div class="st-scenes"><button class="chip-btn on" data-nb="gfocus" data-id="${spot}">📍 Tới ${esc(GATHER[spot].name)} ${GATHER[spot].icon}</button></div>`;
+      if (key) return '<div class="st-scenes"><button class="chip-btn on" data-nb="hgshop">🌸 Mở Tiệm Hương Nhài</button></div>';
+    }
     if (!trig.length) return '<p class="muted small">Chưa tới lúc: đọc kỹ mục tiêu (ban đêm, triều xuống...) rồi quay lại nhé.</p>';
     const name = (t) => (t.via === 'villager' ? `Tìm ${villagerInfo(t.who)?.name || ''}` : t.via === 'mo' ? 'Tới chỗ bé Mơ' : `Tới chỗ ${t.icon || '✨'}`);
     return `<div class="st-scenes">${trig.slice(0, 6).map((t) => `<button class="chip-btn on" data-nb="goto" data-id="${t.scene}">📍 ${esc(name(t))}</button>`).join('')}</div>`;
@@ -107,7 +122,7 @@ export class NotebookPanel {
     const s = this.save;
     const day = this.game.today;
     // người Mũi Én chỉ hiện sau khi bạn đã cập bến (GĐ21)
-    const rows = rel.BOND_IDS.filter((id) => (!EN_PEOPLE.includes(id) || storySys.has(s, 'e1_boat')) && (!CO_PEOPLE.includes(id) || storySys.has(s, 'l1_path'))).map((id) => {
+    const rows = rel.BOND_IDS.filter((id) => (!EN_PEOPLE.includes(id) || storySys.has(s, 'e1_boat')) && (!CO_PEOPLE.includes(id) || storySys.has(s, 'l1_path')) && (!HG_PEOPLE.includes(id) || storySys.has(s, 'h2_shop'))).map((id) => {
       const info = villagerInfo(id);
       const b = BONDS[id];
       const h = rel.heartsOf(s, id);
@@ -172,7 +187,7 @@ export class NotebookPanel {
       const who = villagerInfo(g.who)?.name || '';
       return `<div class="mk-item mg-rec">
         <div class="mk-icon">${g.icon}</div>
-        <div class="mk-info"><b>${esc(g.title)}</b><small>Việc nhờ của ${esc(who)}</small>
+        <div class="mk-info"><b>${esc(g.title)}</b><small>${g.place ? `Ở ${esc(g.place)}` : `Việc nhờ của ${esc(who)}`}</small>
           <small>🏆 ${r?.plays ? `${'⭐'.repeat(r.best) || '—'} · chơi ${r.plays} lần · ${r.perfect} lần 3⭐${r.combo > 1 ? ` · combo ×${r.combo}` : ''}` : 'chưa chơi'}</small></div>
         <div class="mk-buy mg-lv">${DIFFICULTY.names.map((n, i) => `<button class="btn ${i === 0 ? 'primary' : ''}" data-nb="play" data-k="${k}" data-lv="${i}">${DIFFICULTY.icons[i]} ${n}</button>`).join('')}</div>
       </div>`;
@@ -225,6 +240,8 @@ export class NotebookPanel {
     if (act === 'play') this.play(el.dataset.k, +el.dataset.lv);
     if (act === 'buds') this.hud.openBuds();
     if (act === 'goto') { this.hud.closeModal(); this.game.focusStory(el.dataset.id); }
+    if (act === 'gfocus') { this.hud.closeModal(); const g = GATHER[el.dataset.id]; this.game.controls.focusOn(new THREE.Vector3(g.at[0], 0, g.at[1]), Math.max(this.game.controls.zoom, 1.3)); }
+    if (act === 'hgshop') { this.hud.openHgShop(); }
     if (act === 'replay') this.hud.playStory(el.dataset.id, { replay: true });
   }
 }

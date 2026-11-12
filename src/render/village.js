@@ -84,7 +84,7 @@ export function buildVillage(world, decorMap) {
   for (const [id, h] of Object.entries(HOUSES)) {
     const { group, windowMat } = buildHouse(h.style);
     group.position.set(h.x, 0, h.z);
-    group.rotation.y = Math.atan2(C.x - h.x, C.z - h.z); // cửa hướng về quảng trường
+    group.rotation.y = h.face ? Math.atan2(h.face[0] - h.x, h.face[1] - h.z) : Math.atan2(C.x - h.x, C.z - h.z); // cửa hướng về quảng trường (hoặc về điểm face)
     world.add(group);
     const big = h.style.cafe || h.style.school;
     block(h.x, h.z, big ? 2.4 : 2.2, h.name.toLowerCase());

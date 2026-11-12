@@ -17,6 +17,10 @@ import { VILLAGER_IDS } from './village.js';
 import { isNight } from './time.js';
 import { isLowTide, rareCaught, F as fishState } from './fishing.js';
 import { CG_TEXT } from '../../data/story.js';
+import { countOf as craftCount, pageCount } from './craft.js';
+import { isFullMoon } from './fishing.js';
+import { dayOf, calendarOf } from './calendar.js';
+import { SEASONS } from '../../data/seasons.js';
 
 export const createStoryState = () => ({ seen: {}, flags: {}, done: {}, cur: null, buds: {}, queue: [], cloud: 0 });
 export const ARC_IDS = Object.keys(ARCS);
@@ -150,7 +154,10 @@ const NEED_TEXT = {
   blooms: (n) => `Làm nở ${n} Nụ Mộng`,
   after: (id) => { const c = CHAPTERS.find((x) => x.id === id); return c ? `Xong chương ${c.n} “${c.title}”${arcOf(c) === 'main' ? ' của cốt truyện chính' : ''}` : id; },
   cloud: (n) => `${n} điểm ☁️ Mây về (thu hoạch hoa ở Mũi Én)`,
+  days: (n) => `Đợi thêm ${n} ngày`,
+  season: (id) => `Đợi tới ${SEASONS.find((x) => x.id === id)?.name || id}`,
 };
+const todayOf = (s) => dayOf(s.time?.gameMinutes || 0);
 const NEED_VALUE = {
   level: (s) => s.player.level,
   hearts: (s) => VILLAGER_IDS.reduce((a, id) => a + heartsOf(s, id), 0),
@@ -164,6 +171,9 @@ const NEED_VALUE = {
 export function needChecks(save, ch) {
   return Object.entries(ch.need || {}).map(([k, n]) => {
     if (k === 'after') { const ok = !!S(save).done[n]; return { text: NEED_TEXT.after(n), ok, value: ok ? 1 : 0, n: 1 }; }
+    // (GĐ23) đợi n ngày game kể từ khi xong chương "after" · đợi tới mùa
+    if (k === 'days') { const d0 = S(save).doneDay?.[ch.need.after]; const value = d0 ? todayOf(save) - d0 : 0; return { text: NEED_TEXT.days(Math.max(1, n - value)), ok: value >= n, value, n }; }
+    if (k === 'season') { const ok = calendarOf(todayOf(save)).season.id === n; return { text: NEED_TEXT.season(n), ok, value: ok ? 1 : 0, n: 1 }; }
     const value = NEED_VALUE[k] ? NEED_VALUE[k](save) : 0;
     return { text: NEED_TEXT[k] ? NEED_TEXT[k](n) : k, ok: value >= n, value, n };
   });
@@ -174,14 +184,18 @@ const COUNTERS = {
   decided: decidedCount, blooms: bloomCount, given: givenCount, cloud: (s) => S(s).cloud,
   // (GĐ22) câu cá
   bottles: (s) => fishState(s).bottles, caught: (s) => fishState(s).caught, rare: (s) => rareCaught(s), mong: (s) => fishState(s).mong,
+  // (GĐ23) Tiệm Hương Nhài
+  pages: (s) => pageCount(s),
 };
+// bộ đếm có dấu ':' (vd 'made:tea_jasmine', 'sold:tea_jasmine', 'gather:honey') đọc thẳng từ save.craft.count
+const counterOf = (key) => COUNTERS[key] || (String(key).includes(':') ? (s) => craftCount(s, key) : () => 0);
 
 /** Bước đang làm của mạch Cồn Lặng có đang cần thứ này không ('bottles' | 'mong') — để lúc quăng cần biết có thả chai thư / Cá Mộng */
 export function wants(save, what) {
   const cur = current(save, 'lang');
   return !cur.finished && !cur.locked && cur.step?.count?.buds === what && cur.seen < cur.need;
 }
-const stepSeen = (save, step) => (step.count ? Math.min(step.count.n, (COUNTERS[step.count.buds] || (() => 0))(save)) : step.triggers.filter((t) => S(save).seen[t.scene]).length);
+const stepSeen = (save, step) => (step.count ? Math.min(step.count.n, counterOf(step.count.buds)(save)) : step.triggers.filter((t) => S(save).seen[t.scene]).length);
 const stepNeed = (step) => (step.count ? step.count.n : step.need || step.triggers.length);
 const stepDone = (save, step) => stepSeen(save, step) >= stepNeed(step);
 
@@ -222,6 +236,9 @@ export function triggers(save, ctx = {}) {
         if (st.seen[t.scene]) continue;
         if ((t.via === 'mo' || t.night) && !night) continue;
         if (t.lowTide && ctx.hour != null && !isLowTide(ctx.hour)) continue; // chỉ hiện lúc triều xuống
+        if (t.moon && (ctx.day == null || !night || !isFullMoon(ctx.day, ctx.hour ?? 22))) continue; // (GĐ23) chỉ đêm rằm
+        if (t.weather && ctx.weather != null && !t.weather.includes(ctx.weather)) continue; // (GĐ23) chỉ khi trời đúng kiểu
+        if (t.hours && ctx.hour != null && (ctx.hour < t.hours[0] || ctx.hour >= t.hours[1])) continue;
         out.push({ ...t, chapter: cur.ch.id, arc, stepIdx: i, optional: i < cur.stepIdx });
       }
     });
@@ -250,6 +267,12 @@ export function sceneOf(id) {
     const n = +bt[1];
     const say = { 2: 'Lại là “K.” nữa! Ổng đi lạc trong sương hả chị? Sao ổng không kêu to lên?', 3: 'Ổng lấy vợ rồi. Chắc ổng hết buồn rồi ha chị. ...Mà sao ổng vẫn còn viết thư?', 4: 'Có em bé! Chị ơi, cái cằm bướng là cằm làm sao?', 5: '“Lần này con không quay đầu.” Vậy là ổng về tới chưa hả chị?' }[n] || '...';
     return { title: `Chai thư thứ ${n}`, lines: [['cg', 'bottle', { i: n - 1 }], ['nar', 'Thêm một chiếc chai nữa. Giấy bên trong còn khô.'], ['nhum', n === 5 ? 'sad' : 'think', say], ['cg', null], ['end']] };
+  }
+  // 'hpage_<n>': mở trang Sổ Hương thứ n (GĐ23) — hiện trang sổ + hồi ức của bà Nhài
+  const hp = /^hpage_(\d+)$/.exec(id || '');
+  if (hp && CG_TEXT.hpages?.[+hp[1]]) {
+    const pg = CG_TEXT.hpages[+hp[1]];
+    return { title: `Sổ Hương · ${pg.title}`, lines: [['cg', 'hpage', { i: +hp[1] }], ...(pg.after || []).map((l) => (Array.isArray(l) ? l : ['nar', l])), ['cg', null], ['end']] };
   }
   const m = /^bloom_(\w+)$/.exec(id || '');
   const b = m && BUDS[m[1]];
@@ -290,6 +313,8 @@ function settleArc(save, before) {
   const ch = before.ch;
   if (ch.steps.every((sp) => stepDone(save, sp))) {
     st.done[ch.id] = 1;
+    st.doneDay = st.doneDay || {};
+    st.doneDay[ch.id] = todayOf(save);
     return { stepDone: true, chapterDone: ch, reward: ch.reward || {}, next: current(save, before.arc) };
   }
   const after = current(save, before.arc);
@@ -325,9 +350,16 @@ export const checkProgress = (save, before) => settle(save, before);
 
 // ---------------- chữ ----------------
 /** {name} = tên người chơi · {dấu?A|B} = có dấu thì A, không thì B */
-export const fmt = (text, save) => String(text ?? '')
-  .replace(/\{([!\w&|]+)\?([^|}]*)\|([^}]*)\}/g, (_, c, a, b) => (cond(save, c) ? a : b))
-  .replace(/\{name\}/g, save.player?.name || 'bạn');
+export function fmt(text, save) {
+  // (GĐ23) cho phép lồng nhau: {a?A|{b?B|C}} — thay từ trong ra ngoài
+  let out = String(text ?? '');
+  for (let k = 0; k < 6; k++) {
+    const next = out.replace(/\{([!\w&|]+)\?([^{|}]*)\|([^{}]*)\}/g, (_, c, a, b) => (cond(save, c) ? a : b));
+    if (next === out) break;
+    out = next;
+  }
+  return out.replace(/\{name\}/g, save.player?.name || 'bạn');
+}
 
 /** Câu dân làng nói thêm theo tiến độ truyện (hoặc null). Câu của chương mới được ưu tiên. */
 export function storyLine(save, id, rng = Math.random) {

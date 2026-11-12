@@ -27,6 +27,8 @@
 // =============================================================
 
 // ---- Diễn viên: tên hiện trên khung thoại, giọng "bíp" (pitch: số càng lớn giọng càng cao), hình dáng ----
+import { HG_CAST, HG_ARC, HG_CHAPTERS, HG_PAGES, HG_SCENES, HG_LINES, HG_MO_LINES } from './storyHuong.js';
+
 export const CAST = {
   you: { name: '{name}', pitch: 660 },
   mo: { name: 'Mơ', pitch: 1380, look: { skin: '#fff3ea', hair: '#6a4a3a', outfit: '#bdeee0', hat: null, bun: true }, spirit: true, color: '#7fd8c4' },
@@ -37,6 +39,7 @@ export const CAST = {
   khoi: { name: 'Khơi', pitch: 480, look: { skin: '#e6b48c', hair: '#2f2a2a', outfit: '#7fb3c9', hat: null }, color: '#5a9fc0' },
   me_su: { name: 'Mẹ bé Su', pitch: 600, look: { skin: '#fbe3d0', hair: '#4a3328', outfit: '#ffe9b8', hat: null, bun: true }, color: '#e0a86a' },
   ba_tu: { pitch: 330 }, ong_ba: { pitch: 240 }, co_mai: { pitch: 640 }, anh_duy: { pitch: 420 }, co_ngan: { pitch: 560 }, be_su: { pitch: 1040 },
+  ...HG_CAST, // (GĐ23) Đảo Ngàn Hương — xem data/storyHuong.js
 };
 
 // ---- Số liệu chung ----
@@ -283,6 +286,7 @@ export const ARCS = {
   main: { name: 'Giấc mơ của tiệm hoa', icon: '📜', desc: 'Câu chuyện về người chủ cũ mà cả đảo đã quên.' },
   en: { name: 'Mũi Én · Cơn mưa đi lạc', icon: '🌫️', desc: 'Hòn đảo phía đông ba mươi năm không mưa, và ngọn đèn chưa từng tắt.' },
   lang: { name: 'Cồn Lặng · Người giữ sương', icon: '🎣', desc: 'Khối sương phía tây Đảo Mây ba mươi năm không tan. Có người đang giữ nó lại.' },
+  huong: HG_ARC,
 };
 
 // =============================================================
@@ -1727,3 +1731,12 @@ export const MO_LINES = [
   'Đom đóm rủ Mơ đi chơi, mà Mơ phải trông tiệm.',
   'Cậu nhớ ngủ sớm nha. Người lớn hay quên ngủ lắm.',
 ];
+
+// =============================================================
+//  (GĐ23) Gắn mạch truyện Đảo Ngàn Hương (nội dung ở data/storyHuong.js)
+// =============================================================
+CHAPTERS.push(...HG_CHAPTERS);
+Object.assign(SCENES, HG_SCENES);
+CG_TEXT.hpages = HG_PAGES;
+for (const [id, list] of Object.entries(HG_LINES)) STORY_LINES_B[id] = [...list, ...(STORY_LINES_B[id] || [])];
+MO_LINES.push(...HG_MO_LINES);

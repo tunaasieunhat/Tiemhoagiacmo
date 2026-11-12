@@ -64,6 +64,9 @@ import { Director } from './render/director.js';
 import { DreamWorld } from './render/dreamWorld.js';
 import { MuiEnView } from './render/muien.js';
 import { ConLangView, CON } from './render/conlang.js';
+import { HuongView } from './render/huong.js';
+import * as craft from './systems/craft.js';
+import { HG, GATHER, PRODUCTS, INGREDIENTS, CRAFT_RULES } from '../data/huong.js';
 import * as fishing from './systems/fishing.js';
 import { FISH_SPOTS, FISH_RULES, SPOT_REWARD } from '../data/fishing.js';
 import { EN, EN_RULES, EN_PLOTS, isEnPlot } from '../data/muien.js';
@@ -85,7 +88,7 @@ const ACTIONS = {
 const FX = { till: 'dirt', plant: 'seed', water: 'water', fertilize: 'fert', harvest: 'sparkle', treat: 'spray' };
 
 /** Vật chạm được ưu tiên hơn nhà / dân làng / khách / ô đất khi nằm trùng tia chạm */
-const PRIORITY_PICKS = new Set(['story', 'mo', 'buds', 'sail', 'diep', 'fishspot', 'fishstall', 'fogwall']);
+const PRIORITY_PICKS = new Set(['story', 'mo', 'buds', 'sail', 'diep', 'fishspot', 'fishstall', 'fogwall', 'gather', 'hgshop', 'hgbridge']);
 
 export const TUTORIAL = [
   { text: 'Chọn 🪏 Xẻng rồi chạm vào ô đất để xới đất (hoặc chạm ô đất bằng ✋ để xem).', done: (a) => a === 'till' },
@@ -142,6 +145,7 @@ export class Game {
     this.dreamWorld = new DreamWorld(stage.scene, world.shop); // GĐ20B: Đồi Mộng, cầu, kệ Nụ Mộng...
     this.muien = new MuiEnView(stage.scene); // GĐ21: đảo Mũi Én
     this.conlang = new ConLangView(stage.scene); // GĐ22: Cồn Lặng + các điểm câu cá
+    this.huong = new HuongView(stage.scene); // GĐ23: Đảo Ngàn Hương + Tiệm Hương Nhài
     this.syncStoryWorld();
     this.cine = false;
     this.storyTrig = [];
@@ -250,6 +254,14 @@ export class Game {
       // 🐛 sâu & 📦 đơn hàng (GĐ16)
       if (!offline) this.bugTick(to);
       for (const e of orders.ordersTick(s, to, Math.random, { offline, dMin: step })) this.onOrderEvent(e, offline);
+      // 🌸 Tiệm Hương Nhài: khách du lịch mua hàng trên kệ (GĐ23)
+      const sold = craft.shopTick(s, from, to, { open: story.has(s, 'hg_shop'), offline });
+      if (sold.length) {
+        const coins = sold.reduce((a, x) => a + x.coins, 0);
+        s.stats.coinsEarned = (s.stats.coinsEarned || 0) + coins;
+        if (!offline) this.toast(`🧳 Khách du lịch mua ${sold.map((x) => PRODUCTS[x.id].icon).join('')} ở Tiệm Hương Nhài: +${coins.toLocaleString('vi-VN')} 💰`, 'good');
+        this.hgProgress();
+      }
       // cửa hàng: khách đến / khách bỏ đi
       const shopEv = shop.shopTick(s, {
         offline, hourFloat: this.clock.hourFloat, flowerIds: this.unlockedFlowers(),
@@ -295,6 +307,12 @@ export class Game {
       if (om && e.tomorrow) {
         e.tomorrow.type = om.type; e.tomorrow.disease = null;
         if (!offline) setTimeout(() => this.toast(`✨ Mơ: “Mơ ngửi thấy rồi! Ngày mai trời sẽ có ${WEATHER[om.type].name.toLowerCase()}. Nụ của ${BUDS[om.id].who} đang cựa mình đó!”`, 'good'), 2600);
+      }
+      // 🌧️ (GĐ23) chương 16 cần "nước mưa đầu mùa": đợi quá 2 ngày không mưa thì ngày mai mưa
+      if (e.tomorrow && story.triggers(this.save, {}).some((t) => t.scene === 'h16_rain')) {
+        const cs = craft.C(this.save);
+        cs.rainWait = ['rain', 'storm', 'hail', 'snow'].includes(this.save.weather.today?.type) ? 0 : (cs.rainWait || 0) + 1;
+        if (cs.rainWait >= 2 && !['rain', 'snow'].includes(e.tomorrow.type)) { e.tomorrow.type = calendar.calendarOf(e.day + 1).season.id === 'dong' ? 'snow' : 'rain'; e.tomorrow.disease = null; cs.rainWait = 0; if (!offline) setTimeout(() => this.toast('🌧️ Sen: “Chị ơi, trời oi quá. Chắc mai mưa đó.”', 'info'), 3000); }
       }
       this.applyWeatherVisuals();
       this.emitter.emit('weather');
@@ -423,6 +441,7 @@ export class Game {
     this.dreamWorld.update(dt, { night: this.dayNight.night || 0, hour: c.hourFloat, flash: this.flash });
     this.muien.update(dt, { night: this.dayNight.night || 0 });
     this.conlang.update(dt, { night: this.dayNight.night || 0, hide: this.cine });
+    this.huong.update(dt, { night: this.dayNight.night || 0, hide: this.cine });
     // 🎵 nhạc riêng Mũi Én: máy quay ở Mũi Én (hoặc đang chiếu cảnh truyện ở đó) thì phát nhạc đảo
     const area = !this.visit && this.atEn ? 'en' : 'main';
     if (area !== this.musicArea) { this.musicArea = area; this.audio?.music?.setArea?.(area); }
@@ -439,7 +458,7 @@ export class Game {
     // (0.23) điểm sáng cốt truyện / bé Mơ: ưu tiên tuyệt đối, dò theo khoảng cách trên màn hình
     // (trước đây điểm sáng nằm trong vùng chạm của nhà hay sau lưng dân làng thì chạm mãi không được ⇒ kẹt nhiệm vụ)
     if (!this.decorMode && !this.visit) {
-      const sp = this.storyView.pickNear((p) => this.toScreen(p), x, y) || this.conlang.spotNear((p) => this.toScreen(p), x, y);
+      const sp = this.storyView.pickNear((p) => this.toScreen(p), x, y) || this.conlang.spotNear((p) => this.toScreen(p), x, y) || this.huong.spotNear((p) => this.toScreen(p), x, y);
       if (sp) return sp;
     }
     this.raycaster.setFromCamera(this.controls.ndc(x, y), this.stage.camera);
@@ -520,6 +539,9 @@ export class Game {
     if (pick.kind === 'fishstall') { this.select(null); this.emitter.emit('fishstall'); return; }
     if (pick.kind === 'fogwall') { this.select(null); this.toast('🌫️ Sương dày quá, không thấy đường vào. Hình như ngoài đó có một hòn cồn...', 'info'); return; }
     if (pick.kind === 'sail') { this.select(null); this.sail(); return; }
+    if (pick.kind === 'gather') { this.select(null); this.emitter.emit('gather', { id: pick.id }); return; }
+    if (pick.kind === 'hgshop') { this.select(null); this.emitter.emit('hgshop'); return; }
+    if (pick.kind === 'hgbridge') { this.select(null); this.toast('🌉 Cầu mục hết rồi, đi không được. Hỏi Ông Ba xem sao.', 'info'); return; }
     if (pick.kind === 'buds') { this.select(null); this.emitter.emit('buds'); return; }
     if (pick.kind === 'diep') { this.select(null); this.toast(`🌿 Bà Diệp: “${story.diepLine()}”`, 'info'); return; }
     if (pick.kind === 'mo') { this.select(null); this.tapMo(); return; }
@@ -831,7 +853,7 @@ export class Game {
       g.visible = !plots.some((p) => p.parcel === id);
       return g.visible && !this.visit;
     }).map(([, g]) => g);
-    this.pickRoots = this.decorMode ? [this.decorView.root] : [this.bugView.root, this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, ...locked, ...parcels, this.villagers.root, ...this.villagers.housePick(), this.storyView.root, this.dreamWorld.root, this.muien.root, this.conlang.root];
+    this.pickRoots = this.decorMode ? [this.decorView.root] : [this.bugView.root, this.farmView.root, this.customers.root, this.world.shop, this.world.market, this.world.lab, ...locked, ...parcels, this.villagers.root, ...this.villagers.housePick(), this.storyView.root, this.dreamWorld.root, this.muien.root, this.conlang.root, this.huong.root];
   }
 
   /** Vị trí lô thứ pi (lô của dân làng nằm ở mảnh đất riêng) */
@@ -1593,8 +1615,9 @@ export class Game {
   refreshStory() {
     if (this.cine) return;
     const hour = this.clock.hourFloat;
+    this.hgAutoFlags();
     const all = story.currentAll(this.save);
-    this.storyTrig = this.visit ? [] : story.triggers(this.save, { hour });
+    this.storyTrig = this.visit ? [] : story.triggers(this.save, { hour, day: this.today, weather: this.save.weather?.today?.type });
     this.storyWho = new Set(this.storyTrig.filter((t) => t.via === 'villager').map((t) => t.who));
     this.storyView.sync(this.storyTrig, story.moVisible(this.save, hour));
     const key = `${Object.values(all).map((cur) => `${cur.finished ? 'end' : cur.ch.id}:${cur.locked ? 'L' : cur.stepIdx}`).join('|')}|${this.storyTrig.map((t) => t.scene).join(',')}`;
@@ -1708,9 +1731,91 @@ export class Game {
       wreck: !!f.co_wreck, flower: over && !!f.co_clear, lamp: !!f.co_lamp, luoiGone: !!f.co_stay && (over || !!f.co_lamp),
     });
     if (f.co_open && this.controls && !this.coRegion) { this.coRegion = { x: 0, z: 0, r: this.controls.regions[0].r, x2: CON.center[0], z2: CON.center[1], r2: CON.camRadius }; this.controls.regions.push(this.coRegion); }
+    // 🌸 Đảo Ngàn Hương (GĐ23)
+    const has = (k) => !!(f[k] || seen[k]);
+    this.huong.sync({
+      bridge: !!f.hg_bridge, bridgeSpot: !f.hg_bridge,
+      gather: Object.fromEntries(Object.entries(GATHER).map(([id, g]) => [id, !g.need || has(g.need)])),
+      shop: f.hg_stay && d.h17 ? 'sen' : f.hg_kept ? 'open' : 'sale',
+      fair: !!f.hg_fair, wed: !!f.hg_wed && !!d.h17, chair: !!seen.h18_epi && !f.hg_go,
+    });
+    if (f.hg_bridge && this.controls && !this.hgRegion) {
+      const [ben, ...rest] = HG.lobes, m = HG.lobes.find((l) => l.id === 'meadow');
+      this.hgRegion = [{ x: 0, z: 0, r: this.controls.regions[0].r, x2: ben.x, z2: ben.z, r2: ben.r - 2 }];
+      for (const l of [ben, ...rest]) if (l !== m) this.hgRegion.push({ x: m.x, z: m.z, r: m.r - 2.5, x2: l.x, z2: l.z, r2: Math.max(4, l.r - 2.5) });
+      this.controls.regions.push(...this.hgRegion);
+    }
     // mở vùng camera Mũi Én khi đã có thuyền
     if (f.boat_ready && this.controls && !this.enRegion) { this.enRegion = { x: EN.center[0], z: EN.center[1], r: EN.camRadius }; this.controls.regions.push(this.enRegion); }
   }
+
+  // ---------------- 🌸 Đảo Ngàn Hương (GĐ23) ----------------
+  hgHas(k) { return story.has(this.save, k); }
+
+  /** Dấu tự động cho kết ẩn: đủ 12 trang Sổ Hương · thân với ông Quế (từ 5 ❤️) */
+  hgAutoFlags() {
+    const f = story.S(this.save).flags;
+    if (!f.hg_allpages && craft.pageCount(this.save) >= 12) f.hg_allpages = 1;
+    if (!f.hg_quefriend && relations.heartsOf(this.save, 'ong_que') >= 5) f.hg_quefriend = 1;
+  }
+
+  /** Cập nhật tiến độ truyện sau khi hái / làm / bán. before = currentAll lấy trước khi thay đổi (nếu có) */
+  hgProgress(before = null) {
+    const prog = story.checkProgress(this.save, before || story.currentAll(this.save));
+    if (prog.chapterDone || prog.stepDone) this.afterStoryProgress(prog);
+    else { this.storyKey = this.storyKey && 'x'; this.refreshStory(); }
+    this.syncStoryWorld();
+    this.saveMgr.markDirty();
+    this.emitter.emit('inventory');
+  }
+
+  /** Bối cảnh để xét chỗ hái có mở không */
+  hgCtx() { return { hour: this.clock.hourFloat, day: this.today, has: (k) => this.hgHas(k) }; }
+
+  /** Ghi kết quả hái nguyên liệu sau mini game */
+  hgGather(spotId, stars, combo = 0) {
+    const s = this.save, g = GATHER[spotId];
+    const before = story.currentAll(s);
+    favors.recordMiniGame(s, g.game, stars, combo);
+    const res = craft.gather(s, spotId, stars, { day: this.today });
+    if (stars > 0) this.gainXp(CRAFT_RULES.xpGather + stars);
+    const got = Object.entries(res.got || {});
+    this.toast(got.length ? `${g.icon} Hái được: ${got.map(([k, n]) => `${INGREDIENTS[k].icon} ${INGREDIENTS[k].name} ×${n}`).join(', ')}` : `${g.icon} ${res.msg}`, got.length ? 'good' : 'info');
+    this.hgProgress(before);
+    return res;
+  }
+
+  /** Làm 1 mẻ sau mini game chế biến */
+  hgMake(id, stars, combo = 0) {
+    const s = this.save, p = PRODUCTS[id];
+    const before = story.currentAll(s);
+    favors.recordMiniGame(s, p.game, stars, combo);
+    const res = craft.make(s, id, stars, (k) => this.hgHas(k));
+    if (!res.ok) { this.toast(res.msg, 'warn'); return res; }
+    this.gainXp(CRAFT_RULES.xpMake + stars * 3);
+    this.toast(p.sell === false ? `${p.icon} Đã pha xong ${p.name}.` : `${p.icon} Làm xong ${res.made} ${p.name} ${'⭐'.repeat(res.q) || '(mẻ hơi hỏng)'} — đã bày lên kệ`, 'good');
+    // trang Sổ Hương mới ⇒ chiếu hồi ức (trừ trang cuối, trang đó thuộc chương 17)
+    if (res.firstPage != null && res.firstPage < 11) story.S(s).queue.push(`hpage_${res.firstPage}`);
+    this.hgProgress(before);
+    return res;
+  }
+
+  hgQuickSell(key) {
+    const res = craft.quickSell(this.save, key);
+    if (!res.ok) { this.toast(res.msg, 'warn'); return res; }
+    this.toast(`💸 Bán ngay cho Sen ${res.n} món: +${res.coins.toLocaleString('vi-VN')} 💰`, 'good');
+    this.hgProgress();
+    return res;
+  }
+
+  hgBuy(id, n) {
+    const res = craft.buyIng(this.save, id, n);
+    this.toast(res.msg, res.ok ? 'good' : 'warn');
+    if (res.ok) { this.saveMgr.markDirty(); this.emitter.emit('inventory'); }
+    return res;
+  }
+
+  storyIng(id, n) { craft.addIng(this.save, id, n); this.saveMgr.markDirty(); }
 
   // ---------------- 🎣 câu cá (GĐ22) ----------------
   fishCtx() { return { hour: this.clock.hourFloat, day: this.today, weather: this.save.weather?.today?.type }; }

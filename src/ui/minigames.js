@@ -3,6 +3,7 @@
 // Số liệu độ khó ở data/minigames.js (MINIGAMES, MG_LEVELS, RHYMES). GĐ17: mức Dễ/Vừa/Khó, combo, hiệu ứng, kỷ lục.
 import { MINIGAMES, RHYMES, DIFFICULTY, MG_FX } from '../../data/minigames.js';
 import { scaledConfig } from '../systems/favors.js';
+import { HG_ENGINES } from './craftGames.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -359,6 +360,9 @@ function mathQuestion() {
   const opts = shuffle([...set]);
   return { html, opts: opts.map(String), answer: opts.indexOf(ans) };
 }
+
+// (GĐ23) 14 mini game của Đảo Ngàn Hương
+Object.assign(ENGINES, HG_ENGINES);
 
 // =============================================================== KHUNG CHẠY GAME
 export function runMiniGame(kind, { title = '', icon = '🎮', ask = '', who = '', sfx = null, level = 0, record = null, practice = false } = {}) {

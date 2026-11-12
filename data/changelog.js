@@ -4,6 +4,17 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.24.0',
+    notes: [
+      '🌸 VÙNG ĐẤT MỚI: Đảo Ngàn Hương — hòn đảo lớn nhất từ trước tới giờ, phía tây bắc Đảo Mây, nối bằng cây cầu gỗ. 8 vùng: Bến Hương, Đồng Hoa Sương, Đồi Trà bậc thang, Rừng Ong, Đầm Sen, Vườn Quế & Cam, Suối & Cây Đa Cổ, quảng trường chợ phiên. Mở khi xong chương 3 cốt truyện chính + cấp 12',
+      '📖 Cốt truyện mới dài nhất "Hương để nhớ" (18 chương, 4 hồi theo 4 mùa, 3 kết thúc + 1 vĩ thanh): bà Nhài thợ ủ hương đang quên dần mọi thứ trừ mùi hương, cô cháu Sen, ông Quế nuôi ong và một đám cưới dang dở năm mươi năm',
+      '🏪 Tiệm Hương Nhài: chế biến 12 món từ hoa — trà nhài, trà ướp sen, mứt hoa hồng, siro cam quế, nến oải hương, xà phòng vạn thọ, nước hoa nhài, hương cưới… Hoa ít sao, sắp héo vẫn dùng được. Hàng bày lên kệ, khách du lịch ghé mua dần (hoặc bán ngay cho Sen)',
+      '🎮 14 mini game mới: hái búp trà, hái hoa sương sớm, hun khói lấy mật, quay mật, chèo thuyền hái sen, rung cây hứng cam, bóc vỏ quế, đoán hương, sao trà, nấu mứt, chưng cất, đổ khuôn, giã cối, pha hương 3 tầng. Chơi càng nhiều càng khó dần; chơi lại cho vui trong 📖 Sổ tay › Mini game',
+      '📒 Sổ Hương 12 trang: làm món nào lần đầu thì mở một trang hồi ức về đời bà Nhài',
+      '👥 5 người bạn mới: bà Nhài, Sen, ông Quế, chị Trà, bé Mật (trò chuyện, tặng hoa, nhờ việc bằng mini game mới, quà mốc tim)',
+    ],
+  },
+  {
     version: '0.23.0',
     notes: [
       '🌫️ VÙNG ĐẤT MỚI: Cồn Lặng — làng chài phủ sương ở phía tây Đảo Mây, đi bộ qua bãi đá. Mở sau khi xong truyện Mũi Én + cấp 20 (chưa mở thì cả cồn chìm trong sương)',

@@ -60,6 +60,167 @@ export const BONDS = {
     ],
     events: [],
   },
+  // ============ (GĐ23) Đảo Ngàn Hương ============
+  ba_nhai: {
+    birthday: { season: 'xuan', day: 3 },
+    gifts: { love: ['lavender', 'rose:white', 'meaning:longing'], like: ['tone:pastel', 'peony', 'daisy'], dislike: ['marigold'], hate: ['rose:black'] },
+    giftLines: {
+      love: 'Mùi này... bà biết mùi này. Hồi xưa có người cũng hay mang sang cho bà. Cảm ơn cháu.',
+      like: 'Đẹp quá. Để bà ướp vào trà cho cháu.',
+      neutral: 'Cảm ơn cháu. Cháu tên gì nhỉ?',
+      dislike: 'Hăng quá, bà nhức đầu mất.',
+      hate: 'Màu đen... đám tang. Cháu cất đi giùm bà.',
+    },
+    rewards: {
+      3: { msg: 'Bà Nhài dúi vào tay bạn một gói trà nhài bà tự ướp từ mùa trước. “Cháu uống cho ngủ ngon.”', coins: 600, items: { fertilizer: 6 } },
+      5: { msg: 'Bà Nhài gọi đúng tên bạn suốt một buổi chiều. Sen đứng ở cửa nhìn, rồi quay đi lau mắt.', coins: 1500, xp: 60 },
+      7: { msg: 'Bà Nhài tặng bạn chiếc lọ thủy tinh xanh bà giữ từ thời con gái. “Cháu giữ giùm bà. Bà hay làm rơi đồ lắm.”', coins: 2500 },
+      10: { msg: 'Bà Nhài cài lên áo bạn một bông nhài. “Cháu là người nhà rồi. Người nhà thì không cần nhớ tên.”', coins: 4000, xp: 150 },
+    },
+    talks: [
+      { say: 'Cháu có ngửi thấy không? Gió đổi hướng rồi. Gió tây bắc là gió mang thư.', ch: [
+        { t: 'Thư của ai vậy bà?', fp: 18, r: 'Của... một người bạn. Bà nhớ cái mùi, mà không nhớ cái mặt. Lạ ghê.' },
+        { t: 'Cháu chỉ thấy mùi hoa nhài.', fp: 12, r: 'Ừ, thì đó. Hoa nhài là thư đó cháu.' },
+      ] },
+      { say: 'Bà làm hương sáu chục năm. Cháu biết cái khó nhất là gì không?', ch: [
+        { t: 'Là chọn đúng hoa ạ?', fp: 10, r: 'Không. Hoa thì dễ.' },
+        { t: 'Là nhớ mùi hương ạ?', fp: 20, r: 'Không. Khó nhất là biết lúc nào nên đậy nắp lại. Để lâu quá, hương bay mất.' },
+      ] },
+      { say: 'Con bé đứng quầy dữ quá ha. Mà nó dễ thương. Nó là con nhà ai vậy cháu?', ch: [
+        { t: 'Là Sen, cháu gái bà đó.', fp: 15, r: 'Cháu bà hả? ...Ừ. Ừ, bà biết mà. Bà chỉ hỏi thử cháu thôi.' },
+        { t: 'Bà hỏi Sen thử đi bà.', fp: 10, r: 'Thôi. Hỏi nhiều người ta buồn.' },
+      ] },
+    ],
+    events: [],
+  },
+  sen: {
+    birthday: { season: 'thu', day: 6 },
+    gifts: { love: ['sunflower', 'tulip:yellow', 'meaning:hope'], like: ['tone:warm', 'cosmos', 'carnation'], dislike: ['lily'], hate: ['rose:black'] },
+    giftLines: {
+      love: 'Hướng dương... Hồi nhỏ bà hay cắm hoa này trên bàn học của em. ...Cảm ơn chị.',
+      like: 'Cũng đẹp. Em cắm ở quầy.',
+      neutral: 'Ừm. Cảm ơn.',
+      dislike: 'Hoa ly hả. Bệnh viện toàn hoa ly. Em không thích.',
+      hate: 'Chị đùa hả?',
+    },
+    rewards: {
+      3: { msg: 'Sen nói “cảm ơn” mà không cau mày. Rồi đưa bạn một hũ mứt tự nấu “làm dư, chị cầm đi”.', coins: 800 },
+      5: { msg: 'Sen kể bạn nghe chuyện ở thành phố: căn phòng trọ, ca làm đêm, và cuộc điện thoại báo bà đi lạc lần đầu.', coins: 1600, xp: 60 },
+      7: { msg: 'Sen viết tên bạn lên tấm bảng “Người làm của tiệm”, ngay dưới tên em. “Đừng nghĩ nhiều. Ghi cho đủ người thôi.”', coins: 2500 },
+      10: { msg: 'Sen ôm bạn một cái, rất nhanh, rồi bỏ chạy vào trong. Trên quầy để lại một gói quà: chai nước hoa nhài đầu tiên em tự cất.', coins: 4000, xp: 150 },
+    },
+    talks: [
+      { say: 'Chị hỏi thật đi. Chị qua đây giúp vì thương bà, hay vì tò mò?', ch: [
+        { t: 'Vì bà nhớ tên một người mà cả đảo bên kia đã quên.', fp: 20, r: '...Vậy thì chị cũng như em thôi. Ở lại vì một cái tên.' },
+        { t: 'Vì chị thích mùi hương ở đây.', fp: 10, r: 'Thích thì làm cho đàng hoàng. Đừng làm cho vui.' },
+      ] },
+      { say: 'Hồi em mười tuổi, bà dạy em phân biệt bốn mươi mùi hoa. Giờ bà không phân biệt được em với khách.', ch: [
+        { t: 'Nhưng bà vẫn nhớ mùi hương. Biết đâu bà nhớ em qua mùi.', fp: 22, r: 'Em... chưa nghĩ tới chuyện đó.' },
+        { t: 'Chị xin lỗi. Chắc em mệt lắm.', fp: 15, r: 'Mệt thì ngủ một giấc là hết. Cái này thì không hết.' },
+      ] },
+      { say: 'Kệ trà hết rồi. Chị có búp trà không?', ch: [
+        { t: 'Để chị lên đồi hái.', fp: 15, r: 'Ừ. Nhớ hái búp non thôi, chị Trà mà thấy lá già là chửi đó.' },
+        { t: 'Em nghỉ chút đi, để chị trông quầy.', fp: 20, r: 'Em không cần nghỉ. ...Thôi, năm phút. Năm phút thôi.' },
+      ] },
+    ],
+    events: [],
+  },
+  ong_que: {
+    birthday: { season: 'dong', day: 2 },
+    gifts: { love: ['daisy:white', 'peony', 'meaning:love'], like: ['sunflower', 'tone:warm', 'marigold'], dislike: ['tulip'], hate: ['rose:black'] },
+    giftLines: {
+      love: '...Mẫu đơn. Ngày xưa có người bảo mẫu đơn là hoa cưới. Cảm ơn cô.',
+      like: 'Ong thích hoa này. Tôi cũng vậy.',
+      neutral: 'Ừ.',
+      dislike: 'Hoa này ong không đậu. Tôi không biết để làm gì.',
+      hate: 'Cất đi.',
+    },
+    rewards: {
+      3: { msg: 'Ông Quế đưa bạn hũ mật ong đầu vụ, không nói gì thêm.', coins: 700, items: { fertilizer: 6 } },
+      5: { msg: 'Ông Quế chỉ cho bạn cách nghe tiếng ong để biết tổ nào sắp chia đàn.', coins: 1500, xp: 60 },
+      7: { msg: 'Ông Quế đẽo tặng bạn một cái muỗng gỗ quét mật. Cán muỗng khắc một bông nhài rất nhỏ.', coins: 2500 },
+      10: { msg: 'Ông Quế đưa bạn chìa khóa lán ong. “Lỡ tôi có đi đâu thì cô cho ong ăn giùm.”', coins: 4000, xp: 150 },
+    },
+    talks: [
+      { say: 'Ong nó chỉ sống bốn mươi ngày. Mà cả đời nó đi hút mật cho một cái tổ nó không kịp thấy đầy.', ch: [
+        { t: 'Vậy nó có buồn không ông?', fp: 18, r: 'Không. Nó đâu biết. Chỉ người mới biết mà vẫn làm.' },
+        { t: 'Nghe giống chuyện của ông.', fp: 12, r: '...Cô nói nhiều quá.' },
+      ] },
+      { say: 'Bà ấy... dạo này có khỏe không?', ch: [
+        { t: 'Bà khỏe. Hôm qua bà còn hỏi đường ra gốc đa.', fp: 22, r: 'Gốc đa... Ừ. Ừ, bà ấy thích chỗ đó.' },
+        { t: 'Sao ông không tự sang hỏi?', fp: 8, r: 'Bốn mươi năm rồi. Sang thì nói câu gì trước?' },
+      ] },
+      { say: 'Con Mật nó nhét giấy vô tổ ong hoài. Ong khó chịu lắm, mà tôi không nỡ lấy ra.', ch: [
+        { t: 'Ông giữ giùm bé nhé.', fp: 20, r: 'Tôi giữ hết. Có cả hộp.' },
+        { t: 'Ong không khó chịu đâu, ong biết đó là thư.', fp: 15, r: 'Cô nói giống con nhỏ.' },
+      ] },
+    ],
+    events: [],
+  },
+  chi_tra: {
+    birthday: { season: 'ha', day: 4 },
+    gifts: { love: ['hydrangea', 'meaning:gratitude', 'cosmos:pink'], like: ['tone:cool', 'daisy', 'lavender'], dislike: ['orchid'], hate: ['rose:black'] },
+    giftLines: {
+      love: 'Trời đất ơi đẹp quá! Chị cắm trên bàn thờ ba con Mật nha em.',
+      like: 'Dễ thương ghê. Cảm ơn em!',
+      neutral: 'Ừa, cảm ơn em nha.',
+      dislike: 'Lan hả. Sang quá, chị không biết chưng sao cho hợp.',
+      hate: 'Ối, màu này xui lắm em ơi.',
+    },
+    rewards: {
+      3: { msg: 'Chị Trà dúi cho bạn một bao búp trà loại một. “Đừng nói con Sen, nó bắt chị tính tiền.”', coins: 600 },
+      5: { msg: 'Chị Trà dạy bạn bài hát hái trà của làng. Bé Mật hát theo sai lời, cả ba cười nghiêng ngả.', coins: 1400, xp: 60 },
+      7: { msg: 'Chị Trà kể chuyện chồng chị: đi biển một mùa gió, không về. “Chị không khóc nữa. Còn con Mật mà.”', coins: 2500 },
+      10: { msg: 'Chị Trà nhận bạn làm em kết nghĩa, có ăn chè đàng hoàng.', coins: 4000, xp: 150 },
+    },
+    talks: [
+      { say: 'Con Sen nó gồng ghê lắm em. Mười bảy tuổi mà gánh cả tiệm lẫn bà.', ch: [
+        { t: 'Mình phụ được gì thì phụ chị ha.', fp: 20, r: 'Ừ. Nó không nhờ đâu, mình cứ làm thôi.' },
+        { t: 'Sao không ai giúp Sen hết vậy chị?', fp: 12, r: 'Có chứ. Mà nó không chịu. Giống bà nó y chang.' },
+      ] },
+      { say: 'Hồi nhỏ chị hay sang tiệm bà Nhài ăn chực. Bà làm mứt gừng ngon nhất đảo.', ch: [
+        { t: 'Hôm nào mình làm lại cho bà ăn đi chị.', fp: 20, r: 'Ý hay! Bà không nhớ công thức đâu, mà chị nhớ cái vị.' },
+        { t: 'Giờ bà còn làm không chị?', fp: 10, r: 'Bà quên đường ra bếp rồi em.' },
+      ] },
+      { say: 'Con Mật nó cứ hỏi ba nó ở đâu. Chị nói ba đi làm xa. Em thấy chị nói vậy có sai không?', ch: [
+        { t: 'Không sai. Đợi bé lớn thêm chút nữa.', fp: 18, r: 'Ừ. Lớn thêm chút nữa.' },
+        { t: 'Bé biết hết rồi đó chị. Bé viết thư gửi ong mà.', fp: 15, r: 'Trời... vậy mà chị tưởng nó chơi.' },
+      ] },
+    ],
+    events: [],
+  },
+  be_mat: {
+    birthday: { season: 'xuan', day: 6 },
+    gifts: { love: ['sunflower', 'marigold', 'meaning:joy'], like: ['tone:warm', 'tulip', 'daisy:yellow'], dislike: ['hydrangea'], hate: ['rose:black'] },
+    giftLines: {
+      love: 'Màu vàng như mật! Em cho ong coi nha chị!',
+      like: 'Đẹp ghê! Em cắm vô ly nước.',
+      neutral: 'Em cảm ơn chị!',
+      dislike: 'Hoa này ong không thích. Em cũng không thích.',
+      hate: 'Ghê quá à!',
+    },
+    rewards: {
+      3: { msg: 'Bé Mật tặng bạn một con ong làm bằng hạt cà phê sơn vàng.', coins: 500 },
+      5: { msg: 'Bé Mật dắt bạn đi xem “nhà ong bí mật” trong bụi tre, và bắt bạn ngoéo tay không kể ai.', coins: 1200, xp: 50 },
+      7: { msg: 'Bé Mật viết một lá thư gửi ong cho bạn: “Ong ơi nhờ ong chở chị này đi chơi.”', coins: 2000 },
+      10: { msg: 'Bé Mật gọi bạn là “chị Hai”. Từ giờ phần chè của bé chia đôi.', coins: 3500, xp: 120 },
+    },
+    talks: [
+      { say: 'Chị ơi, ong bay tới trời mất mấy ngày?', ch: [
+        { t: 'Chắc một ngày thôi, ong bay nhanh lắm.', fp: 15, r: 'Vậy mai ba em đọc được thư rồi!' },
+        { t: 'Chị không biết. Em hỏi ông Quế thử?', fp: 12, r: 'Ông Quế bảo ong bay bằng trái tim. Em không hiểu.' },
+      ] },
+      { say: 'Hôm nay em đếm được một trăm con ong. Rồi em đếm lại được chín mươi chín.', ch: [
+        { t: 'Chắc một con đi giao thư.', fp: 20, r: 'Đúng rồi! Chị thông minh ghê!' },
+        { t: 'Đếm ong khó lắm đó.', fp: 10, r: 'Không khó. Tại tụi nó không chịu đứng yên.' },
+      ] },
+      { say: 'Bà Nhài hôm qua gọi em là Sen. Em có giống chị Sen không?', ch: [
+        { t: 'Hồi nhỏ chắc chị Sen giống em lắm.', fp: 18, r: 'Hihi. Vậy em cho bà gọi.' },
+        { t: 'Bà nhớ nhầm thôi em.', fp: 12, r: 'Bà nhớ nhầm hoài. Mà bà cười hiền lắm.' },
+      ] },
+    ],
+    events: [],
+  },
   nhum: {
     birthday: { season: 'ha', day: 5 },
     gifts: { love: ['hydrangea:blue', 'daisy:blue', 'saltdaisy:blue'], like: ['tone:cool', 'meaning:hope', 'cosmos'], dislike: ['lavender'], hate: ['rose:black'] },

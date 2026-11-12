@@ -49,6 +49,9 @@ import { GAME_VERSION, GAME_STAGE } from '../version.js';
 import { Cinema } from './cinema.js';
 import { FishingUI } from './fishingGame.js';
 import * as fishSys from '../systems/fishing.js';
+import * as craft from '../systems/craft.js';
+import { GATHER, PRODUCTS, INGREDIENTS, CRAFT_RULES, HG_GAME_NAMES } from '../../data/huong.js';
+import { CG_TEXT } from '../../data/story.js';
 import { FISH, FISH_RULES, FISH_SPOTS, BAITS, RODS, GEAR } from '../../data/fishing.js';
 import * as storySys from '../systems/story.js';
 import { STORY_RULES, BUDS } from '../../data/story.js';
@@ -133,6 +136,9 @@ export class Hud {
     this.fishing = new FishingUI(this);
     em.on('fish', ({ id }) => this.openFish(id));
     em.on('fishstall', () => this.openFishStall());
+    // GĐ23: Đảo Ngàn Hương
+    em.on('gather', ({ id }) => this.openGather(id));
+    em.on('hgshop', () => this.openHgShop());
     em.on('sync', (s) => this.updateSync(s));
     this.updateClock(game.clock);
     this.updateToolbar();
@@ -237,6 +243,8 @@ export class Hud {
     if (ld) { this.onLandAct(ld); return; }
     const fh = e.target.closest('[data-fh]');
     if (fh) { this.onFishStall(fh); return; }
+    const hg = e.target.closest('[data-hg]');
+    if (hg) { this.onHgShop(hg); return; }
     const bd = e.target.closest('[data-bd]');
     if (bd) { this.onBudAct(bd); return; }
     const vg = e.target.closest('[data-vg]');
@@ -311,6 +319,7 @@ export class Hud {
       case 'go-village': this.closeModal(); g.goVillage(); break;
       case 'go-en': this.closeModal(); g.sail(); break;
       case 'fish-stall': this.openFishStall(); break;
+      case 'hg-shop': this.openHgShop(); break;
       case 'see-villager': this.closeModal(); g.focusVillager(b.dataset.id); break;
       case 'knock': this.openVillager(b.dataset.id); break;
       case 'friends': this.friends.open(); break;
@@ -598,6 +607,93 @@ export class Hud {
     this.openModal('fishstall', `<h2>🐟 Quầy cá của Nhum</h2><div class="mk-wallet">💰 ${s.player.coins.toLocaleString('vi-VN')}</div>${tabs}${body}`, 'wide');
   }
 
+  // ---------- 🌸 Đảo Ngàn Hương (GĐ23) ----------
+  /** Chạm chỗ hái ⇒ mini game ⇒ nhận nguyên liệu */
+  async openGather(id) {
+    const g = this.game, def = GATHER[id];
+    if (!def || g.cine || g.visit || this.hgBusy) return;
+    const ok = craft.gatherOpen(g.save, id, g.hgCtx());
+    if (!ok.ok) { this.toast(ok.msg, 'info'); return; }
+    const [title, icon] = HG_GAME_NAMES[def.game];
+    const level = def.hard ? 2 : craft.levelOf(g.save, def.game);
+    this.closeModal();
+    this.hgBusy = true;
+    try {
+      const res = await runMiniGame(def.game, { title: `${def.name} · ${title}`, icon, ask: `Còn ${ok.left} lượt hái hôm nay. Thưởng: ${Object.keys(def.give).map((k) => (k === 'any' ? '🎁 nguyên liệu bất kỳ' : `${INGREDIENTS[k].icon} ${INGREDIENTS[k].name}`)).join(', ')}`, sfx: g.audio?.sfx, level, record: g.save.mg?.[def.game] });
+      if (!res.quit) g.hgGather(id, res.stars, res.combo);
+    } finally { this.hgBusy = false; }
+  }
+
+  /** Bảng Tiệm Hương Nhài: chế biến · kệ hàng · nguyên liệu · Sổ Hương */
+  openHgShop(tab) {
+    const g = this.game, s = g.save;
+    if (!storySys.has(s, 'hg_shop')) { this.toast(storySys.has(s, 'hg_bridge') ? '📄 Tiệm đang dán giấy sang nhượng. Theo cốt truyện 🌸 Ngàn Hương nhé!' : 'Tiệm ở bên kia cầu mục.', 'info'); return; }
+    if (tab) this.hgTab = tab;
+    const cur = this.hgTab || 'make';
+    const has = (k) => storySys.has(s, k);
+    const c = craft.C(s);
+    const tabs = `<div class="mk-tabs">${[['make', '🧪 Chế biến'], ['shelf', `🧺 Kệ hàng <span class="pill">${craft.goodsCount(s)}</span>`], ['ing', '🌿 Nguyên liệu'], ['book', `📖 Sổ Hương <span class="pill">${craft.pageCount(s)}/12</span>`]].map(([k, n]) => `<button class="${cur === k ? 'on' : ''}" data-hg="tab" data-id="${k}">${n}</button>`).join('')}</div>`;
+    const need = (p) => [
+      ...Object.entries(p.ing || {}).map(([k, n]) => { const h = craft.ingOf(s, k); return `<span class="${h >= n ? 'ok' : 'miss'}">${INGREDIENTS[k].icon} ${INGREDIENTS[k].name} ${h}/${n}</span>`; }),
+      ...Object.entries(p.flowers || {}).map(([sp, n]) => { const h = craft.flowerCount(s, sp); return `<span class="${h >= n ? 'ok' : 'miss'}">${FLOWERS[sp].icon} ${FLOWERS[sp].name} ${h}/${n}</span>`; }),
+    ].join('');
+    let body = '';
+    if (cur === 'make') {
+      const list = craft.PRODUCT_IDS.filter((id) => craft.known(id, has) && !(PRODUCTS[id].once && craft.countOf(s, `made:${id}`)));
+      body = list.map((id) => {
+        const p = PRODUCTS[id], can = craft.canMake(s, id, has).ok, [gn, gi] = HG_GAME_NAMES[p.game];
+        return `<div class="mk-item hg-recipe ${can ? '' : 'dim'}"><div class="mk-icon">${p.icon}</div>
+          <div class="mk-info"><b>${esc(p.name)}${p.sell === false ? ' <small class="muted">· chỉ pha một lần</small>' : ` <small class="muted">· ${craft.priceOf(id, 1).toLocaleString('vi-VN')} 💰/món</small>`}</b><small class="hg-need">${need(p)}</small><small class="muted">${gi} ${gn} · ⭐ càng nhiều càng được nhiều món & giá cao</small></div>
+          <div class="mk-buy"><button class="btn ${can ? 'primary' : 'disabled'}" data-hg="make" data-id="${id}">Làm</button></div></div>`;
+      }).join('') || '<div class="empty-shop">📖<p>Chưa biết công thức nào. Theo cốt truyện để học nhé.</p></div>';
+      body = `<p class="muted small">Hoa trong kho mấy sao cũng dùng được (tiệm lấy hoa ít sao trước). Nguyên liệu hái ở các vùng trên đảo.</p><div class="mk-body">${body}</div>`;
+    } else if (cur === 'shelf') {
+      const goods = craft.goodsList(s);
+      const open = g.clock.hourFloat >= CRAFT_RULES.open[0] && g.clock.hourFloat < CRAFT_RULES.open[1];
+      body = `<p class="muted small">🧳 Khách du lịch ghé mua dần trong giờ mở cửa (${CRAFT_RULES.open[0]}–${CRAFT_RULES.open[1]} giờ) — ${open ? '<b>đang mở cửa</b>' : 'đang đóng cửa'}. Đã bán được ${c.earned.toLocaleString('vi-VN')} 💰. Cần tiền gấp thì bán ngay cho Sen (${Math.round(CRAFT_RULES.quick * 100)}% giá).</p>`
+        + (goods.length ? `<div class="mk-body">${goods.map((x) => { const p = PRODUCTS[x.id]; return `<div class="mk-item"><div class="mk-icon">${p.icon}</div><div class="mk-info"><b>${esc(p.name)} ${'⭐'.repeat(x.q) || '<small class="muted">(mẻ hơi hỏng)</small>'}</b><small>Còn ${x.n} món · ${x.price.toLocaleString('vi-VN')} 💰/món</small></div>
+          <div class="mk-buy"><button class="btn" data-hg="quick" data-id="${x.key}">💸 Bán ngay · ${(Math.round(x.price * CRAFT_RULES.quick) * x.n).toLocaleString('vi-VN')}</button></div></div>`; }).join('')}</div>`
+          : '<div class="empty-shop">🧺<p>Kệ đang trống. Vào thẻ 🧪 Chế biến để làm hàng nhé!</p></div>');
+    } else if (cur === 'ing') {
+      const ings = Object.entries(INGREDIENTS).filter(([k, d]) => !d.story || craft.ingOf(s, k) > 0).map(([k, d]) => `<div class="mk-item"><div class="mk-icon">${d.icon}</div><div class="mk-info"><b>${esc(d.name)}</b><small>Đang có ${craft.ingOf(s, k)}</small></div>
+        <div class="mk-buy">${d.buy ? `<span class="price">${d.buy} 💰</span><div class="row-btns">${[1, 5].map((n) => `<button class="btn ${s.player.coins < d.buy * n ? 'disabled' : 'primary'}" data-hg="buy" data-id="${k}" data-n="${n}">Mua ${n}</button>`).join('')}</div>` : ''}</div></div>`).join('');
+      const spots = Object.entries(GATHER).filter(([, gd]) => !gd.story && (!gd.need || has(gd.need))).map(([id, gd]) => {
+        const st = craft.gatherOpen(s, id, g.hgCtx());
+        return `<div class="mk-item"><div class="mk-icon">${gd.icon}</div><div class="mk-info"><b>${esc(gd.name)}</b><small>${HG_GAME_NAMES[gd.game][1]} ${HG_GAME_NAMES[gd.game][0]} → ${Object.keys(gd.give).map((k) => (k === 'any' ? '🎁' : INGREDIENTS[k].icon)).join(' ')}${gd.hours ? ` · ${gd.hours[0]}–${gd.hours[1]} giờ` : ''}</small><small class="${st.ok ? '' : 'muted'}">${st.ok ? `Còn ${st.left} lượt hôm nay` : esc(st.msg)}</small></div></div>`;
+      }).join('');
+      body = `<h3>Nguyên liệu</h3><div class="mk-body">${ings}</div><h3>Chỗ hái trên đảo <small class="muted">· chạm biểu tượng trên bản đồ</small></h3><div class="mk-body">${spots}</div>`;
+    } else {
+      body = `<div class="hg-book">${CG_TEXT.hpages.map((pg, i) => c.pages[i]
+        ? `<div class="hg-page"><small>Trang ${i + 1} · ${esc(pg.year)}</small><b>${esc(pg.title)}</b>${pg.text.split('\n').map((l) => `<p>${esc(l)}</p>`).join('')}</div>`
+        : `<div class="hg-page locked"><small>Trang ${i + 1}</small><b>???</b><p>${(() => { const id = craft.PRODUCT_IDS.find((k) => PRODUCTS[k].page === i); return craft.known(id, has) ? `Làm ${PRODUCTS[id].icon} ${esc(PRODUCTS[id].name)} lần đầu để mở trang này.` : 'Chưa biết công thức.'; })()}</p></div>`).join('')}</div>`;
+    }
+    this.openModal('hgshop', `<h2>🌸 ${storySys.has(s, 'hg_stay') && s.story.done.h17 ? 'Tiệm Nhài & Sen' : 'Tiệm Hương Nhài'}</h2><div class="mk-wallet">💰 ${s.player.coins.toLocaleString('vi-VN')}</div>${tabs}${body}`, 'wide');
+  }
+
+  async onHgShop(el) {
+    const g = this.game, s = g.save, id = el.dataset.id;
+    if (el.classList.contains('disabled')) { g.toast(el.dataset.hg === 'make' ? 'Chưa đủ nguyên liệu' : 'Không đủ tiền', 'warn'); return; }
+    const top = this.scrollBox()?.scrollTop || 0;
+    switch (el.dataset.hg) {
+      case 'tab': this.hgTab = id; break;
+      case 'buy': g.hgBuy(id, +el.dataset.n); break;
+      case 'quick': g.hgQuickSell(id); break;
+      case 'make': {
+        const p = PRODUCTS[id], [gn, gi] = HG_GAME_NAMES[p.game];
+        this.closeModal();
+        const res = await runMiniGame(p.game, { title: `${p.name} · ${gn}`, icon: gi, sfx: g.audio?.sfx, level: craft.levelOf(s, p.game), record: s.mg?.[p.game] });
+        if (res.quit) { this.toast('Đã dừng, nguyên liệu vẫn còn nguyên.', 'info'); return; }
+        g.hgMake(id, res.stars, res.combo);
+        if (!this.modal && !g.cine) this.openHgShop('make');
+        return;
+      }
+      default:
+    }
+    this.openHgShop();
+    const box = this.scrollBox();
+    if (box && el.dataset.hg !== 'tab') box.scrollTop = top;
+  }
+
   onFishStall(el) {
     const g = this.game, s = g.save, id = el.dataset.id;
     if (el.classList.contains('disabled')) { g.toast(el.dataset.fh === 'seed' ? 'Chưa đủ số cá để đổi hạt' : 'Không đủ tiền', 'warn'); return; }
@@ -716,6 +812,7 @@ export class Hud {
       <p class="vg-say">“${esc(hello)}”</p>
       ${storyBtn}
       ${id === 'nhum' && storySys.has(g.save, 'co_fish') ? '<button class="btn wide" data-act="fish-stall">🐟 Mở quầy cá</button>' : ''}
+      ${['sen', 'ba_nhai'].includes(id) && storySys.has(g.save, 'hg_shop') ? '<button class="btn wide" data-act="hg-shop">🌸 Vào Tiệm Hương Nhài</button>' : ''}
       ${bday ? `<p class="bday">🎂 Hôm nay là <b>sinh nhật</b> của ${esc(info.name)}! Tặng quà được gấp đôi tình thân.</p>` : ''}
       <div class="vg-acts">
         <button class="btn ${ev ? 'primary glow' : 'primary'} ${!meet.ok || !canTalk ? 'disabled' : ''}" data-vg="talk" data-id="${id}">${ev ? `✨ ${esc(ev.title)}` : '💬 Trò chuyện'}${canTalk ? '' : ' ✓'}</button>

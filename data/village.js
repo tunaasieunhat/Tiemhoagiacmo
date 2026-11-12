@@ -28,6 +28,10 @@ export const HOUSES = {
   // (GĐ22) Cồn Lặng — làng chài trong sương phía tây
   luoi: { name: 'Chòi của Chú Lưới', owner: 'chu_luoi', x: -43.5, z: 0.5, style: { wall: '#e9e4da', roof: '#6f7f8f', trim: '#7a6a5a' } },
   nhum: { name: 'Chòi cá của Nhum', owner: 'nhum', x: -36.5, z: 11, style: { wall: '#f1ede2', roof: '#8fb7b0', trim: '#8a6a55' } },
+  // (GĐ23) Đảo Ngàn Hương — tây bắc. face: cửa nhà quay về điểm này. with: người ở chung
+  nhai: { name: 'Nhà bà Nhài', owner: 'ba_nhai', with: ['sen'], x: -33.4, z: -36.6, face: [-37, -31], style: { wall: '#fff6ea', roof: '#e8a0b4', trim: '#a87458', flowers: '#ffffff' } },
+  que: { name: 'Lán ong ông Quế', owner: 'ong_que', x: -85, z: -46.5, face: [-80, -42], style: { wall: '#efdcb8', roof: '#8a6a50', trim: '#6f5238' } },
+  tra: { name: 'Nhà chị Trà', owner: 'chi_tra', with: ['be_mat'], x: -62.6, z: -68.6, face: [-56, -61], style: { wall: '#f2f7e6', roof: '#7fb36a', trim: '#8a6a55', swing: true } },
   school: { name: 'Trường làng', owner: null, x: -11.4, z: 37.6, style: { wall: '#fff3e0', roof: '#e8384f', trim: '#ffffff', school: true } },
 };
 
@@ -48,6 +52,32 @@ export const NEW_VILLAGERS = {
     name: 'Nhum', self: 'cháu', role: 'Cô bé trông quầy cá',
     look: { skin: '#f0c8a4', hair: '#4a3a30', outfit: '#f6c98a', hat: null },
     bio: 'Mười hai tuổi, lớn lên trong sương, chưa từng thấy biển xanh. Mê câu cá và ghi tên từng con vào sổ. Trên cổ lúc nào cũng đeo một con cá gỗ.',
+  },
+  // (GĐ23) Đảo Ngàn Hương
+  ba_nhai: {
+    name: 'Bà Nhài', self: 'bà', role: 'Thợ ủ hương',
+    look: { skin: '#f6d6c2', hair: '#f4f1ee', outfit: '#e9d6ef', hat: null, bun: true },
+    bio: 'Bảy mươi tám tuổi, từng là thợ ủ hương giỏi nhất vùng biển. Dạo này bà hay quên tên người, nhưng ngửi một lần là nhớ mãi một mùi hương.',
+  },
+  sen: {
+    name: 'Sen', self: 'em', role: 'Cháu gái bà Nhài',
+    look: { skin: '#f6d3b8', hair: '#2f2626', outfit: '#9fd0c6', hat: null },
+    bio: 'Mười bảy tuổi, bỏ việc trên thành phố về trông bà. Nói năng cộc lốc, làm việc không nghỉ tay, và hay khóc một mình ở cuối cầu.',
+  },
+  ong_que: {
+    name: 'Ông Quế', self: 'ông', role: 'Người nuôi ong',
+    look: { skin: '#d9a77f', hair: '#e2e2e2', outfit: '#c9a46a', hat: '#f2ecd8' },
+    bio: 'Tám mươi tuổi, nuôi ong ở bìa rừng. Bốn mươi năm nay chưa nói với bà Nhài một câu nào, nhưng chiều nào cũng ra ngồi dưới gốc đa nhìn về phía tiệm.',
+  },
+  chi_tra: {
+    name: 'Chị Trà', self: 'chị', role: 'Người hái trà',
+    look: { skin: '#e9b892', hair: '#3a2a22', outfit: '#8fc48a', hat: '#e8d9a8' },
+    bio: 'Hái trà trên đồi từ năm mười tuổi. Thẳng tính, cười to, là người lớn duy nhất Sen chịu nghe lời.',
+  },
+  be_mat: {
+    name: 'Bé Mật', self: 'em', role: 'Con gái chị Trà',
+    look: { skin: '#f6d3b8', hair: '#5a3a28', outfit: '#ffd36e', hat: null },
+    bio: 'Tám tuổi, chạy theo đàn ong cả ngày. Bé tin ong mang được lời nhắn lên trời, nên hay nhét giấy vào tổ ong gửi cho ba.',
   },
   // (GĐ21) ba người còn ở lại Mũi Én
   ong_hai: {
@@ -109,6 +139,13 @@ export const ACTIVITIES = {
   jars: { name: 'Đang hứng sương vào hũ', icon: '🫙', outdoor: true, anim: 'water' },
   sell: { name: 'Đang bán hoa khô', icon: '💐', anim: 'idle' },
   ledger: { name: 'Đang ghi sổ mưa', icon: '📒', outdoor: true, anim: 'sit' },
+  // (GĐ23) Đảo Ngàn Hương
+  brew: { name: 'Đang pha hương', icon: '⚗️', anim: 'work' },
+  shopkeep: { name: 'Đang trông tiệm', icon: '🏪', anim: 'idle' },
+  sniff: { name: 'Đang ngồi ngửi hoa', icon: '🌼', outdoor: true, anim: 'sit' },
+  bees: { name: 'Đang chăm ong', icon: '🐝', outdoor: true, anim: 'work' },
+  picktea: { name: 'Đang hái trà', icon: '🍃', outdoor: true, anim: 'water' },
+  chase: { name: 'Đang chạy theo đàn ong', icon: '🐝', outdoor: true, anim: 'play' },
 };
 
 // Chỗ đứng / ngồi. node = điểm đường gần nhất (đi theo đường đá). rot = hướng nhìn (độ, 0 = về phía nam)
@@ -133,6 +170,21 @@ export const SPOTS = {
   co_net: { x: -44.4, z: 9.4, rot: 120, node: 'co_c' },
   co_stall: { x: -35.2, z: 4.6, rot: 150, node: 'co_in' },
   door_luoi: { node: 'd_luoi', door: 'luoi' }, door_nhum: { node: 'd_nhum', door: 'nhum' },
+  // (GĐ23) Đảo Ngàn Hương
+  hg_counter: { x: -36.2, z: -29.8, rot: 55, node: 'hg_shop' },
+  hg_bench: { x: -35.0, z: -34.0, rot: 60, node: 'd_nhai' },
+  hg_work: { x: -40.0, z: -33.4, rot: 240, node: 'hg_shop' },
+  hg_fair: { x: -45.6, z: -38.4, rot: 200, node: 'hg_neck' },
+  hg_meadow: { x: -56.4, z: -45.4, rot: 90, node: 'hg_m' },
+  hg_tea: { x: -53.6, z: -70.2, rot: 200, node: 'hg_t' },
+  hg_tea2: { x: -57.8, z: -69.0, rot: 160, node: 'hg_t' },
+  hg_hive: { x: -78.4, z: -39.4, rot: 20, node: 'hg_hv' },
+  hg_hive2: { x: -76.0, z: -38.6, rot: 300, node: 'hg_hv' },
+  hg_lan: { x: -74.4, z: -45.0, rot: 270, node: 'hg_fw' },
+  hg_pond: { x: -72.4, z: -60.0, rot: 220, node: 'hg_pd' },
+  hg_banyan: { x: -37.6, z: -61.0, rot: 180, node: 'hg_by' },
+  hg_pier: { x: -30.6, z: -27.6, rot: 50, node: 'hg_b' },
+  door_nhai: { node: 'd_nhai', door: 'nhai' }, door_que: { node: 'd_que', door: 'que' }, door_tra: { node: 'd_tra', door: 'tra' },
   // (GĐ21) Mũi Én
   en_light: { x: 66.6, z: -0.4, rot: 215, node: 'd_hai' },
   en_dock: { x: 52.4, z: 6.9, rot: 270, node: 'en_dock' },
@@ -156,6 +208,12 @@ export const SCHEDULES = {
   // (GĐ22) Cồn Lặng
   chu_luoi: [[0, 'home', 'sleep'], [4.5, 'co_pier', 'fish'], [9, 'co_net', 'net'], [12, 'home', 'home'], [14, 'co_net', 'net'], [17, 'co_pier', 'fish'], [20.5, 'home', 'home'], [22, 'home', 'sleep']],
   nhum: [[0, 'home', 'sleep'], [6, 'co_pier2', 'fish'], [9.5, 'co_stall', 'fishsell'], [12.5, 'home', 'home'], [14, 'co_stall', 'fishsell'], [17.5, 'co_pier2', 'fish'], [19.5, 'home', 'home'], [21, 'home', 'sleep']],
+  // (GĐ23) Đảo Ngàn Hương — Sen và bé Mật ở chung nhà nên dùng cửa nhà (door_…) thay cho 'home'
+  ba_nhai: [[0, 'home', 'sleep'], [6.5, 'hg_work', 'brew'], [9, 'hg_bench', 'sniff'], [12, 'home', 'home'], [14, 'hg_work', 'brew'], [16.5, 'hg_meadow', 'stroll'], [18.5, 'home', 'home'], [21, 'home', 'sleep']],
+  sen: [[0, 'door_nhai', 'sleep'], [6, 'hg_counter', 'shopkeep'], [12, 'door_nhai', 'home'], [13, 'hg_counter', 'shopkeep'], [18, 'hg_pier', 'stroll'], [19.5, 'door_nhai', 'home'], [22, 'door_nhai', 'sleep']],
+  ong_que: [[0, 'home', 'sleep'], [5, 'hg_hive', 'bees'], [10, 'hg_lan', 'work'], [12, 'home', 'home'], [14, 'hg_hive', 'bees'], [17, 'hg_banyan', 'watch'], [19, 'home', 'home'], [21, 'home', 'sleep']],
+  chi_tra: [[0, 'home', 'sleep'], [5, 'hg_tea', 'picktea'], [11, 'home', 'home'], [13.5, 'hg_tea', 'picktea'], [17, 'hg_fair', 'chat'], [19, 'home', 'home'], [21.5, 'home', 'sleep']],
+  be_mat: [[0, 'door_tra', 'sleep'], [6.5, 'hg_hive2', 'chase'], [9, 'hg_tea2', 'play'], [11.5, 'door_tra', 'home'], [13.5, 'hg_pond', 'play'], [16, 'hg_hive2', 'chase'], [18.5, 'door_tra', 'home'], [20.5, 'door_tra', 'sleep']],
   // (GĐ21) Mũi Én
   ong_hai: [[0, 'en_light', 'lamp'], [5.5, 'home', 'sleep'], [10, 'en_dock', 'fish'], [13, 'home', 'home'], [15, 'en_bench', 'read'], [17.5, 'en_light', 'lamp']],
   trieu: [[0, 'home', 'sleep'], [5.5, 'en_jars', 'jars'], [9, 'en_bench', 'ledger'], [11.5, 'home', 'home'], [13.5, 'en_dock', 'stroll'], [16.5, 'en_jars', 'jars'], [19.5, 'home', 'home'], [22, 'home', 'sleep']],
@@ -174,6 +232,10 @@ export const NODES = {
   d_su: { x: 7.5, z: 32.0 }, d_cafe: { x: 5.9, z: 39.5 }, d_school: { x: -9.4, z: 37.0 },
   // (GĐ22) Cồn Lặng
   co_in: { x: -32.2, z: 6.2 }, co_c: { x: -39.6, z: 7.6 }, co_pier: { x: -41, z: 15.6 }, d_luoi: { x: -41.6, z: 2.0 }, d_nhum: { x: -34.6, z: 12.2 },
+  // (GĐ23) Đảo Ngàn Hương
+  hg_b: { x: -30.2, z: -27.2 }, hg_shop: { x: -35.2, z: -29.6 }, d_nhai: { x: -34.4, z: -34.6 }, hg_neck: { x: -44.4, z: -38.0 },
+  hg_m: { x: -55, z: -47.2 }, hg_fw: { x: -72.4, z: -44.4 }, hg_hv: { x: -77.0, z: -40.8 }, d_que: { x: -82.6, z: -45.0 },
+  hg_pd: { x: -71.4, z: -58.6 }, hg_t: { x: -55.2, z: -66.2 }, d_tra: { x: -60.6, z: -67.2 }, hg_by: { x: -38.8, z: -58.8 },
   // (GĐ21) Mũi Én
   en_dock: { x: 53.2, z: 6.2 }, en_c: { x: 60.4, z: 6.2 }, en_n: { x: 62.6, z: -1.6 },
   d_hai: { x: 64.6, z: -1.4 }, d_sao: { x: 56.4, z: 8.9 }, d_trieu: { x: 65.4, z: 11.2 },
@@ -186,6 +248,9 @@ export const EDGES = [
   ['E', 'd_su', true], ['SE', 'd_cafe', true], ['W', 'd_school', true], ['SW', 'd_school', false],
   // (GĐ22) Cồn Lặng
   ['co_in', 'co_c', true], ['co_c', 'co_pier', true], ['co_c', 'd_luoi', true], ['co_in', 'd_nhum', true],
+  // (GĐ23) Đảo Ngàn Hương
+  ['hg_b', 'hg_shop', true], ['hg_shop', 'd_nhai', true], ['hg_shop', 'hg_neck', true], ['hg_neck', 'hg_m', true], ['hg_m', 'hg_fw', true],
+  ['hg_fw', 'hg_hv', false], ['hg_fw', 'd_que', false], ['hg_m', 'hg_pd', false], ['hg_m', 'hg_t', true], ['hg_t', 'd_tra', true], ['hg_m', 'hg_by', false],
   // (GĐ21) Mũi Én
   ['en_dock', 'en_c', true], ['en_c', 'en_n', true], ['en_n', 'd_hai', true], ['en_c', 'd_sao', true], ['en_c', 'd_trieu', true],
 ];
@@ -219,6 +284,26 @@ export const LINES = {
   nhum: {
     any: ['Chị câu được con gì rồi? Cho cháu ghi vô sổ với!', 'Mồi cháu bán rẻ nhất vùng đó. Tại cả vùng có mình cháu bán.', 'Bên ngoài sương có gì nữa hả chị? Kể cháu nghe đi.'],
     morning: ['Sáng sớm cá ăn mồi dữ lắm, chị quăng lẹ đi!'], evening: ['Chiều rồi, cháu ra bến câu với ông đây.'], rain: ['Mưa trong sương nghe như ai rải gạo á chị.'],
+  },
+  ba_nhai: {
+    any: ['Cháu ngửi thử cái này đi. Thơm không? Bà quên mất nó là hoa gì rồi.', 'Nhài phải hái lúc sương còn đọng, để nắng lên là bay hết hồn hoa.', 'Cháu ăn cơm chưa? Bà để phần cháu chén chè.'],
+    morning: ['Sáng nào bà cũng ra vườn đếm hoa nhài. Đếm hoài mà không nhớ hôm qua bao nhiêu.'], evening: ['Chiều rồi. Hình như bà đang đợi ai đó... mà bà quên mất là ai.'], rain: ['Mưa làm hoa thơm hơn đó cháu. Mưa rửa sạch hết mùi khác đi.'],
+  },
+  sen: {
+    any: ['Chị cần gì? Em đang bận.', 'Bà em mà có hỏi chị là ai, chị cứ trả lời lại. Ngày nào bà cũng hỏi.', 'Kệ hàng trống là em lo. Chị có nguyên liệu thì làm thêm giùm em.'],
+    morning: ['Sáng nay bà dậy sớm, tưởng hôm nay là ngày đi học của em. Em mười bảy tuổi rồi.'], evening: ['Em ra cuối cầu ngồi chút. Một chút thôi.'], rain: ['Mưa thì khách ít. Em ngồi gói trà cho đỡ buồn.'],
+  },
+  ong_que: {
+    any: ['Ong nó biết người. Ai hiền nó không đốt.', 'Mật năm nay ngọt. Hoa cà phê bên kia rừng nở sớm.', 'Đừng hỏi tôi chuyện tiệm bên đó.'],
+    morning: ['Ong dậy sớm hơn người. Tôi phải dậy sớm hơn ong.'], evening: ['Chiều tôi hay ra gốc đa ngồi. Ở đó gió thổi ngược về phía bến.'], rain: ['Mưa thì ong ở trong tổ. Tôi cũng ở trong lán.'],
+  },
+  chi_tra: {
+    any: ['Hái trà là phải nhẹ tay. Búp non như con nít, mạnh tay là dập.', 'Con Sen nó cứng đầu y như bà nó hồi trẻ.', 'Em ghé đồi chị lấy trà nè, chị để phần ngon nhất.'],
+    morning: ['Trà hái sáng sớm mới thơm. Trưa nắng là lá mệt rồi.'], evening: ['Chiều chị ra chợ ngồi buôn chuyện chút cho vui.'], rain: ['Mưa thì nghỉ hái, ở nhà vò trà.'],
+  },
+  be_mat: {
+    any: ['Chị ơi, con ong này tên Bông. Em đặt đó!', 'Em hái được ba búp trà, mẹ khen em giỏi.', 'Chị có biết ong bay cao nhất là tới đâu không?'],
+    morning: ['Ong đi làm rồi, em đi theo nè!'], evening: ['Mẹ kêu em về ăn cơm mà ong chưa về tổ hết.'], rain: ['Mưa rồi, ong ở nhà, em cũng ở nhà...'],
   },
   ong_hai: {
     any: ['Thuyền từ Đảo Mây sang đấy à? Lâu lắm rồi bến này mới có thuyền lạ.', 'Đèn thì phải sáng. Người đi biển không cần biết ai thắp, chỉ cần biết còn có chỗ để về.', 'Một trăm hai mươi bậc. Ông đếm mỗi tối, chưa lần nào thiếu.'],

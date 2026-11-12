@@ -18,9 +18,9 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
   cùng bảng — muốn đổi phải thêm migration mới. Mô phỏng tiến độ: chạy thử với số liệu `data/*` (cấp 10 ≈ 3 giờ chơi chăm).
   ✅ GĐ16 (0.17.0) chăm sóc có kỹ năng. ✅ GĐ18 (0.18.0) mục tiêu dài hạn. ✅ GĐ17 (0.19.0) mini game hay hơn.
   ✅ GĐ20A (0.20.0) cốt truyện chính chương 1–2 + hội thoại kiểu phim + treo hoa. ✅ GĐ20B (0.21.0) chương 3–7, Nụ Mộng,
-  3 kết thúc — cốt truyện chính đã trọn bộ. ✅ GĐ21 (0.22.0) đảo Mũi Én + truyện "Cơn mưa đi lạc". ✅ GĐ22 (0.23.0) Cồn Lặng + truyện "Người giữ sương" + câu cá.
+  3 kết thúc — cốt truyện chính đã trọn bộ. ✅ GĐ21 (0.22.0) đảo Mũi Én + truyện "Cơn mưa đi lạc". ✅ GĐ22 (0.23.0) Cồn Lặng + truyện "Người giữ sương" + câu cá. ✅ GĐ23 (0.24.0) Đảo Ngàn Hương + truyện "Hương để nhớ" + Tiệm Hương Nhài chế biến.
   Việc tiếp theo: hỏi người dùng.
-  Đề xuất đã nêu: GĐ19 xưởng chế biến + nuôi ong, GĐ22 điểm danh + sổ thưởng mùa, GĐ23 tùy biến nhân vật, GĐ24 hội làng.
+  Đề xuất đã nêu: GĐ19 nuôi ong (một phần đã có ở GĐ23), điểm danh + sổ thưởng mùa, tùy biến nhân vật, hội làng (đánh số GĐ mới khi làm).
 - Đưa lên mạng: Netlify (`netlify.toml`, `docs/HUONG_DAN_DUA_LEN_MANG.md`) — trang thật: https://tiem-hoa-giac-mo.netlify.app
   (Netlify đang deploy nhánh `ccr-845954e0-2hh7a1`; `main` chỉ có commit đầu tiên). APK: Capacitor + GitHub Actions
   (`.github/workflows/android.yml`, `android-keystore.yml`, `docs/HUONG_DAN_APK.md`); thư mục `android/` KHÔNG commit,
@@ -179,6 +179,22 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   (**cinema phải lấy cảnh qua `storySys.sceneOf`, không tra thẳng `SCENES`**), xếp vào `story.queue`. Cá Mộng chỉ cắn ở `fogsea` đêm rằm
   khi truyện đang cần. Dấu: `co_open`, `co_fish` (biết câu), `co_wreck`, `co_told|co_kept`, `rod_khoi`, `co_clear|co_stay`, `co_lamp`.
   Kết `co_stay` ⇒ chú Lưới rời cồn (`GONE_WHEN` trong `data/village.js`). Dân cồn (`CO_PEOPLE`) ẩn trong Sổ tay tới khi xem `l1_path`.
+- **Đảo Ngàn Hương & Tiệm Hương Nhài** (GĐ23): số liệu `data/huong.js` (`HG` các mũi đất hình tròn + cầu + vị trí tiệm, `INGREDIENTS`,
+  `GATHER` chỗ hái: game/give theo ⭐/perDay/hours/need, `PRODUCTS` 12 công thức = 12 trang Sổ Hương, `CRAFT_RULES`, `HG_GAMES/HG_LEVELS`
+  gộp vào `MINIGAMES/MG_LEVELS` ở cuối `data/minigames.js`). Logic thuần `src/systems/craft.js` (`save.craft = { ing, goods 'mã|sao', pages,
+  count 'made:x'|'sold:x'|'gather:x'|'play:game', gday }` — fillDefaults, KHÔNG tăng SAVE_VERSION; hoa dùng loại ít sao trước; `shopTick`
+  khách du lịch mua theo giờ, gọi trong `game.advance`). 14 engine mini game ở `src/ui/craftGames.js` (`Object.assign(ENGINES, HG_ENGINES)`
+  trong minigames.js; vòng lặp dt ≤ 0,25 giây để máy chậm vẫn đúng giờ). Bài thử mini game: chặn `/src/main.js` (route trả về chỉ import CSS),
+  tắt `backdrop-filter` (swiftshader vẽ blur rất chậm). 3D `src/render/huong.js` (`HuongView`, vật tĩnh gộp bằng `mergeStatic` đã export từ world.js;
+  pick `gather`/`hgshop`/`hgbridge`; thân đảo y=-0,8 để mép cát không che cỏ mũi bên cạnh). Camera: hành lang đảo chính→Bến Hương + hành lang
+  Đồng Hoa Sương→từng mũi (mở khi có dấu `hg_bridge`). Dân đảo: `HOUSES` có `face` (hướng cửa) và `with` (người ở chung, `homeOf` tra cả hai).
+  UI: `hud.openGather` / `openHgShop` (`data-hg`, thẻ make/shelf/ing/book), Sổ tay ẩn dân đảo tới khi xem `h2_shop`, nút chỉ đường cho bước đếm.
+  **Kịch bản** ở `data/storyHuong.js` (gộp vào CAST/CHAPTERS/SCENES/STORY_LINES_B/CG_TEXT.hpages ở cuối `data/story.js`), mạch `arc: 'huong'`
+  h1–h18, mở khi xong `c3` + cấp 12. Thêm vào hệ truyện: `need.days` (đợi n ngày sau `after`, lưu `story.doneDay`), `need.season`, trigger
+  `moon`/`weather`/`hours`, bộ đếm có ':' đọc `save.craft.count`, cảnh động `hpage_<n>` (trang Sổ Hương, xếp hàng khi làm món lần đầu),
+  lệnh `['ing', id, n]`, cg `hpage`/`note`, chữ điều kiện lồng nhau `{a?A|{b?B|C}}` (`fmt` thay từ trong ra). Dấu: `hg_bridge`, `hg_shop`
+  (mở bán), `hg_kept`, `hg_fair`, `hg_told|hg_silent`, `hg_adv_stay|hg_adv_go`, `hg_tree`, `hg_f_*` (bông hoa chọn), kết `hg_stay|hg_go|hg_wed`
+  (kết ẩn cần `hg_told&hg_allpages&hg_quefriend` — hai dấu sau do `game.hgAutoFlags` đặt). Chương 16: quá 2 ngày không mưa thì ép mai mưa.
 - **Ưu tiên chạm cốt truyện** (0.23): `game.pickAt` dò `storyView.pickNear` (theo khoảng cách trên màn hình, bán kính 46px) trước, rồi
   `PRIORITY_PICKS` (story, mo, buds, sail, diep, fishspot, fishstall, fogwall) trước nhà/dân làng. `game.focusStory(scene)` = nút Chỉ đường.
 - **Vùng camera** (0.22): `controls.regions` nhận hình tròn `{x,z,r}` hoặc hành lang thuôn `{x,z,r,x2,z2,r2}`; đảo chính ↔ làng và
