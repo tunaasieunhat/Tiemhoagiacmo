@@ -4,6 +4,14 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.27.1',
+    notes: [
+      '🎵 Nhạc nền theo vùng: Làng Hoa (Petals Under the Bamboo, Sunlight on the Veranda), Cồn Lặng (Where the Water Rests), Đảo Ngàn Hương (Petals on the Hillside, Jasmine Mist on the Hillside)',
+      '🌙 Đảo chính có nhạc đêm riêng từ 19:00 tới 5:00 (Moonlight on the Clover, Under the Moonlit Petals)',
+      'Kéo bản đồ sang vùng khác thì nhạc nhỏ dần rồi chuyển sang bài của vùng đó',
+    ],
+  },
+  {
     version: '0.27.0',
     notes: [
       '🎆 BIG UPDATE “LỄ HỘI ĐẢO MÂY”!',

@@ -19,7 +19,25 @@ export const AUDIO = {
         { file: 'audio/saltwater-and-petals.mp3', title: 'Saltwater and Petals' },
         { file: 'audio/petals-at-first-light.mp3', title: 'Petals at First Light' },
       ],
+      // (0.27.1) nhạc riêng thêm theo vùng
+      village: [ // 🏘️ Làng Hoa
+        { file: 'audio/petals-under-the-bamboo.mp3', title: 'Petals Under the Bamboo' },
+        { file: 'audio/sunlight-on-the-veranda.mp3', title: 'Sunlight on the Veranda' },
+      ],
+      night: [ // 🌙 Đảo chính ban đêm (từ nightFrom giờ tới nightTo giờ sáng)
+        { file: 'audio/moonlight-on-the-clover.mp3', title: 'Moonlight on the Clover' },
+        { file: 'audio/under-the-moonlit-petals.mp3', title: 'Under the Moonlit Petals' },
+      ],
+      lang: [ // 🎣 Cồn Lặng (thêm bài "Where the Island Sleeps" vào đây khi có file)
+        { file: 'audio/where-the-water-rests.mp3', title: 'Where the Water Rests' },
+      ],
+      huong: [ // 🌸 Đảo Ngàn Hương
+        { file: 'audio/petals-on-the-hillside.mp3', title: 'Petals on the Hillside' },
+        { file: 'audio/jasmine-mist-on-the-hillside.mp3', title: 'Jasmine Mist on the Hillside' },
+      ],
     },
+    nightFrom: 19,      // đảo chính đổi sang nhạc đêm từ 19:00
+    nightTo: 5,         // tới 5:00 sáng
     crossfadeSeconds: 1.5, // đổi vùng: nhạc cũ nhỏ dần trong bấy nhiêu giây rồi mới sang bài của vùng mới
   },
 

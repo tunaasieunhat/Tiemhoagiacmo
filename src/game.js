@@ -77,6 +77,7 @@ import { EN, EN_RULES, EN_PLOTS, isEnPlot } from '../data/muien.js';
 import { BUDS, STORY_RULES, ARCS } from '../data/story.js';
 import { VIP } from '../data/shopTiers.js';
 import { EVENT_MILESTONES } from '../data/events.js';
+import { AUDIO } from '../data/audio.js';
 import { BUGS, HARVEST_FUN, FRESH } from '../data/care.js';
 // (GĐ25) Tiệm Hoa Của Quần Đảo: kế hoạch hôm nay, tiệc, chi nhánh
 import * as planSys from './systems/plan.js';
@@ -511,7 +512,7 @@ export class Game {
     this.world.home.update(dt, this.dayNight.night || 0);
     this.world.forest.update(dt, { snow: this.weatherDetail.snow, wind: this.farmView.wind || 0 });
     // 🎵 nhạc riêng Mũi Én: máy quay ở Mũi Én (hoặc đang chiếu cảnh truyện ở đó) thì phát nhạc đảo
-    const area = !this.visit && this.atEn ? 'en' : 'main';
+    const area = this.musicAreaNow();
     if (area !== this.musicArea) { this.musicArea = area; this.audio?.music?.setArea?.(area); }
     this.bugView.update(dt);
     this.decorView.update(dt);
@@ -2512,6 +2513,19 @@ export class Game {
 
   // ---------------- 🌫️ Mũi Én (GĐ21) ----------------
   get atEn() { return this.controls.target.x > 40; }
+
+  /** (0.27.1) Vùng nhạc nền theo chỗ máy quay đang nhìn: en | lang | huong | village | night | main */
+  musicAreaNow() {
+    if (this.visit) return 'main';
+    if (this.atEn) return 'en';
+    const { x, z } = this.controls.target;
+    const near = (cx, cz, r) => Math.hypot(x - cx, z - cz) < r;
+    if (near(CON.center[0], CON.center[1], CON.radius + 2)) return 'lang';
+    if (HG.lobes.some((l) => near(l.x, l.z, l.r + 1))) return 'huong';
+    if (near(VILLAGE.center.x, VILLAGE.center.z, VILLAGE.radius - 2)) return 'village';
+    const h = this.clock?.hourFloat ?? 12;
+    return h >= AUDIO.music.nightFrom || h < AUDIO.music.nightTo ? 'night' : 'main';
+  }
 
   /** Ra khơi: đang ở Đảo Mây thì sang Mũi Én và ngược lại */
   sail(to = null) {
