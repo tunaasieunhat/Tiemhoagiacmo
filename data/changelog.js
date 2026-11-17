@@ -4,6 +4,15 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.27.2',
+    notes: [
+      '👩‍💼 Sửa nhân viên bán hàng “đứng yên”: khách tới là vài phút sau nhân viên ra quầy phục vụ ngay, không đợi tới lượt',
+      '💐 Nhân viên mọi tay nghề đều gói được bó hoa (trước đây tay nghề 1–2 bỏ qua khách mua bó hoa mà không báo gì)',
+      '💬 Nhân viên có bong bóng 🌸/💐 khi bán, ❓ khi kho không có hoa (kèm lý do), 💌 nhắc khi khách quen muốn gặp chính chủ tiệm',
+      '🛍️ Khách được báo trước mà kho đã đổi thì phần lớn đổi ý theo hoa đang có',
+    ],
+  },
+  {
     version: '0.27.1',
     notes: [
       '🎵 Nhạc nền theo vùng: Làng Hoa (Petals Under the Bamboo, Sunlight on the Veranda), Cồn Lặng (Where the Water Rests), Đảo Ngàn Hương (Petals on the Hillside, Jasmine Mist on the Hillside)',

@@ -30,8 +30,9 @@ export const STAFF = {
   },
   clerk: {
     name: 'Bán hàng', icon: '👩‍💼', level: 7, base: 110, perSkill: 26, commission: 6,
-    desc: 'Tự phục vụ khách cành lẻ / nhiều cành; tay nghề 3+ tự gói bó hoa theo yêu cầu; tay nghề 6+ phục vụ 2 khách mỗi lượt.',
-    every: [32, 6],
+    desc: 'Khách tới là ra quầy phục vụ: bán cành lẻ, nhiều cành và gói bó hoa. Tay nghề 4+ rành ý nghĩa hoa (bó hoa đẹp hơn), 5+ biết đưa hoa thay thế, 6+ phục vụ 2 khách mỗi lượt.',
+    every: [24, 4],         // phút nghỉ sau mỗi lần phục vụ: tay nghề 1 → 10
+    react: 8,               // khách đứng chờ (8 − tay nghề) phút thì nhân viên ra phục vụ (ít nhất 1 phút)
     look: { skin: '#ffe0c7', hair: '#3b2a22', outfit: '#f6a6b9', hat: null, bun: true },
   },
   courier: {

@@ -185,7 +185,10 @@ export function spawnCustomer(save, rng, flowerIds, ctx = {}) {
   while (used.has(spot)) spot++;
   // lấy khách đã báo trước (nếu còn hợp với loài đang bán), rồi bổ sung danh sách
   ensureUpcoming(save, rng, flowerIds, ctx);
-  const next = sh.upcoming.shift();
+  let next = sh.upcoming.shift();
+  // (0.27.2) khách báo trước lúc kho còn khác: nay kho có hoa mà khách lại hỏi thứ không có ⇒ phần lớn đổi ý theo kho hiện tại
+  const info = stockInfo(save);
+  if (Object.keys(info.stock).length && canServe(next.request, save.inventory) === 'no' && rng() < SMART.stockBias) next = { npc: next.npc, request: generateRequest(rng, tier, flowerIds, { ...ctx, ...info }) };
   ensureUpcoming(save, rng, flowerIds, ctx);
   const npc = !busy.has(next.npc) ? npcOf(next.npc) : pick(rng, pool.length ? pool : CUSTOMERS);
   const c = {

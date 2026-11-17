@@ -1164,33 +1164,56 @@ export class Game {
       if (parts.length) { this.refreshFarm(); this.emitter.emit('inventory'); this.saveMgr.markDirty(); }
     }
     if (offline) { this.runCourier(now, true); return; }
-    // 👩‍💼 bán hàng: phục vụ khách (tay nghề 3+ gói bó hoa, 6+ phục vụ 2 khách mỗi lượt)
-    const ck = automation.due(s, 'clerk', now);
-    if (ck) {
+    // 👩‍💼 bán hàng (0.27.2): khách tới là phục vụ ngay sau vài phút chuẩn bị (không đợi "tới lượt");
+    //   mọi tay nghề đều gói được bó hoa — tay nghề 4+ rành ý nghĩa hoa, 5+ biết đưa hoa thay thế, 6+ phục vụ 2 khách mỗi lượt
+    const ck = automation.workerOf(s, 'clerk');
+    if (ck?.active && now >= (ck.nextAt || 0)) {
       const per = ck.skill >= 6 ? 2 : 1;
-      let served = 0;
-      for (const c of s.shop.customers.filter((x) => !x.regular && now - x.arrivedAt > 3)) {
+      const prep = Math.max(1, STAFF.clerk.react - ck.skill); // phút chuẩn bị trước khi ra quầy
+      let served = 0, tried = false;
+      // khách quen có chuyện riêng: nhân viên mời chủ tiệm ra (nhắc 1 lần)
+      for (const c of s.shop.customers.filter((x) => x.regular && !x.clerkNote && now - x.arrivedAt >= prep)) { c.clerkNote = 1; this.toast(`👩‍💼 ${ck.name}: “${shop.npcOf(c.npc).name} là khách quen, muốn chính chủ tiệm gói hoa. Chủ tiệm ra quầy nhé!”`, 'info'); this.staffBubble('clerk', '💌'); }
+      for (const c of s.shop.customers.filter((x) => !x.regular && now - x.arrivedAt >= prep)) {
         if (served >= per) break;
-        if (c.request.type === 'bouquet' && ck.skill < 3) continue;
-        const sel = shop.autoPick(c.request, s.inventory, ck.skill >= 4 ? ALL_KNOWN : s.book?.meanings); // tay nghề 4+ rành ngôn ngữ loài hoa
+        tried = true;
+        const known = ck.skill >= 4 ? ALL_KNOWN : s.book?.meanings;
+        const sel = shop.autoPick(c.request, s.inventory, known);
         if (c.request.type === 'bouquet') { sel.paper = sel.paper || 'kraft'; sel.ribbon = sel.ribbon || 'twine'; }
         let use = sel;
-        if (!shop.evaluateDelivery(c.request, sel).ok && ck.skill >= SMART.clerkSubSkill) use = shop.subPick(c.request, s.inventory, ALL_KNOWN) || sel; // tay nghề 5+: biết đưa hoa thay thế
+        if (!shop.evaluateDelivery(c.request, sel).ok && ck.skill >= SMART.clerkSubSkill) use = shop.subPick(c.request, s.inventory, ALL_KNOWN) || sel;
         if (use.sub && use.paper == null && c.request.type === 'bouquet') { use.paper = 'kraft'; use.ribbon = 'twine'; }
         if (!shop.evaluateDelivery(c.request, use).ok) {
           // kho không có hoa hợp ý ⇒ báo chủ tiệm 1 lần cho mỗi khách (để biết vì sao nhân viên đứng yên)
-          if (!c.clerkNote) { c.clerkNote = 1; this.toast(`👩‍💼 ${ck.name}: “Kho không có hoa hợp ý ${shop.npcOf(c.npc).name}${c.request.type === 'bouquet' && ck.skill < 3 ? '' : c.request.minQuality > 1 ? ` (khách cần hoa ${c.request.minQuality}★ trở lên)` : ''}, chủ tiệm xem giúp nhé!”`, 'info'); }
+          if (!c.clerkNote) {
+            c.clerkNote = 1;
+            const why = shop.canServe(c.request, s.inventory) === 'sub' ? ` (chỉ có hoa thay thế — nhân viên tay nghề ${SMART.clerkSubSkill}+ mới biết đưa)` : c.request.minQuality > 1 ? ` (khách cần hoa ${c.request.minQuality}★ trở lên)` : '';
+            this.toast(`👩‍💼 ${ck.name}: “Kho không có hoa hợp ý ${shop.npcOf(c.npc).name}${why}, chủ tiệm xem giúp nhé!”`, 'info');
+            this.staffBubble('clerk', '❓');
+          }
           continue;
         }
         const r = this.deliverToCustomer(c.id, use);
         if (!r.ok) continue;
         served++;
         ck.today.earned = (ck.today.earned || 0) + r.ev.price + (r.tip || 0);
-        if (automation.addJob(ck)) this.toast(`⭐ ${ck.name} lên tay nghề ${ck.skill}!${ck.skill === 3 ? ' Từ giờ biết gói bó hoa.' : ck.skill === 6 ? ' Từ giờ phục vụ 2 khách mỗi lượt.' : ''}`, 'good');
-        this.toast(`👩‍💼 ${ck.name} đã bán hoa cho ${shop.npcOf(c.npc).name} (+${r.ev.price + (r.tip || 0)} 💰)`, 'info');
+        if (automation.addJob(ck)) this.toast(`⭐ ${ck.name} lên tay nghề ${ck.skill}!${ck.skill === 4 ? ' Từ giờ rành ý nghĩa các loài hoa.' : ck.skill === 5 ? ' Từ giờ biết đưa hoa thay thế.' : ck.skill === 6 ? ' Từ giờ phục vụ 2 khách mỗi lượt.' : ''}`, 'good');
+        this.toast(`👩‍💼 ${ck.name} đã ${c.request.type === 'bouquet' ? 'gói bó hoa' : 'bán hoa'} cho ${shop.npcOf(c.npc).name} (+${r.ev.price + (r.tip || 0)} 💰)`, 'info');
+        this.staffBubble('clerk', c.request.type === 'bouquet' ? '💐' : '🌸');
       }
+      // vừa phục vụ xong thì nghỉ một chút (tay nghề cao nghỉ ít); không có khách thì không mất lượt
+      if (served) ck.nextAt = now + automation.intervalOf('clerk', ck);
+      else if (tried) ck.nextAt = now + 5;
     }
     this.runCourier(now, false);
+  }
+
+  /** Bong bóng cảm xúc trên đầu nhân viên (cho thấy họ đang làm việc) */
+  staffBubble(role, icon) {
+    const m = this.staffModels[role];
+    if (!m?.visible) return;
+    const pos = m.position.clone().setY(2.2);
+    this.emitter.emit('float', { pos, text: icon });
+    this.particles.spawn('sparkle', pos.clone().setY(1.2));
   }
 
   /** 🚚 Người giao hàng: chi nhánh sắp hết hàng thì tự đóng gói & gửi thuyền */
