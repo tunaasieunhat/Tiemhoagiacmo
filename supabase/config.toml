@@ -1,0 +1,5 @@
+# Cấu hình tối thiểu để GitHub Actions đưa Edge Function lên (xem .github/workflows/supabase-functions.yml)
+project_id = "nhwqubttbkpcuckrduij"
+
+[functions.contest-submit]
+verify_jwt = false

@@ -1,0 +1,13 @@
+node_modules
+dist
+.env
+.env.local
+*.log
+.DS_Store
+
+# Android (tạo tự động trong GitHub Actions)
+android/
+*.apk
+*.jks
+scripts/trailer/frames/
+*.mp4
