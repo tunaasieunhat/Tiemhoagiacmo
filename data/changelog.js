@@ -4,6 +4,13 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.27.3',
+    notes: [
+      '🎨 Biểu tượng (icon) mới cho game: cô chủ tiệm đội mũ rơm cầm hoa trước Tiệm Hoa Giấc Mơ',
+      '🌸 Màn hình chờ lúc mở app cũng đổi theo icon mới',
+    ],
+  },
+  {
     version: '0.27.2',
     notes: [
       '👩‍💼 Sửa nhân viên bán hàng “đứng yên”: khách tới là vài phút sau nhân viên ra quầy phục vụ ngay, không đợi tới lượt',

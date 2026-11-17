@@ -282,6 +282,9 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
 - **App Android bắt buộc cập nhật** (0.9.3): `src/online/updater.js` hỏi `ONLINE.apkReleaseApi` (GitHub Releases), APK có số
   phiên bản cao hơn ⇒ sự kiện `app-update-required` ⇒ `hud.showForceUpdate()` che toàn màn hình. Vì vậy **mỗi lần muốn app
   nhận bản mới phải tăng `version`**; đẩy code mà không tăng version thì app không bị bắt cập nhật.
+- **Icon app** (0.27.3): bản vẽ gốc `assets/icon-source.svg` (mẫu A: chủ tiệm + tiệm hoa, người dùng đã duyệt). Từ đó xuất `public/icons/*`
+  (web/PWA, maskable thu 82%) và `assets/icon-*.png`, `splash*.png` (CI chạy `@capacitor/assets` để tạo icon Android; foreground thu 66% cho icon tròn).
+  Đổi icon phải hỏi người dùng duyệt trước.
 - Code chỉ dành cho app Android nằm ở `src/online/native.js` (kiểm tra `isNative()`); trên web các hàm không làm gì.
 - Đồ họa theo mức `GRAPHICS` trong `data/config.js` (`settings.quality`: auto/high/medium/low); bundle build thành
   1 file JS (`inlineDynamicImports`) để ghép được bản xem thử.
