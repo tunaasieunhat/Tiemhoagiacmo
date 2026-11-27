@@ -1,0 +1,152 @@
+# 🧪 APK BẢN THỬ (0.29): build từ nhánh thu-nghiem, mở hết tính năng (VITE_TEST_BUILD=1).
+#  - App riêng: mã vn.tiemhoagiacmo.game.test, tên "Tiệm Hoa (Bản thử)" ⇒ cài SONG SONG với app thật, không đụng save thật.
+#  - Đăng lên Releases dạng PRE-RELEASE, tag cố định "ban-thu" (không phải "latest") ⇒ app thật KHÔNG bị bắt cập nhật,
+#    link tải bản chính không đổi. Link tải bản thử:
+#    https://github.com/<chủ-repo>/Tiemhoagiacmo/releases/download/ban-thu/TiemHoaGiacMo-BanThu.apk
+name: APK bản thử (nhánh thu-nghiem)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [thu-nghiem]
+    paths:
+      - 'src/**'
+      - 'data/**'
+      - 'public/**'
+      - 'assets/**'
+      - 'index.html'
+      - 'package.json'
+      - 'capacitor.config.json'
+      - 'scripts/android-setup.mjs'
+      - '.github/workflows/android-test.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk-test
+  cancel-in-progress: false
+
+env:
+  # Mật khẩu cố định của khóa ký (giống Ôn Luyện Nha Khoa). Phần bí mật là nội dung khóa trong secret
+  # ANDROID_KEYSTORE_B64 — không có file khóa thì biết mật khẩu cũng không ký được.
+  KS_PASS: tiemhoagiacmo
+  KS_ALIAS: tiemhoa
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Không bắt buộc. Điền trong Settings → Secrets and variables → Actions → tab "Variables".
+      VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+      VITE_SITE_URL: ${{ vars.SITE_URL }}
+      VITE_APK_URL: ${{ vars.APK_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Khóa ký
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: |
+          if [ -z "$KS" ]; then
+            echo "::warning title=Chưa có khóa ký::Thêm secret ANDROID_KEYSTORE_B64 để phát hành APK (xem docs/HUONG_DAN_APK.md). Bản này chỉ ký tạm nên không đăng lên Releases."
+            exit 0
+          fi
+          # Chỉ giữ ký tự base64 (bỏ dấu cách, xuống dòng, ký tự lạ khi copy trên điện thoại)
+          clean=$(printf '%s' "$KS" | tr -cd 'A-Za-z0-9+/=')
+          raw=${#KS}; len=${#clean}
+          if printf '%s' "$clean" | base64 -d > "$RUNNER_TEMP/release.p12" 2>/dev/null \
+             && keytool -list -keystore "$RUNNER_TEMP/release.p12" -storetype PKCS12 -storepass "$KS_PASS" > "$RUNNER_TEMP/ks.txt" 2>&1; then
+            fp=$(grep -o 'SHA-256): .*' "$RUNNER_TEMP/ks.txt" | head -1)
+            echo "::notice title=Khóa ký hợp lệ::$fp"
+            echo "KEYSTORE_FILE=$RUNNER_TEMP/release.p12" >> "$GITHUB_ENV"
+            echo "SIGNED=1" >> "$GITHUB_ENV"
+          else
+            echo "::error title=Secret ANDROID_KEYSTORE_B64 chưa đúng::Secret dài $raw ký tự, còn $len ký tự base64 (số đúng ghi trong file HUONG_DAN.txt). Hãy xóa secret rồi dán lại TOÀN BỘ nội dung file ANDROID_KEYSTORE_B64.txt."
+            exit 1
+          fi
+
+      - name: Cài thư viện
+        run: npm ci
+
+      - name: Build game (bản thử)
+        run: VITE_TEST_BUILD=1 npm run build
+
+      - name: Đổi mã app & tên app cho bản thử
+        run: |
+          node -e "const f='capacitor.config.json',c=JSON.parse(require('fs').readFileSync(f));c.appId='vn.tiemhoagiacmo.game.test';c.appName='Tiệm Hoa (Bản thử)';require('fs').writeFileSync(f,JSON.stringify(c,null,2))"
+          cat capacitor.config.json
+
+      - name: Tạo dự án Android
+        run: |
+          npx cap add android
+          npx --yes @capacitor/assets@4.0.0 generate --android --iconBackgroundColor '#ffe3ea' --iconBackgroundColorDark '#ffe3ea' --splashBackgroundColor '#ffe3ea' --splashBackgroundColorDark '#ffe3ea'
+          node scripts/android-setup.mjs
+          npx cap sync android
+
+      - name: Build APK
+        working-directory: android
+        run: |
+          set -o pipefail
+          chmod +x gradlew
+          if [ "$SIGNED" = "1" ]; then
+            ./gradlew assembleRelease --no-daemon --stacktrace \
+              -Pandroid.injected.signing.store.file="$KEYSTORE_FILE" \
+              -Pandroid.injected.signing.store.password="$KS_PASS" \
+              -Pandroid.injected.signing.key.alias="$KS_ALIAS" \
+              -Pandroid.injected.signing.key.password="$KS_PASS" 2>&1 | tee "$GITHUB_WORKSPACE/build.log"
+            cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/TiemHoaGiacMo.apk"
+          else
+            ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee "$GITHUB_WORKSPACE/build.log"
+            cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/TiemHoaGiacMo.apk"
+          fi
+
+      - name: Báo lỗi build
+        if: failure()
+        run: |
+          if [ -f build.log ]; then
+            msg=$(grep -E "^e: |error:|What went wrong|^> |Could not|FAILURE|Exception" build.log | head -60 | sed 's/%/%25/g; s/\r//g' | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error title=Gradle::${msg}"
+          fi
+
+      - name: Thông tin APK
+        run: |
+          V=$(node -p "require('./package.json').version")
+          echo "VERSION_NAME=$V" >> "$GITHUB_ENV"
+          ls -la TiemHoaGiacMo.apk
+          echo "::notice title=APK::TiemHoaGiacMo.apk $(stat -c %s TiemHoaGiacMo.apk) bytes, phiên bản $V (lượt ${GITHUB_RUN_NUMBER}), đã ký=${SIGNED:-0}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TiemHoaGiacMo-BanThu-apk
+          path: TiemHoaGiacMo.apk
+          retention-days: 14
+
+      - name: Đăng bản thử (pre-release "ban-thu")
+        if: env.SIGNED == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          cp TiemHoaGiacMo.apk TiemHoaGiacMo-BanThu.apk
+          NOTES="🧪 BẢN THỬ ${VERSION_NAME} (lượt ${GITHUB_RUN_NUMBER}) — chưa phát hành. App riêng, cài song song với app chính, mở sẵn hết tính năng. Chỉ chơi khách."
+          if ! gh release view ban-thu >/dev/null 2>&1; then
+            gh release create ban-thu --target "$GITHUB_SHA" --title "🧪 Bản thử" --notes "$NOTES" --prerelease --latest=false \
+              || gh release create ban-thu --target "${DEFAULT_BRANCH:-main}" --title "🧪 Bản thử" --notes "$NOTES" --prerelease --latest=false
+          fi
+          gh release edit ban-thu --title "🧪 Bản thử ${VERSION_NAME} (lượt ${GITHUB_RUN_NUMBER})" --notes "$NOTES" --prerelease --latest=false
+          gh release upload ban-thu TiemHoaGiacMo-BanThu.apk --clobber
+          echo "::notice title=Bản thử::https://github.com/${GH_REPO}/releases/download/ban-thu/TiemHoaGiacMo-BanThu.apk"

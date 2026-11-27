@@ -3,6 +3,7 @@
 //  - Trong app Android: hỏi GitHub Releases xem đã có APK số phiên bản cao hơn chưa → màn hình BẮT BUỘC tải bản mới
 //    (chỉ báo khi file APK đã thật sự được đăng, tránh báo lúc APK còn đang build)
 import { ONLINE } from '../../data/online.js';
+import { TEST_BUILD } from '../testBuild.js';
 import { GAME_VERSION, BUILD_ID } from '../version.js';
 import { isNative } from './native.js';
 
@@ -32,6 +33,7 @@ async function getJson(url) {
 
 /** Bản APK mới hơn bản đang chạy (null nếu không có / không hỏi được). */
 async function checkNative() {
+  if (TEST_BUILD) return null; // (0.29) app bản thử: không bắt tải APK bản chính (là app khác, cài song song)
   if (ONLINE.apkReleaseApi) {
     try {
       const info = parseRelease(await getJson(ONLINE.apkReleaseApi));
