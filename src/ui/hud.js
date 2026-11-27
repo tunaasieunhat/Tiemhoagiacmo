@@ -58,6 +58,7 @@ import * as craft from '../systems/craft.js';
 import * as homeSys from '../systems/home.js';
 import { HOME_COLORS, HOME_ITEMS, HOME_PARTS } from '../../data/home.js';
 import { GATHER, PRODUCTS, INGREDIENTS, CRAFT_RULES, HG_GAME_NAMES } from '../../data/huong.js';
+import { fishArt, itemArt, seedArt } from './art.js';
 import { CG_TEXT } from '../../data/story.js';
 import { FISH, FISH_RULES, FISH_SPOTS, BAITS, RODS, GEAR } from '../../data/fishing.js';
 import * as storySys from '../systems/story.js';
@@ -603,7 +604,7 @@ export class Hud {
     const tabs = `<div class="mk-tabs"><button class="${cur === 'shop' ? 'on' : ''}" data-fh="tab" data-id="shop">🪱 Mồi & đồ câu</button><button class="${cur === 'bag' ? 'on' : ''}" data-fh="tab" data-id="bag">🐟 Đổi cá <span class="pill">${fishSys.bagCount(s)}</span></button></div>`;
     let body;
     if (cur === 'shop') {
-      const baits = Object.entries(BAITS).map(([id, b]) => `<div class="mk-item"><div class="mk-icon">${b.icon}</div><div class="mk-info"><b>${esc(b.name)} <small class="muted">đang có ${st.bait[id] || 0}</small></b><small>${esc(b.desc)}</small></div>
+      const baits = Object.entries(BAITS).map(([id, b]) => `<div class="mk-item"><div class="mk-icon">${itemArt('bait', id) || b.icon}</div><div class="mk-info"><b>${esc(b.name)} <small class="muted">đang có ${st.bait[id] || 0}</small></b><small>${esc(b.desc)}</small></div>
         <div class="mk-buy"><span class="price">${b.price} 💰</span><div class="row-btns">${[5, 20].map((n) => `<button class="btn ${s.player.coins < b.price * n ? 'disabled' : 'primary'}" data-fh="bait" data-id="${id}" data-n="${n}">Mua ${n}</button>`).join('')}</div></div></div>`).join('');
       const rods = Object.entries(RODS).filter(([id, r]) => !r.need || st.rods.includes(id)).map(([id, r]) => {
         const own = st.rods.includes(id), using = st.rod === id;
@@ -623,7 +624,7 @@ export class Hud {
         const keys = Object.keys(st.bag).filter((k) => fishSys.parseFishKey(k).id === id);
         const value = keys.reduce((a, k) => a + fishSys.priceOf(k) * st.bag[k], 0);
         const detail = keys.map((k) => { const p = fishSys.parseFishKey(k); return `${p.shiny ? '✨' : ''}${'★'.repeat(p.q)}×${st.bag[k]}`; }).join(' · ');
-        return `<div class="mk-item fh-fish" style="--tc:${FISH_RULES.tierColors[f.t]}"><div class="mk-icon">${f.icon}</div>
+        return `<div class="mk-item fh-fish" style="--tc:${FISH_RULES.tierColors[f.t]}"><div class="mk-icon">${fishArt(id)}</div>
           <div class="mk-info"><b>${esc(f.name)} <small class="fh-tier">${FISH_RULES.tierNames[f.t]}</small></b><small>Có ${n} con · ${detail}</small></div>
           <div class="fh-acts"><button class="btn primary" data-fh="sell" data-id="${id}">💰 Bán hết · ${value.toLocaleString('vi-VN')}</button>
             <button class="btn ${n >= d.cost ? '' : 'disabled'}" data-fh="seed" data-id="${id}">🌱 ${d.cost} con → ${d.give} hạt ${esc(d.name)}</button>
@@ -1383,7 +1384,7 @@ export class Hud {
       const { species, variant } = variants.parseVkey(k);
       const n = g.save.inventory.seeds[k] || 0;
       return `<button class="seed ${g.seed === k ? 'active' : ''} ${n ? '' : 'empty'}" data-seed="${k}" title="${esc(variants.variantName(species, variant))}">
-        <span>${FLOWERS[species].icon}${vdot(species, variant)}</span><small>${FLOWERS[species].greenhouseOnly ? '🏠' : ''}${esc(variants.variantName(species, variant))}</small><b>${n}</b></button>`;
+        <span class="seed-art">${seedArt(k)}${vdot(species, variant)}</span><small>${FLOWERS[species].greenhouseOnly ? '🏠' : ''}${esc(variants.variantName(species, variant))}</small><b>${n}</b></button>`;
     }).join('');
   }
 
@@ -1504,7 +1505,7 @@ export class Hud {
   // ---------- kho đồ ----------
   openInventory() {
     const s = this.game.save;
-    const seeds = this.seedList().map((k) => { const { species, variant } = variants.parseVkey(k); return `<div class="cell"><span>${FLOWERS[species].icon}${vdot(species, variant)}</span><small>Hạt ${esc(variants.variantName(species, variant))}</small><b>×${s.inventory.seeds[k] || 0}</b></div>`; }).join('');
+    const seeds = this.seedList().map((k) => { const { species, variant } = variants.parseVkey(k); return `<div class="cell"><span class="seed-art">${seedArt(k)}${vdot(species, variant)}</span><small>Hạt ${esc(variants.variantName(species, variant))}</small><b>×${s.inventory.seeds[k] || 0}</b></div>`; }).join('');
     const flowers = Object.entries(s.inventory.flowers).filter(([, n]) => n > 0).map(([k, n]) => {
       const f = variants.parseFlowerKey(k);
       return `<div class="cell"><span>${FLOWERS[f.species].icon}${vdot(f.species, f.variant)}</span><small>${esc(variants.variantName(f.species, f.variant))} <i class="stars">${'★'.repeat(f.q)}</i></small><b>×${n}</b>

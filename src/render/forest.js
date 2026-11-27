@@ -1,8 +1,25 @@
 // 🌲 Rừng bao quanh đảo chính (GĐ24): cây mọc dọc bờ + 2 khu rừng (đông nam, tây nam). Vẽ bằng InstancedMesh cho nhẹ.
 // Đổi màu theo mùa (xuân hoa anh đào, hạ xanh đậm, thu cam đỏ, đông trụi lá phủ tuyết), đung đưa khi gió, phủ tuyết theo thời tiết.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { mat } from '../models/materials.js';
 import { FOREST } from '../../data/island.js';
+
+/** (0.30) gộp nhiều khối thành 1 hình + tô màu đỉnh (dưới sẫm, trên sáng) ⇒ cây có khối & bóng mà vẫn 1 lần vẽ */
+function cluster(parts, dark = 0.72, light = 1.08) {
+  const geos = parts.map(([geo, x, y, z, sx = 1, sy = 1, sz = 1]) => {
+    const g = (geo.index ? geo.toNonIndexed() : geo.clone());
+    g.deleteAttribute('uv');
+    g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion(), new THREE.Vector3(sx, sy, sz)));
+    return g;
+  });
+  const m = mergeGeometries(geos, false);
+  m.computeBoundingBox();
+  const { min, max } = m.boundingBox, pos = m.attributes.position, col = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) { const k = dark + (light - dark) * ((pos.getY(i) - min.y) / (max.y - min.y || 1)); col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = k; }
+  m.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  return m;
+}
 
 const rng = (seed) => () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
 
@@ -16,13 +33,17 @@ export class ForestView {
     this.spots = spots;
     const round = spots.filter((s) => s[2] === 0), pine = spots.filter((s) => s[2] === 1);
     this.round = round; this.pine = pine;
-    const toon = (c) => { const m = mat(c).clone(); return m; };
+    const toon = (c, vc = false) => { const m = mat(c).clone(); if (vc) m.vertexColors = true; return m; };
     // thân
-    this.trunks = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.16, 0.24, 1.4, 6), toon('#8a6446'), spots.length);
+    const ico = new THREE.IcosahedronGeometry(1, 1), ico0 = new THREE.IcosahedronGeometry(1, 0);
+    // thân có rễ loe + 1 cành (0.30)
+    this.trunks = new THREE.InstancedMesh(cluster([[new THREE.CylinderGeometry(0.16, 0.24, 1.4, 6), 0, 0, 0], [new THREE.CylinderGeometry(0.24, 0.36, 0.2, 6), 0, -0.6, 0], [new THREE.CylinderGeometry(0.05, 0.07, 0.5, 5), 0.2, 0.25, 0, 1, 1, 1]], 0.75, 1.05), toon('#8a6446', true), spots.length);
     // tán tròn (màu từng cây riêng)
-    this.crowns = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), toon('#ffffff'), round.length);
+    // tán nhiều chùm: 1 khối chính + 3 chùm phụ (0.30)
+    this.crowns = new THREE.InstancedMesh(cluster([[ico, 0, 0, 0], [ico0, 0.62, -0.25, 0.3, 0.55, 0.5, 0.55], [ico0, -0.6, -0.2, -0.28, 0.55, 0.5, 0.55], [ico0, 0.12, 0.62, -0.1, 0.5, 0.45, 0.5]]), toon('#ffffff', true), round.length);
     // thông: 2 tầng nón
-    this.pines = new THREE.InstancedMesh(new THREE.ConeGeometry(1, 2.2, 7), toon('#ffffff'), pine.length * 2);
+    // thông: mỗi tầng là 2 nón chồng (răng cưa rõ hơn) (0.30)
+    this.pines = new THREE.InstancedMesh(cluster([[new THREE.ConeGeometry(1, 2.2, 8), 0, 0, 0], [new THREE.ConeGeometry(0.78, 1.5, 8), 0, 0.55, 0]], 0.7, 1.1), toon('#ffffff', true), pine.length * 2);
     // tuyết trên ngọn
     this.caps = new THREE.InstancedMesh(new THREE.ConeGeometry(1, 0.7, 7), toon('#f8fbff'), spots.length);
     for (const m of [this.trunks, this.crowns, this.pines, this.caps]) { m.castShadow = false; m.receiveShadow = false; m.frustumCulled = false; this.root.add(m); }

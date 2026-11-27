@@ -7,6 +7,15 @@ import { FISH_SPOTS, BAITS, RODS, FISH_RULES } from '../../data/fishing.js';
 import * as fishSys from '../systems/fishing.js';
 import { WEATHER } from '../../data/seasons.js';
 import { lookOf } from '../systems/wardrobe.js';
+import { fishArt, itemArt } from './art.js';
+
+/** (0.30) SVG → ảnh để vẽ lên canvas (cá nhảy khỏi mặt nước) */
+function artImage(svgStr) {
+  if (!svgStr) return null;
+  const img = new Image();
+  img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgStr.replace('class="art', 'width="128" height="128" class="art'))}`;
+  return img;
+}
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -80,7 +89,7 @@ export class FishingUI {
     const got = now.filter((id) => st.book[id]?.n).length;
     const moonIn = (FISH_RULES.moonEvery - (e.day % FISH_RULES.moonEvery)) % FISH_RULES.moonEvery;
     const chips = [`${WEATHER[e.weather]?.icon || '☀️'} ${esc(WEATHER[e.weather]?.name || 'Nắng đẹp')}`, e.night ? '🌙 Ban đêm' : '☀️ Ban ngày', e.lowTide ? '🌊 Triều xuống' : '🌊 Triều lên', e.moon ? '🌕 Đêm rằm' : moonIn ? `🌕 Rằm: còn ${moonIn} ngày` : '🌕 Rằm: đêm nay'].filter(Boolean);
-    const baits = Object.entries(BAITS).map(([id, b]) => `<button class="fs-bait ${st.baitSel === id ? 'on' : ''} ${st.bait[id] > 0 ? '' : 'empty'}" data-fs="bait" data-id="${id}" title="${esc(b.desc)}"><span>${b.icon}</span><b>${esc(b.name)}</b><small>×${st.bait[id] || 0}</small></button>`).join('');
+    const baits = Object.entries(BAITS).map(([id, b]) => `<button class="fs-bait ${st.baitSel === id ? 'on' : ''} ${st.bait[id] > 0 ? '' : 'empty'}" data-fs="bait" data-id="${id}" title="${esc(b.desc)}"><span>${itemArt('bait', id) || b.icon}</span><b>${esc(b.name)}</b><small>×${st.bait[id] || 0}</small></button>`).join('');
     const rod = RODS[st.rod] || RODS.bamboo;
     const canCast = open.ok && st.bait[st.baitSel] > 0;
     this.card.className = 'fs-card prep';
@@ -271,7 +280,8 @@ export class FishingUI {
       c.save(); c.translate(x, y); c.rotate((k - 0.5) * 2.4 * L.dir);
       c.font = `${L.size}px serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
       if (L.shiny) { c.shadowColor = '#ffd34e'; c.shadowBlur = 20; }
-      c.fillText(L.icon, 0, 0); c.restore();
+      if (L.img?.complete && L.img.naturalWidth) { const z = L.size * 1.6; c.drawImage(L.img, -z / 2, -z / 2, z, z); } else c.fillText(L.icon, 0, 0);
+      c.restore();
       if (!L.splashed && k > 0.05) { L.splashed = true; this.burst(L.x0, this.waterY(L.x0), 16); }
     }
     // ---- đồng hồ lực căng dây ----
@@ -498,7 +508,7 @@ export class FishingUI {
         const icon = res.kind === 'fish' ? res.fish.icon : res.kind === 'junk' ? res.junk.icon : res.kind === 'chest' ? '🧰' : res.kind === 'bottle' ? '🍾' : '🐋';
         const x0 = S.fish?.x ?? this.W * 0.5;
         S.fish = null; S.bob = null; S.line = 0; S.bend = 0.3;
-        S.leap = { icon, x0, y0: this.waterY(x0), x1: this.W * 0.2, y1: this.horizon - 70, t: 0, dir: x0 > this.W * 0.2 ? -1 : 1, size: res.kind === 'fish' ? 34 + res.fish.t * 6 : 36, shiny: !!res.shiny };
+        S.leap = { icon, img: artImage(res.kind === 'fish' ? fishArt(res.fish.id, { shiny: res.shiny }) : res.kind === 'junk' ? itemArt('junk', res.junk.name) : res.kind === 'chest' ? itemArt('chest') : res.kind === 'mong' ? fishArt('mong') : null), x0, y0: this.waterY(x0), x1: this.W * 0.2, y1: this.horizon - 70, t: 0, dir: x0 > this.W * 0.2 ? -1 : 1, size: res.kind === 'fish' ? 34 + res.fish.t * 6 : 36, shiny: !!res.shiny };
         this.setHint(res.kind === 'fish' ? '🎉 Lên rồi!' : '');
         buzz(40);
         if (res.kind !== 'miss') this.game.audio?.sfx?.chime?.(res.kind === 'fish' ? 2 + res.fish.t : 3);
@@ -515,17 +525,17 @@ export class FishingUI {
     let html;
     if (res.kind === 'miss') {
       html = `<div class="fs-res miss"><span class="fs-big">💨</span><b>${!hooked ? 'Cá chạy mất rồi!' : this.snapped ? 'Đứt dây!' : 'Cá sổng mất!'}</b><small>${!hooked ? 'Chạm đúng lúc phao chìm hẳn và hiện ❗ nhé.' : this.snapped ? 'Đừng giữ căng kịch quá lâu. Thả tay cho dây chùng bớt.' : 'Giữ kim trong vùng xanh lâu hơn để cá vào bờ.'}</small></div>`;
-    } else if (res.kind === 'junk') html = `<div class="fs-res"><span class="fs-big">${res.junk.icon}</span><b>${esc(res.junk.name)}</b><small>Không phải cá… bán ve chai được ${res.coins} 💰.</small></div>`;
-    else if (res.kind === 'chest') html = `<div class="fs-res good"><span class="fs-big">🧰</span><b>Rương báu!</b><small>+${res.coins} 💰${res.luck ? ' · +1 🎟️ vé may mắn' : ''}${res.bait ? ` · +${res.bait.n} 🌸 mồi hoa` : ''}</small></div>`;
+    } else if (res.kind === 'junk') html = `<div class="fs-res"><span class="fs-big">${itemArt('junk', res.junk.name) || res.junk.icon}</span><b>${esc(res.junk.name)}</b><small>Không phải cá… bán ve chai được ${res.coins} 💰.</small></div>`;
+    else if (res.kind === 'chest') html = `<div class="fs-res good"><span class="fs-big">${itemArt('chest')}</span><b>Rương báu!</b><small>+${res.coins} 💰${res.luck ? ' · +1 🎟️ vé may mắn' : ''}${res.bait ? ` · +${res.bait.n} 🌸 mồi hoa` : ''}</small></div>`;
     else if (res.kind === 'bottle') html = '<div class="fs-res good"><span class="fs-big">🍾</span><b>Một chiếc chai đóng rêu</b><small>Bên trong có một mảnh giấy cuộn tròn…</small></div>';
-    else if (res.kind === 'mong') html = '<div class="fs-res good"><span class="fs-big">🐋</span><b>Cá Mộng</b><small>Trắng như trăng. Nó không vùng vẫy nữa, chỉ nhìn bạn.</small></div>';
+    else if (res.kind === 'mong') html = '<div class="fs-res good"><span class="fs-big">' + fishArt('mong') + '</span><b>Cá Mộng</b><small>Trắng như trăng. Nó không vùng vẫy nữa, chỉ nhìn bạn.</small></div>';
     else {
       const f = res.fish, tc = FISH_RULES.tierColors[f.t];
-      html = `<div class="fs-res good" style="--tc:${tc}"><span class="fs-big ${res.shiny ? 'shiny' : ''}">${f.icon}</span>
+      html = `<div class="fs-res good" style="--tc:${tc}"><span class="fs-big ${res.shiny ? 'shiny' : ''}">${fishArt(f.id, { shiny: res.shiny })}</span>
         <b>${res.shiny ? '✨ ' : ''}${esc(f.name)}${res.shiny ? ' ánh kim' : ''} <i class="stars">${'★'.repeat(res.q)}</i></b>
         <small><span class="fs-tier">${FISH_RULES.tierNames[f.t]}</span> · dài ${res.cm} cm · bán ~${fishSys.priceOf(res.key)} 💰</small>
         ${res.isNew ? '<small class="fs-new">📖 Loài mới vào Sổ cá!</small>' : res.record ? '<small class="fs-new">🏆 Con to nhất từ trước tới giờ!</small>' : ''}
-        ${res.pearl ? `<small class="fs-new">⚪ Tách sò ra một viên ngọc trai: +${res.pearl.coins} 💰</small>` : ''}
+        ${res.pearl ? `<small class="fs-new">⚪ ${itemArt('pearl')} Tách sò ra một viên ngọc trai: +${res.pearl.coins} 💰</small>` : ''}
         ${res.spotComplete ? '<small class="fs-new">🎉 Đã sưu tầm đủ cá ở chỗ câu này! Nhận thưởng rồi nhé.</small>' : ''}</div>`;
     }
     const st = fishSys.F(this.game.save);

@@ -19,6 +19,7 @@ import { HG_GAME_NAMES, GATHER } from '../../data/huong.js';
 const HG_PEOPLE = ['ba_nhai', 'sen', 'ong_que', 'chi_tra', 'be_mat'];
 import * as fishSys from '../systems/fishing.js';
 import { FISH_RULES } from '../../data/fishing.js';
+import { fishArt } from './art.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const SEASON_NAMES = { xuan: 'Xuân', ha: 'Hạ', thu: 'Thu', dong: 'Đông' };
@@ -95,8 +96,8 @@ export class NotebookPanel {
     const secs = fishSys.bookBySpot(s).map(({ def, fish, done }) => {
       const got = fish.filter((x) => x.got).length;
       const cards = fish.map(({ f, got: b }) => (b
-        ? `<div class="fb-card" style="--tc:${FISH_RULES.tierColors[f.t]}"><span class="fb-icon">${f.icon}</span><b>${b.shiny ? '✨ ' : ''}${esc(f.name)}</b><small class="fb-tier">${FISH_RULES.tierNames[f.t]} <i class="stars">${'★'.repeat(b.q)}</i></small><small>Đã câu ${b.n} · to nhất ${b.max} cm</small><small class="muted">${esc(cond(f) || 'lúc nào cũng có')}</small></div>`
-        : `<div class="fb-card unk" style="--tc:${FISH_RULES.tierColors[f.t]}"><span class="fb-icon">❔</span><b>???</b><small class="fb-tier">${FISH_RULES.tierNames[f.t]}</small><small class="muted">${esc(cond(f) || 'chưa gặp')}</small></div>`)).join('');
+        ? `<div class="fb-card" style="--tc:${FISH_RULES.tierColors[f.t]}"><span class="fb-icon">${fishArt(f.id, { shiny: b.shiny })}</span><b>${b.shiny ? '✨ ' : ''}${esc(f.name)}</b><small class="fb-tier">${FISH_RULES.tierNames[f.t]} <i class="stars">${'★'.repeat(b.q)}</i></small><small>Đã câu ${b.n} · to nhất ${b.max} cm</small><small class="muted">${esc(cond(f) || 'lúc nào cũng có')}</small></div>`
+        : `<div class="fb-card unk" style="--tc:${FISH_RULES.tierColors[f.t]}"><span class="fb-icon fb-shadow">${fishArt(f.id)}</span><b>???</b><small class="fb-tier">${FISH_RULES.tierNames[f.t]}</small><small class="muted">${esc(cond(f) || 'chưa gặp')}</small></div>`)).join('');
       return `<div class="fb-sec"><h3>${def.icon} ${esc(def.name)} <small class="muted">${got}/${fish.length}${done ? ' · ✔ đã nhận thưởng' : ''}</small></h3><div class="fb-grid">${cards}</div></div>`;
     }).join('');
     return `<p class="muted small st-wide">Đã sưu tầm ${fishSys.speciesCaught(s)}/${fishSys.FISH_IDS.length} loài · câu được tổng cộng ${fishSys.F(s).caught} con. Sưu tầm đủ cá của một chỗ câu sẽ có thưởng. Chạm 🎣 ở mép nước để câu.</p>${secs}`;

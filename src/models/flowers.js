@@ -1,8 +1,9 @@
 // Mô hình 3D chibi cho các loài hoa theo từng giai đoạn lớn.
 import * as THREE from 'three';
+import { compactInto } from './mergeParts.js';
 import { FLOWERS } from '../../data/flowers.js';
 import { variantColors } from '../systems/variants.js';
-import { sphere, cyl, cone, at, group } from './primitives.js';
+import { sphere, cyl, cone, at, group, rbox } from './primitives.js';
 import { buildLuckHead } from './luckFlowers.js';
 
 const DRY = '#b39a74';
@@ -37,7 +38,7 @@ function stem(h, color, r = 0.04) {
  * @param {number} stage 0 hạt, 1 mầm, 2 nụ, 3 nở
  * @param {{wilted?: boolean, dead?: boolean}} cond
  */
-export function buildPlant(flowerId, stage, { wilted = false, dead = false, variant = null } = {}) {
+export function buildPlant(flowerId, stage, { wilted = false, dead = false, variant = null, bare = false } = {}) {
   const def = FLOWERS[flowerId];
   const base = variantColors(flowerId, variant);
   const t = dead ? 0.85 : wilted ? 0.45 : 0;
@@ -54,20 +55,35 @@ export function buildPlant(flowerId, stage, { wilted = false, dead = false, vari
   root.add(sway);
   root.userData.sway = sway;
 
+  // (0.30) ụ đất nhỏ quanh gốc + vài hòn sỏi (mọi giai đoạn)
+  if (!bare) {
+    const soilMound = sphere(0.2, dead ? '#6b5444' : '#7c5640', 10);
+    soilMound.scale.set(1, 0.22, 1); soilMound.position.y = 0.01; sway.add(soilMound);
+    [[0.15, -0.06, '#c9b8a6'], [-0.13, 0.1, '#b8a898']].forEach(([x, z, c]) => { const p = sphere(0.03, c, 5); p.scale.y = 0.6; p.position.set(x, 0.03, z); sway.add(p); });
+  }
+
   if (stage === 0 && !dead) {
     const mound = sphere(0.22, '#7c5640', 12);
     mound.scale.set(1, 0.32, 1);
     mound.position.y = 0.02;
     sway.add(mound);
     [[-0.07, 0.05], [0.06, -0.04], [0.02, 0.08]].forEach(([x, z]) => sway.add(at(sphere(0.035, '#f3e1b5', 6), x, 0.08, z)));
-    return root;
+    // vết nứt đất + cọc gỗ cắm bảng nhỏ màu của hạt (biết ô này gieo hoa gì)
+    for (const a of [0.3, 1.9, 3.6]) { const cr = cyl(0.006, 0.006, 0.12, '#5a3d2b', 4); cr.rotation.set(Math.PI / 2, 0, a); cr.position.set(Math.cos(a) * 0.08, 0.075, Math.sin(a) * 0.08); sway.add(cr); }
+    sway.add(at(cyl(0.012, 0.012, 0.3, '#c9a27e', 5), 0.17, 0.15, 0.12));
+    const tag = rbox(0.12, 0.08, 0.015, C.petal, 0.01); tag.position.set(0.17, 0.27, 0.13); sway.add(tag);
+    sway.add(at(sphere(0.02, C.petalDark, 6), 0.17, 0.27, 0.14));
+    return compactInto(root, []) && root;
   }
 
   if (stage === 1 && !dead) {
     sway.add(stem(0.22, C.stem, 0.03));
+    // 2 lá mầm tròn + 2 lá thật nhỏ + đỉnh xoăn
+    for (const s2 of [-1, 1]) { const cot = sphere(0.06, mixColor(C.leaf, '#d8f0a0', 0.35), 8); cot.scale.set(1.3, 0.3, 0.8); cot.position.set(s2 * 0.07, 0.17, 0); cot.rotation.z = s2 * 0.4; sway.add(cot); }
     sway.add(leaf(C.leaf, 0.22, Math.PI / 4, 0.5, 0.2));
     sway.add(leaf(C.leaf, 0.22, Math.PI / 4 + Math.PI, 0.5, 0.2));
-    return root;
+    const tip = sphere(0.035, mixColor(C.leaf, '#e8ffb0', 0.3), 6); tip.position.y = 0.24; sway.add(tip);
+    return compactInto(sway, []) && root;
   }
 
   // từ giai đoạn 2 trở đi: thân + lá + nụ/hoa
@@ -114,6 +130,9 @@ export function buildPlant(flowerId, stage, { wilted = false, dead = false, vari
     sepal.rotation.x = Math.PI;
     sepal.position.y = 0.02;
     head.add(sepal);
+    // (0.30) 5 đài nhọn ôm nụ + sọc cánh hé màu
+    for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; const sp = cone(0.03, 0.12, C.leaf, 4); sp.position.set(Math.cos(a) * 0.07, 0.08, Math.sin(a) * 0.07); sp.rotation.set(Math.sin(a) * 0.4, 0, -Math.cos(a) * 0.4); head.add(sp); }
+    for (let i = 0; i < 3; i++) { const a = (i / 3) * Math.PI * 2 + 0.5; const st = sphere(0.04, C.petal, 6); st.scale.set(0.5, 1.6, 0.5); st.position.set(Math.cos(a) * 0.075, 0.16, Math.sin(a) * 0.075); head.add(st); }
   } else if (def.model === 'rose') {
     buildRose(head, C);
   } else if (def.model === 'tulip') {
@@ -143,6 +162,13 @@ export function buildPlant(flowerId, stage, { wilted = false, dead = false, vari
     if (!dead) root.userData.fx = fx;
   }
 
+  // (0.30) đốt thân + 2 lá non nhỏ sát gốc
+  if (def.model !== 'orchid') {
+    for (const y of [H * 0.3, H * 0.62]) sway.add(at(sphere(r * 1.25, mixColor(C.stem, '#3f6f3a', 0.25), 6), 0, y, 0));
+    sway.add(leaf(mixColor(C.leaf, '#d8f0a0', 0.2), 0.13, 2.2, 0.25, 0.04));
+    sway.add(leaf(mixColor(C.leaf, '#d8f0a0', 0.2), 0.12, 5.1, 0.25, 0.04));
+  }
+
   if (dead) {
     sway.rotation.z = 0.75;
     head.rotation.z = 1.0;
@@ -150,6 +176,8 @@ export function buildPlant(flowerId, stage, { wilted = false, dead = false, vari
     sway.rotation.z = 0.35;
     head.rotation.z = 0.7;
   }
+  // gộp khối (cây Vận May có hiệu ứng động riêng ⇒ để nguyên)
+  if (!def.luck) compactInto(sway, []);
   return root;
 }
 

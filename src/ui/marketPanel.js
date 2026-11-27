@@ -16,6 +16,7 @@ import { ownsParcel } from '../systems/land.js';
 import { heartsOf } from '../systems/relations.js';
 import { villagerInfo } from '../systems/village.js';
 import { eventOpen } from '../systems/decor.js';
+import { seedArt, itemArt } from './art.js';
 
 const TABS = [
   { id: 'seeds', label: '🌱 Hạt giống' },
@@ -75,7 +76,7 @@ export class MarketPanel {
     return `<p class="muted small">Chợ chỉ bán hạt màu cơ bản. Màu khác có được nhờ 🧬 lai tạo hoặc quà của khách quen.</p>` + NORMAL_FLOWER_IDS.filter((id) => !FLOWERS[id].salt || this.save.story?.seen?.e1_sao).map((id) => {
       const f = FLOWERS[id];
       return this.card({
-        icon: f.icon, name: `Hạt ${variants.variantName(id, null)}`,
+        icon: seedArt(variants.vkey(id)), name: `Hạt ${variants.variantName(id, null)}`,
         desc: `Lớn trong ${formatDuration(f.growHours * 60)} · tưới ${f.waterPerDay} lần/ngày · bán ~${f.basePrice} 💰${f.greenhouseOnly ? ' · 🏠 chỉ trồng trong nhà kính' : ''}${f.tall ? ' · 🌬️ thân cao, sợ gió lớn' : ''}${f.salt ? ' · 🌫️ chỉ trồng ở Mũi Én' : ''}`,
         price: f.seedPrice, lock: lv < f.unlockLevel ? f.unlockLevel : 0, owned: this.save.inventory.seeds[variants.vkey(id)] || 0,
         buttons: this.buyBtns('seed', id, f.seedPrice),
@@ -87,7 +88,7 @@ export class MarketPanel {
     const s = this.save;
     const lv = s.player.level;
     const sup = Object.entries(SUPPLIES).map(([id, it]) => this.card({
-      icon: it.icon, name: it.name, desc: it.desc, price: it.price, owned: s.inventory.items[id] || 0, buttons: this.buyBtns('supply', id, it.price),
+      icon: itemArt('supply', id) || it.icon, name: it.name, desc: it.desc, price: it.price, owned: s.inventory.items[id] || 0, buttons: this.buyBtns('supply', id, it.price),
     })).join('');
     const wraps = (dict, kind, icon) => Object.entries(dict).filter(([, w]) => !w.free).map(([id, w]) => this.card({
       icon: `<span class="swatch-dot ${kind === 'ribbons' ? 'ribbon' : ''}" style="--c:${w.color}"></span>`, name: w.name,

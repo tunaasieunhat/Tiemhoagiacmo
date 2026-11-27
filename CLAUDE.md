@@ -185,6 +185,11 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   Hiệu năng: `GRAPHICS.dynamicRes` (độ nét tự co giãn trong vòng vẽ ở main.js, `stage.nudgeResolution`), `shadowEvery` (shadowMap.autoUpdate = false),
   mức `low` 60 khung + mức `battery` 30 khung, màn hình 120 Hz cũng giới hạn 60. Chạm: `QUICK_TAP_*`, kéo không hụt 12px đầu, trôi khi vuốt (`controls.vel`);
   `PLAYER.walkSpeed/runFar/actionSeconds/actionHit`.
+- **Bản 0.30** (bản thử): hình SVG trong `src/ui/art.js` — `fishArt(id, {shiny})` (bảng `FISH_ART`: shape fish|slim|tall|flat|eel|puffer|lantern|squid|shrimp|crab|
+  lobster|shell|jelly|seahorse|dragon|whale + màu/họa tiết), `seedArt(vkey)` (gói hạt dùng `flowerSVG` đã export từ bouquetPreview), `itemArt(kind, id)` (supply/bait/junk/
+  pearl/chest; không có hình ⇒ null, dùng emoji). SVG có xmlns ⇒ vẽ lên canvas được (`artImage` trong fishingGame: cá nhảy khỏi mặt nước). CSS `.art` = 1em.
+  Cây trồng: `buildPlant(..., { bare })` (bare = không ụ đất, dùng cho giỏ treo), gộp khối bằng `compactInto` (`src/models/mergeParts.js`; cây Vận May không gộp).
+  Rừng: hình gộp `cluster()` có màu đỉnh (vertexColors) trong forest.js.
 - **Câu cá làm lại** (0.28): `src/ui/fishingGame.js` vẽ cảnh bằng canvas (`startScene/draw`, pha power → throwBob → wait → reel → result;
   thẻ kết quả `.fs-overlay` nổi trên cảnh, nút "Câu tiếp" `data-fs="quick"`). Luật/số liệu không đổi. Bot thử phải chạy TRONG trang (setInterval đọc
   `window.__fishing`) vì swiftshader chậm, gọi từ ngoài sẽ lỡ cửa sổ cắn câu.

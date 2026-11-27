@@ -17,7 +17,7 @@ export function shopDisplayBaskets(ids = []) {
     b.add(at(cyl(0.2, 0.13, 0.2, '#d9a67e', 10), 0, 0, 0)); // giỏ
     b.add(at(cyl(0.21, 0.21, 0.04, '#b8845f', 10), 0, 0.1, 0));
     let plant;
-    try { plant = buildPlant(id, 3); } catch { plant = null; }
+    try { plant = buildPlant(id, 3, { bare: true }); } catch { plant = null; }
     if (plant) {
       // thu nhỏ để cây nào cũng cao cỡ 0,5 (hoa thân cao không chọc vào mái hiên)
       const box = new THREE.Box3().setFromObject(plant);

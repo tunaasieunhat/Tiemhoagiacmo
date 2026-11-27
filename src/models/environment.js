@@ -22,16 +22,30 @@ export function tree(kind = 'green', scale = 1) {
   };
   const p = palettes[kind] || palettes.green;
   const g = new THREE.Group();
+  const dk = (c, k = 0.82) => `#${new THREE.Color(c).multiplyScalar(k).getHexString()}`;
   g.add(at(cyl(0.16, 0.24, 1.2, '#a8795a', 8), 0, 0.6, 0));
+  // (0.30) rễ loe ở gốc + 2 cành chìa ra + vòng vỏ cây
+  const flare = cyl(0.24, 0.36, 0.22, '#9a6c4e', 8); flare.position.y = 0.11; g.add(flare);
+  for (const [a, y] of [[0.6, 0.8], [3.4, 0.92]]) { const br = cyl(0.045, 0.07, 0.55, '#a8795a', 6); br.position.set(Math.cos(a) * 0.3, y, Math.sin(a) * 0.3); br.rotation.set(Math.sin(a) * 0.95, 0, -Math.cos(a) * 0.95); g.add(br); g.add(at(sphere(0.16, p[2], 8), Math.cos(a) * 0.52, y + 0.22, Math.sin(a) * 0.52)); }
+  for (const y of [0.45, 0.8]) { const rg = cyl(0.205, 0.205, 0.03, '#946648', 8); rg.position.y = y; g.add(rg); }
+  // tán: các chùm lá, chùm dưới sẫm màu hơn (như có bóng)
   g.add(at(sphere(0.85, p[0], 12), 0, 1.75, 0));
   g.add(at(sphere(0.6, p[1], 12), 0.5, 1.45, 0.25));
   g.add(at(sphere(0.55, p[2], 12), -0.45, 1.5, -0.2));
   g.add(at(sphere(0.5, p[1], 12), 0.05, 2.3, 0.1));
+  g.add(at(sphere(0.48, dk(p[0]), 10), -0.15, 1.28, 0.35));
+  g.add(at(sphere(0.42, dk(p[2]), 10), 0.4, 1.25, -0.35));
+  g.add(at(sphere(0.38, p[2], 10), -0.55, 2.0, 0.3));
+  g.add(at(sphere(0.34, p[0], 10), 0.62, 2.0, -0.15));
+  // đốm sáng trên đỉnh tán
+  for (let i = 0; i < 5; i++) { const a = i * 1.3; g.add(at(sphere(0.14, `#${new THREE.Color(p[1]).lerp(new THREE.Color('#ffffff'), 0.35).getHexString()}`, 6), Math.cos(a) * 0.62, 2.25 + (i % 2) * 0.18, Math.sin(a) * 0.62)); }
   if (kind === 'blossom') {
     for (let i = 0; i < 8; i++) {
       const a = (i / 8) * Math.PI * 2;
       g.add(at(sphere(0.07, '#fff', 6), Math.cos(a) * 0.8, 1.8 + Math.sin(i * 1.7) * 0.3, Math.sin(a) * 0.8));
     }
+  } else if (kind === 'green') {
+    for (let i = 0; i < 5; i++) { const a = i * 2.1 + 0.4; g.add(at(sphere(0.08, '#ff7a5a', 6), Math.cos(a) * 0.92, 1.6 + (i % 3) * 0.18, Math.sin(a) * 0.92)); } // quả nhỏ
   }
   g.scale.setScalar(scale);
   return g;

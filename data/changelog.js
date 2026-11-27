@@ -4,6 +4,17 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.30.0',
+    notes: [
+      '🐟 40 loài cá được vẽ riêng từng con (vảy, vây, sọc, đốm, râu…): cá koi ba màu, cá kiếm có mỏ, cua hoàng đế đầy gai, sứa phát sáng, cá ngựa, rồng biển… — hiện trong Sổ cá, quầy cá và lúc câu được',
+      '🔍 Sổ cá: loài chưa câu hiện bóng mờ thay cho dấu ❔',
+      '🌱 Hạt giống thành gói hạt in hình bông hoa đúng màu (thanh chọn hạt, Chợ)',
+      '🪱 Vật phẩm vẽ mới: mồi giun / tôm / cua / hoa / đêm, bao phân bón, rương báu, ngọc trai, ủng cũ, chai thư…',
+      '🌷 Cây trồng chi tiết hơn: ụ đất quanh gốc, hạt mới gieo có cọc cắm bảng màu, mầm có lá mầm, nụ có đài ôm, thân có đốt',
+      '🌳 Cây & rừng chi tiết hơn: tán nhiều chùm có bóng sẫm phía dưới, thông nhiều tầng răng cưa, gốc có rễ loe, cây có quả nhỏ',
+    ],
+  },
+  {
     version: '0.29.0',
     notes: [
       '🌾 Gấp đôi số lô đất mua ở Chợ: thêm 4 lô ở "Ruộng Ven Rừng" (bìa rừng đông nam, có đường đá nối về nông trại)',

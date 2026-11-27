@@ -3,7 +3,7 @@ import { FLOWERS } from '../../data/flowers.js';
 import { PAPERS, RIBBONS } from '../../data/wrapping.js';
 import { variantColors } from '../systems/variants.js';
 
-function flowerSVG(id, variant, x, y, s) {
+export function flowerSVG(id, variant, x, y, s) {
   const c = FLOWERS[id] ? variantColors(id, variant) : { petal: '#f6a6b9', petalDark: '#ea7f99' };
   const shape = FLOWERS[id]?.model || id; // loài mới dùng lại hình của loài cùng mô hình (vd oải hương biển)
   if (shape === 'sunflower') {

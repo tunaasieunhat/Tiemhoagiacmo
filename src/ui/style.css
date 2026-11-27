@@ -1676,3 +1676,14 @@ body.cine-sepia #game canvas { filter: sepia(.85) saturate(.75) contrast(.95) br
 .sewg { position: absolute; inset: 0; touch-action: none; overflow: hidden; border-radius: inherit; }
 .sewg canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 .sewg .mg-pop { z-index: 3; }
+
+/* (0.30) 🎨 hình vẽ SVG cho cá, hạt giống, vật phẩm (src/ui/art.js) — 1em = cỡ chữ của khung */
+.art { width: 1em; height: 1em; display: inline-block; vertical-align: middle; overflow: visible; }
+.mk-icon .art { width: 1.45em; height: 1.45em; filter: drop-shadow(0 1px 1px rgba(90, 60, 40, .25)); }
+.fb-icon .art { width: 2.2em; height: 2.2em; }
+.fb-shadow .art { filter: brightness(0); opacity: .22; }
+.fs-big .art { width: 2.4em; height: 2.4em; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .25)); }
+.fs-big.shiny .art { filter: drop-shadow(0 0 8px #ffd34e); }
+.fs-res small .art { width: 1.4em; height: 1.4em; }
+.fs-bait > span .art { width: 1.3em; height: 1.3em; }
+.seed .seed-art .art { width: 1.5em; height: 1.5em; }
