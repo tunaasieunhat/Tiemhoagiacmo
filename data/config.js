@@ -69,8 +69,10 @@ export const SEE_THROUGH = {
 
 // ---- Nhân vật ----
 export const PLAYER = {
-  walkSpeed: 4.2,      // đơn vị 3D / giây
-  actionSeconds: 0.55, // thời gian làm 1 thao tác
+  walkSpeed: 5.6,      // đơn vị 3D / giây (0.29: nhanh hơn, đỡ chờ)
+  runFar: 6,           // (0.29) ô ở xa hơn bấy nhiêu thì chạy nhanh dần (tối đa ×2,2)
+  actionSeconds: 0.42, // thời gian làm 1 thao tác (0.29: 0,55 → 0,42)
+  actionHit: 0.3,      // (0.29) thao tác có hiệu lực ở 30% động tác (trước là 50%) ⇒ thấy kết quả sớm hơn
 };
 
 // ---- Đồ họa (GĐ9) ----
@@ -80,8 +82,12 @@ export const GRAPHICS = {
   levels: {
     high: { name: 'Cao', pixelRatio: 2, shadowSize: 2048, fps: 60 },
     medium: { name: 'Vừa', pixelRatio: 1.5, shadowSize: 1024, fps: 60 },
-    low: { name: 'Tiết kiệm pin', pixelRatio: 1, shadowSize: 0, fps: 30 },
+    low: { name: 'Thấp (mượt)', pixelRatio: 1, shadowSize: 0, fps: 60 },       // (0.29) vẫn 60 khung hình
+    battery: { name: 'Tiết kiệm pin', pixelRatio: 1, shadowSize: 0, fps: 30 },
   },
-  autoMinFps: 26,       // chế độ Tự động: dưới mức này thì giảm đồ họa 1 bậc
+  autoMinFps: 40,       // chế độ Tự động: dưới mức này (sau khi đã hạ độ nét) thì giảm đồ họa 1 bậc
   modalFps: 30,         // khi đang mở bảng (che màn hình) chỉ vẽ 30 khung/giây cho mát máy
+  // (0.29) Độ nét tự co giãn để giữ 60 khung hình: máy không kịp thì hạ độ nét từng chút, dư sức thì nâng lại
+  dynamicRes: { lowFps: 54, highFps: 59, step: 0.15, minRatio: 0.85, downAfter: 1.5, upAfter: 6 },
+  shadowEvery: 2,       // (0.29) vẽ lại bóng đổ mỗi 2 khung hình (bóng gần như không đổi, đỡ nặng gần một nửa)
 };

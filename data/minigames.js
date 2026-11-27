@@ -27,7 +27,7 @@ export const MG_FX = {
   comboWindow: 2.5,           // làm đúng liên tiếp trong 2,5 giây thì tính combo
 };
 
-// Việc nhờ của từng người. game: needle | hammer | fishing | pour | math | rhyme | memory
+// Việc nhờ của từng người. game: sew | needle | hammer | fishing | pour | math | rhyme | memory
 export const FAVORS = {
   // (GĐ22) Cồn Lặng
   chu_luoi: [
@@ -83,9 +83,10 @@ export const FAVORS = {
       thanks: 'Hừm. Xếp cũng gọn đấy. Lần sau tôi lại nhờ.', fail: 'Thôi để tôi tự xếp, cô làm rối thêm.' },
   ],
   ba_tu: [
-    { id: 'needle', game: 'needle', title: 'Xỏ kim giúp bà', icon: '🪡',
-      ask: 'Mắt bà dạo này kém quá, xỏ mãi không lọt cái kim. Con xỏ giúp bà mấy cây kim nhé?',
-      thanks: 'Ôi giỏi quá! Mắt tinh như con thì bà đan được cả trăm cái khăn.', fail: 'Khó nhỉ con... thôi để mai bà nhờ lại, không sao đâu.' },
+    // (0.29) thay game Xỏ kim bằng May đồ: kéo ngón tay điều khiển kim khâu theo đường may
+    { id: 'sew', game: 'sew', title: 'May đồ cùng bà', icon: '🧵',
+      ask: 'Tay bà dạo này run, đường kim cứ xiêu vẹo. Con cầm kim may giúp bà mấy mảnh vải này nhé? Cứ đi theo đường chỉ chấm là được.',
+      thanks: 'Ôi đường kim thẳng tắp! Con khéo tay thế này thì bà truyền hết nghề may cho con.', fail: 'Đường kim hơi xiêu một chút... không sao, mai bà con mình may tiếp.' },
   ],
   ong_ba: [
     { id: 'fishing', game: 'fishing', title: 'Câu cá cùng Ông Ba', icon: '🎣',
@@ -126,6 +127,8 @@ export const FAVORS = {
 // Số liệu từng mini game (chỉnh độ khó ở đây)
 export const MINIGAMES = {
   // (0.16) dễ hơn: kim chạy chậm hơn, tăng tốc ít hơn, lỗ kim to hơn, thêm 1 lượt
+  // (0.29) May đồ: pieces = số mảnh vải · seconds = thời gian cả ván · tol = độ rộng đường may (px) · slips = số lần lệch tối đa để được 3⭐ / 2⭐
+  sew: { pieces: 2, seconds: 45, tol: 24, slips: [2, 5], help: 'Giữ ngón tay lên cây kim 🪡 rồi kéo theo đường chỉ chấm trắng. Đi chệch khỏi đường là bị lệch mũi. May xong các mảnh vải trước khi hết giờ — càng ít lệch càng nhiều sao!' },
   needle: { need: 3, tries: 6, speed: 1.45, accel: 1.12, eye: 32, help: 'Chạm màn hình khi lỗ kim nằm ngay dưới sợi chỉ. Cần xỏ 3 lần (tối đa 5 lượt).' },
   hammer: { need: 6, tries: 9, speed: 2.6, accel: 1.08, zone: 0.16, help: 'Chạm khi kim lực nằm trong vùng xanh. Mỗi cây đinh cần 2 cú đóng chuẩn.' },
   fishing: { rounds: 3, waitMin: 1.2, waitMax: 3.4, window: [0.85, 0.7, 0.58], help: 'Đợi phao chìm xuống và hiện ❗ rồi chạm thật nhanh. Chạm sớm cá sẽ sợ chạy mất!' },
@@ -140,6 +143,7 @@ export const MINIGAMES = {
 
 // (GĐ17) Độ khó theo mức Dễ/Vừa/Khó: trường số liệu → [Dễ, Vừa, Khó] (giá trị gán thẳng, không phải hệ số)
 export const MG_LEVELS = {
+  sew: { tol: [24, 19, 15], seconds: [45, 40, 36], pieces: [2, 2, 3] },
   needle: { speed: [1.45, 1.7, 2.0], eye: [32, 28, 24] },
   hammer: { speed: [2.6, 3.0, 3.5], zone: [0.16, 0.14, 0.11] },
   fishing: { window: [[0.85, 0.7, 0.58], [0.75, 0.6, 0.5], [0.65, 0.52, 0.42]] },

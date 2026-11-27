@@ -1,5 +1,5 @@
 // Mua đất của dân làng (GĐ13) — LOGIC THUẦN.
-// Lô mua ở Chợ có plot.slot (0–3, vị trí PLOT_SLOTS); lô mua của dân làng có plot.parcel (mã trong data/land.js).
+// Lô mua ở Chợ có plot.slot (0–7, vị trí PLOT_SLOTS); lô mua của dân làng có plot.parcel (mã trong data/land.js).
 // save.land = { deals: { parcelId: { day, bargain: 'ok'|'fail' } } } — trạng thái trả giá trong ngày
 import { PARCELS, LAND_RULES, MOODS } from '../../data/land.js';
 import { heartsOf, addFp } from './relations.js';

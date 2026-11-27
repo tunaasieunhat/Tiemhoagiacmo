@@ -511,6 +511,7 @@ export class Game {
     this.petView.update(dt, this.player.root.position, this.player.phase === 'walk');
     this.world.home.update(dt, this.dayNight.night || 0);
     this.world.forest.update(dt, { snow: this.weatherDetail.snow, wind: this.farmView.wind || 0 });
+    this.world.terrain?.update(dt); // (0.29) thác nước, bọt sóng
     // 🎵 nhạc riêng Mũi Én: máy quay ở Mũi Én (hoặc đang chiếu cảnh truyện ở đó) thì phát nhạc đảo
     const area = this.musicAreaNow();
     if (area !== this.musicArea) { this.musicArea = area; this.audio?.music?.setArea?.(area); }
@@ -2893,7 +2894,7 @@ export class Game {
 
   applyGraphics() {
     this.graphics = this.stage.applyQuality(this.graphicsLevel);
-    this.weatherFx.density = this.graphicsLevel === 'low' ? 0.4 : 1;
+    this.weatherFx.density = ['low', 'battery'].includes(this.graphicsLevel) ? 0.4 : 1;
     this.emitter.emit('graphics', this.graphicsLevel);
   }
 

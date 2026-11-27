@@ -1,7 +1,8 @@
 // Mô hình 3D đồ trang trí & máy móc (khối hình đơn giản, màu pastel)
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { rbox, sphere, cyl, cone, at, torus, capsule } from './primitives.js';
-import { basic } from './materials.js';
+import { basic, mat } from './materials.js';
 import { bush } from './environment.js';
 
 const WOOD = '#c9926a', WOOD2 = '#e2b98f';
@@ -432,9 +433,202 @@ BUILDERS.fun_balloons = () => {
   return g;
 };
 
+// =============================================================
+//  (0.29) Chi tiết thêm cho từng món (gắn sau khi dựng khung chính). Khối nhỏ dùng hình ít mặt.
+// =============================================================
+const lowCache = new Map();
+const low = (k, make) => { if (!lowCache.has(k)) lowCache.set(k, make()); return lowCache.get(k); };
+const bx = (w, h, d, c) => new THREE.Mesh(low(`b${w}|${h}|${d}`, () => new THREE.BoxGeometry(w, h, d)), mat(c));
+const dot = (r, c) => new THREE.Mesh(low(`d${r}`, () => new THREE.SphereGeometry(r, 8, 6)), mat(c));
+const ring = (r, t, c, arc = Math.PI * 2) => new THREE.Mesh(low(`r${r}|${t}|${arc}`, () => new THREE.TorusGeometry(r, t, 5, 18, arc)), mat(c));
+const rod = (r, h, c) => new THREE.Mesh(low(`c${r}|${h}`, () => new THREE.CylinderGeometry(r, r, h, 6)), mat(c));
+/** bông hoa nhỏ 5 cánh nằm ngang tại (x, y, z) */
+function blossom(g, x, y, z, col = '#ffffff', r = 0.05, tilt = 0) {
+  const f = new THREE.Group(); f.position.set(x, y, z); f.rotation.x = tilt;
+  for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; const p = dot(r, col); p.scale.set(1, 0.45, 1); p.position.set(Math.cos(a) * r, 0, Math.sin(a) * r); f.add(p); }
+  f.add(at(dot(r * 0.6, '#ffd36e'), 0, r * 0.25, 0));
+  g.add(f);
+}
+const leafy = (g, x, y, z, s = 1, c = '#7cc27f') => { const l = dot(0.06 * s, c); l.scale.set(1.6, 0.45, 0.9); l.position.set(x, y, z); l.rotation.y = x * 3 + z; g.add(l); };
+
+const DETAILS = {
+  bench(g) {
+    for (let i = 0; i < 4; i++) g.add(at(bx(1.36, 0.012, 0.02, '#b07d56'), 0, 0.515, -0.18 + i * 0.12)); // khe ván ngồi
+    for (const y of [0.66, 0.84]) g.add(at(bx(1.36, 0.012, 0.012, '#b07d56'), 0, y, -0.165)); // khe ván tựa
+    for (const x of [-0.7, 0.7]) { g.add(at(rbox(0.08, 0.06, 0.5, WOOD, 0.02), x, 0.7, 0)); g.add(at(rod(0.025, 0.2, WOOD), x, 0.6, 0.2)); } // tay vịn
+    g.add(at(rbox(0.36, 0.08, 0.32, '#f6a6b9', 0.04), -0.3, 0.55, 0.02)); // gối ngồi
+    for (let i = 0; i < 4; i++) g.add(at(dot(0.015, '#ffffff'), -0.42 + (i % 2) * 0.24, 0.6, -0.08 + Math.floor(i / 2) * 0.2));
+    blossom(g, 0.45, 0.53, 0.05, '#ff8fb1', 0.05); leafy(g, 0.52, 0.52, 0.1);
+  },
+  pot(g) {
+    g.add(at(ring(0.37, 0.04, '#d38f6d'), 0, 0.5, 0).rotateX(Math.PI / 2)); // miệng chậu
+    g.add(at(cyl(0.34, 0.3, 0.05, '#c98263', 14), 0, 0.02, 0)); // đĩa lót
+    for (const y of [0.18, 0.32]) { const b = ring(0.34 - (0.32 - y) * 0.2, 0.012, '#f6e2c8'); b.rotation.x = Math.PI / 2; b.position.y = y; g.add(b); } // sọc trang trí
+    for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2 + 0.3; g.add(at(dot(0.025, '#ffffff'), Math.cos(a) * 0.33, 0.25, Math.sin(a) * 0.33)); }
+    for (let i = 0; i < 3; i++) { const a = i * 2.1; blossom(g, Math.cos(a) * 0.3, 0.95 + (i % 2) * 0.1, Math.sin(a) * 0.3, ['#f47a93', '#ffd36e', '#ffffff'][i], 0.055); }
+  },
+  lantern(g) {
+    for (let i = 0; i < 6; i++) { const r = ring(0.205, 0.01, '#d9534f'); r.rotation.y = (i / 6) * Math.PI; r.scale.set(1, 1.27, 1); r.position.set(0.5, 1.3, 0); g.add(r); } // gân đèn
+    g.add(at(rod(0.008, 0.26, '#7c6a8f'), 0.5, 1.72, 0)); // dây treo
+    g.add(at(rod(0.012, 0.2, '#ffd36e'), 0.5, 0.88, 0)); // tua rua
+    for (let i = 0; i < 5; i++) g.add(at(rod(0.006, 0.18, '#f47a6a'), 0.48 + i * 0.01, 0.72, (i - 2) * 0.01));
+    g.add(at(dot(0.05, '#ffe9a8'), 0.5, 1.3, 0.2)); // chữ phúc sáng
+    g.add(at(cyl(0.16, 0.2, 0.08, '#7c6a8f', 10), 0, 0.04, 0)); // đế cột
+    g.add(at(dot(0.06, '#7c6a8f'), 0, 1.62, 0));
+  },
+  mailbox(g) {
+    g.add(at(cyl(0.16, 0.2, 0.1, WOOD, 10), 0, 0.05, 0)); // chân đế
+    g.add(at(rbox(0.52, 0.04, 0.36, '#e0708a', 0.02), 0, 1.24, 0)); // nắp
+    g.add(at(bx(0.3, 0.025, 0.02, '#7a3d4f'), 0, 1.08, 0.175)); // khe thư
+    const letter = bx(0.22, 0.14, 0.015, '#fffaf0'); letter.position.set(0, 1.16, 0.17); letter.rotation.x = -0.25; g.add(letter); // lá thư ló ra
+    g.add(at(dot(0.025, '#f47a93'), 0, 1.16, 0.185));
+    g.add(at(bx(0.04, 0.05, 0.14, '#ffd34e'), 0.27, 1.36, 0.06)); // cờ báo thư
+    g.add(at(rbox(0.16, 0.08, 0.02, '#ffffff', 0.01), 0, 0.95, 0.175)); // biển số nhà
+    for (let i = 0; i < 3; i++) leafy(g, -0.1 + i * 0.1, 0.06, 0.18, 1.2);
+    blossom(g, 0.05, 0.12, 0.2, '#ffd36e', 0.04);
+  },
+  birdhouse(g) {
+    g.add(at(rod(0.015, 0.22, WOOD), 0, 1.5, 0.3).rotateX(Math.PI / 2)); // que đậu
+    g.add(at(ring(0.09, 0.015, '#ffffff'), 0, 1.62, 0.235)); // viền lỗ cửa
+    const bird = new THREE.Group(); bird.position.set(0, 1.53, 0.4);
+    const bd = dot(0.07, '#ffd34e'); bd.scale.set(1, 0.9, 1.2); bird.add(bd);
+    bird.add(at(dot(0.05, '#ffd34e'), 0, 0.07, 0.04));
+    const beak = cone(0.02, 0.05, '#f2a03d', 4); beak.rotation.x = Math.PI / 2; beak.position.set(0, 0.07, 0.1); bird.add(beak);
+    for (const x of [-0.025, 0.025]) bird.add(at(dot(0.012, '#3b2a22'), x, 0.09, 0.08));
+    g.add(bird);
+    for (const x of [-1, 1]) { const tr = bx(0.36, 0.03, 0.03, '#ffffff'); tr.position.set(x * 0.16, 1.98, 0.24); tr.rotation.z = -x * 0.62; g.add(tr); } // viền mái
+    g.add(at(rbox(0.6, 0.05, 0.55, WOOD2, 0.02), 0, 1.36, 0)); // đế nhà
+    g.add(at(dot(0.04, '#ffffff'), -0.15, 1.75, 0.235)); g.add(at(dot(0.04, '#ffffff'), 0.15, 1.75, 0.235));
+    leafy(g, 0.08, 0.9, 0.06, 1.4); leafy(g, -0.07, 0.6, 0.06, 1.4); blossom(g, 0.05, 0.75, 0.07, '#f47a93', 0.045, Math.PI / 2);
+  },
+  swing(g) {
+    for (const x of [-0.8, 0.8]) { // chân chữ A + cọc
+      for (const z of [-1, 1]) { const l = rod(0.045, 2.1, WOOD); l.position.set(x, 1, z * 0.32); l.rotation.x = z * 0.3; g.add(l); }
+      for (let i = 0; i < 4; i++) { const a = i * 1.6; leafy(g, x + Math.cos(a) * 0.08, 0.4 + i * 0.35, Math.sin(a) * 0.08, 1.1); }
+      blossom(g, x, 1.2, 0.1, '#f47a93', 0.05, Math.PI / 2);
+    }
+    for (const x of [-0.3, 0.3]) { g.add(at(ring(0.04, 0.012, '#ffffff'), x, 1.98, 0)); g.add(at(dot(0.025, '#e6d8c6'), x, 0.68, 0)); } // khoen + nút dây
+    for (let i = 0; i < 3; i++) g.add(at(bx(0.8, 0.01, 0.01, '#e0708a'), 0, 0.645, -0.12 + i * 0.12)); // khe ván ghế
+    g.add(at(rbox(0.8, 0.3, 0.05, '#f78fa7', 0.03), 0, 0.82, -0.17)); // tựa lưng
+  },
+  bunny(g) {
+    const tail = dot(0.1, '#ffffff'); tail.position.set(0, 0.42, -0.3); g.add(tail);
+    for (const x of [-0.14, 0.14]) { const paw = dot(0.08, '#ffffff'); paw.scale.set(1, 0.7, 1.3); paw.position.set(x, 0.24, 0.2); g.add(paw); }
+    for (const x of [-1, 1]) for (const dy of [-0.015, 0.015]) { const w = bx(0.16, 0.006, 0.006, '#c9b8b0'); w.position.set(x * 0.13, 0.88 + dy, 0.27); w.rotation.z = x * dy * 8; g.add(w); } // ria
+    const carrot = cone(0.05, 0.22, '#f2913d', 8); carrot.rotation.z = Math.PI / 2 + 0.3; carrot.position.set(0.02, 0.36, 0.28); g.add(carrot);
+    for (const dz of [-0.03, 0.03]) leafy(g, 0.16, 0.42, 0.28 + dz, 0.8, '#6fbf63');
+    g.add(at(ring(0.36, 0.02, '#f6a6b9'), 0, 0.2, 0).rotateX(Math.PI / 2)); // viền bệ
+    for (let i = 0; i < 4; i++) { const a = (i / 4) * Math.PI * 2 + 0.4; blossom(g, Math.cos(a) * 0.3, 0.21, Math.sin(a) * 0.3, ['#ffc4d6', '#fff0a8'][i % 2], 0.035); }
+  },
+  teaset(g) {
+    g.add(at(cyl(0.58, 0.58, 0.02, '#fff3f6', 18), 0, 0.645, 0)); // khăn trải bàn
+    for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; g.add(at(dot(0.03, '#f6a6b9'), Math.cos(a) * 0.57, 0.63, Math.sin(a) * 0.57)); } // ren mép
+    // ấm trà: nắp, quai, vòi
+    g.add(at(dot(0.05, '#ffffff'), 0, 0.9, 0)); g.add(at(cyl(0.08, 0.1, 0.03, '#ffffff', 10), 0, 0.87, 0));
+    const sp = cyl(0.015, 0.03, 0.16, '#9fe0c4', 6); sp.position.set(0.15, 0.8, 0); sp.rotation.z = -0.9; g.add(sp);
+    const hd = ring(0.07, 0.015, '#9fe0c4'); hd.position.set(-0.15, 0.78, 0); g.add(hd);
+    blossom(g, 0, 0.78, 0.13, '#f47a93', 0.03, Math.PI / 2);
+    for (let i = 0; i < 3; i++) { const a = i * 2.1, x = Math.cos(a) * 0.32, z = Math.sin(a) * 0.32; g.add(at(cyl(0.09, 0.09, 0.012, '#ffffff', 10), x, 0.645, z)); const h = ring(0.03, 0.008, '#ffffff'); h.position.set(x + 0.07, 0.69, z); g.add(h); g.add(at(cyl(0.05, 0.05, 0.01, '#a87458', 8), x, 0.715, z)); } // đĩa + quai tách + trà
+    const plate = cyl(0.12, 0.1, 0.02, '#ffffff', 12); plate.position.set(-0.15, 0.66, -0.3); g.add(plate);
+    for (let i = 0; i < 3; i++) g.add(at(cyl(0.035, 0.035, 0.02, ['#f2c27a', '#f6a6b9', '#c9a27e'][i], 8), -0.18 + i * 0.04, 0.68 + i * 0.012, -0.3)); // bánh quy
+    for (const a of [0.8, 3.9]) { const x = Math.cos(a) * 0.95, z = Math.sin(a) * 0.95; g.add(at(cyl(0.21, 0.21, 0.06, '#f6a6b9', 12), x, 0.39, z)); } // nệm ghế
+  },
+  windmill(g) {
+    for (const y of [0.5, 1.1, 1.7]) { const b = ring(0.52 - y * 0.08, 0.025, '#f2c9a0'); b.rotation.x = Math.PI / 2; b.position.y = y; g.add(b); } // vạch gạch
+    g.add(at(rbox(0.38, 0.06, 0.1, '#a87458', 0.02), 0, 0.58, 0.5)); // mái hiên cửa
+    g.add(at(dot(0.025, '#ffd34e'), 0.1, 0.3, 0.54)); // tay nắm
+    for (const y of [1.0, 1.6]) { const w = rbox(0.2, 0.22, 0.05, '#9fd6f0', 0.03); w.position.set(0, y, 0.43 - (y - 1) * 0.12); w.rotation.x = -0.09; g.add(w); g.add(at(bx(0.22, 0.02, 0.06, '#ffffff'), 0, y, 0.44 - (y - 1) * 0.12)); } // cửa sổ
+    const balc = ring(0.48, 0.03, WOOD); balc.rotation.x = Math.PI / 2; balc.position.y = 1.85; g.add(balc);
+    for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; g.add(at(rod(0.015, 0.18, WOOD), Math.cos(a) * 0.48, 1.76, Math.sin(a) * 0.48)); }
+    g.add(at(dot(0.06, '#ffd34e'), 0, 2.82, 0));
+    // cánh quạt: thêm nan vải (gắn vào nhóm quay)
+    const blades = g.userData.spin;
+    if (blades) for (let i = 0; i < 4; i++) { const h = new THREE.Group(); h.rotation.z = (i * Math.PI) / 2; for (let k = 0; k < 3; k++) h.add(at(bx(0.26, 0.012, 0.05, '#c9a27e'), 0.04, 0.3 + k * 0.3, 0.02)); blades.add(h); }
+    for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; blossom(g, Math.cos(a) * 0.65, 0.06, Math.sin(a) * 0.65, ['#f47a93', '#ffd36e', '#c79cf2'][i % 3], 0.05); leafy(g, Math.cos(a + 0.3) * 0.68, 0.04, Math.sin(a + 0.3) * 0.68); }
+  },
+  fountain(g) {
+    for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2; const st = rbox(0.34, 0.1, 0.2, i % 2 ? '#e6e0d8' : '#cfc8c0', 0.04); st.position.set(Math.cos(a) * 1.02, 0.38, Math.sin(a) * 1.02); st.rotation.y = -a; g.add(st); } // đá viền
+    for (let i = 0; i < 3; i++) { const a = i * 2.2 + 0.5; const pad = cyl(0.14, 0.14, 0.015, '#7cc27f', 10); pad.position.set(Math.cos(a) * 0.6, 0.36, Math.sin(a) * 0.6); g.add(pad); if (i !== 1) blossom(g, Math.cos(a) * 0.6, 0.38, Math.sin(a) * 0.6, '#ffc4d6', 0.035); } // lá súng
+    for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; const d = dot(0.035, '#cfeefe'); d.position.set(Math.cos(a) * 0.38, 0.95, Math.sin(a) * 0.38); g.add(d); } // giọt nước tràn tầng trên
+    const r2 = ring(0.45, 0.03, '#e6e0d8'); r2.rotation.x = Math.PI / 2; r2.position.y = 1.12; g.add(r2);
+    for (let i = 0; i < 2; i++) { const f = dot(0.05, '#ff9f5a'); f.scale.set(1.6, 0.8, 0.7); f.position.set(-0.3 + i * 0.5, 0.34, 0.2 - i * 0.4); f.rotation.y = i * 2; g.add(f); } // cá vàng
+  },
+  arch(g) {
+    for (let i = 0; i < 22; i++) { const t = (i / 21) * Math.PI; leafy(g, Math.cos(t) * 1.0 + (i % 2 ? 0.08 : -0.08), 1.4 + Math.sin(t) * 1.0, 0.1 - (i % 3) * 0.08, 1.4); }
+    for (let i = 0; i < 6; i++) { const t = ((i + 0.5) / 6) * Math.PI; blossom(g, Math.cos(t) * 1.02, 1.4 + Math.sin(t) * 1.02, 0.15, i % 2 ? '#ffffff' : '#ffc4d6', 0.06, Math.PI / 2); }
+    for (const x of [-1, 1]) { // chậu hoa chân cổng + dây leo
+      g.add(at(cyl(0.22, 0.17, 0.3, '#e0a383', 10), x, 0.15, 0.2));
+      for (let k = 0; k < 4; k++) leafy(g, x + (k % 2 ? 0.06 : -0.06), 0.3 + k * 0.28, 0.06, 1.3);
+      blossom(g, x, 0.33, 0.2, '#f47a93', 0.06);
+    }
+    g.add(at(rbox(0.7, 0.22, 0.04, '#fff3e6', 0.04), 0, 2.15, 0.12)); // biển chào
+    g.add(at(dot(0.05, '#f47a93'), -0.15, 2.15, 0.15)); g.add(at(dot(0.05, '#f47a93'), 0.15, 2.15, 0.15));
+  },
+  balloon(g) {
+    for (const y of [1.25, 1.4, 1.55]) { const w = ring(0.31, 0.012, '#a8784f'); w.rotation.x = Math.PI / 2; w.position.y = y; g.add(w); } // vân đan giỏ
+    g.add(at(ring(0.31, 0.04, '#a8784f'), 0, 1.6, 0).rotateX(Math.PI / 2)); // miệng giỏ
+    for (const [x, z] of [[0.34, 0.1], [-0.34, -0.05]]) { const sb = dot(0.08, '#e6d8c6'); sb.scale.set(1, 1.2, 1); sb.position.set(x, 1.3, z); g.add(sb); } // bao cát
+    g.add(at(cyl(0.12, 0.16, 0.12, '#7c6a5e', 8), 0, 2.0, 0)); // đầu đốt
+    g.add(at(new THREE.Mesh(low('fl', () => new THREE.ConeGeometry(0.07, 0.2, 6)), basic('#ffb347')), 0, 2.15, 0));
+    const b = g.userData.bob;
+    if (b) { const band = ring(0.62, 0.04, '#ffffff'); band.rotation.x = Math.PI / 2; band.position.y = -0.85; b.add(band); for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; b.add(at(dot(0.06, i % 2 ? '#ffd34e' : '#9fd6f0'), Math.cos(a) * 0.62, -0.9, Math.sin(a) * 0.62)); } }
+    for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; g.add(at(dot(0.05, '#e6e0d8'), Math.cos(a) * 0.22, 0.03, Math.sin(a) * 0.22)); }
+  },
+  fun_teddy(g) {
+    for (const x of [-0.2, 0.2]) g.add(at(dot(0.06, '#f2d2b0'), x, 1.17, 0.05)); // lòng tai
+    g.add(at(dot(0.035, '#2a1f1c'), 0, 0.88, 0.34)); // mũi
+    const mo = ring(0.04, 0.008, '#2a1f1c', Math.PI); mo.rotation.z = Math.PI; mo.position.set(0, 0.82, 0.33); g.add(mo);
+    for (const x of [-0.17, 0.17]) { const pad = dot(0.07, '#f2d2b0'); pad.scale.set(1, 1, 0.4); pad.position.set(x * 1.1, 0.12, 0.3); g.add(pad); } // gan bàn chân
+    for (let i = 0; i < 5; i++) g.add(at(dot(0.012, '#8a5a3a'), 0, 0.2 + i * 0.07, 0.42 - Math.abs(i - 2) * 0.02)); // đường chỉ may bụng
+    g.add(at(dot(0.04, '#ffffff'), 0, 0.7, 0.24));
+    const heart = dot(0.07, '#ff6f9a'); heart.scale.set(1, 1, 0.4); heart.position.set(0.12, 0.5, 0.3); g.add(heart);
+  },
+  fun_balloons(g) {
+    const b = g.userData.bob;
+    if (b) b.children.filter((c) => c.geometry?.type === 'SphereGeometry').forEach((bl) => { const k = cone(0.035, 0.06, bl.material.color.getStyle(), 6); k.position.set(bl.position.x, bl.position.y - 0.25, bl.position.z); k.rotation.x = Math.PI; b.add(k); const hl = dot(0.04, '#ffffff'); hl.position.set(bl.position.x - 0.07, bl.position.y + 0.1, bl.position.z + 0.15); b.add(hl); });
+    g.add(at(ring(0.13, 0.02, '#ff8fb1'), 0, 0.13, 0).rotateX(Math.PI / 2)); // nơ buộc
+    blossom(g, 0, 0.14, 0.13, '#ffffff', 0.04, Math.PI / 2);
+  },
+};
+
+/** (0.29) Gộp các khối đứng yên cùng màu thành 1 khối ⇒ đồ nhiều chi tiết vẫn nhẹ. Bỏ qua các phần chuyển động (userData). */
+function mergeStill(g) {
+  const u = g.userData, keep = new Set();
+  for (const k of ['spin', 'bob', 'float', 'orbit', 'dangle', 'spinY', 'hover', 'wave']) if (u[k]?.isObject3D) keep.add(u[k]);
+  for (const k of ['flicker', 'bubbles']) (u[k] || []).forEach((o) => keep.add(o));
+  g.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(g.matrixWorld).invert();
+  const buckets = new Map();
+  const visit = (o) => {
+    for (const c of o.children) {
+      if (keep.has(c)) continue;
+      if (c.isMesh && !Array.isArray(c.material) && !c.children.length) {
+        let geo = c.geometry.index ? c.geometry.toNonIndexed() : c.geometry.clone();
+        for (const n of Object.keys(geo.attributes)) if (n !== 'position' && n !== 'normal') geo.deleteAttribute(n);
+        geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, c.matrixWorld));
+        const k = c.material.uuid;
+        if (!buckets.has(k)) buckets.set(k, { m: c.material, geos: [], src: [] });
+        buckets.get(k).geos.push(geo);
+        buckets.get(k).src.push(c);
+      } else if (c.children.length) visit(c);
+    }
+  };
+  visit(g);
+  for (const b of buckets.values()) {
+    if (b.src.length < 2) continue; // chỉ 1 khối: để nguyên
+    const merged = mergeGeometries(b.geos, false);
+    if (!merged) continue; // không gộp được thì giữ các khối cũ
+    for (const v of b.src) v.parent.remove(v);
+    const m = new THREE.Mesh(merged, b.m); m.castShadow = true;
+    g.add(m);
+  }
+}
+
 export function buildDecor(id) {
   const g = (BUILDERS[id] || BUILDERS.pot)();
+  DETAILS[BUILDERS[id] ? id : 'pot']?.(g);
   g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  mergeStill(g);
   return g;
 }
 

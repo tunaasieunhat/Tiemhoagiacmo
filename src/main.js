@@ -45,22 +45,39 @@ async function boot() {
   let last = performance.now();
   let lastDraw = 0;
   const perf = { frames: 0, since: performance.now(), startAt: performance.now() + 6000 };
+  // (0.29) độ nét tự co giãn để giữ 60 khung hình
+  const dr = { slow: 0, fast: 0, ema: 1 / 60 };
+  let frameNo = 0;
   const loop = (t) => {
     requestAnimationFrame(loop);
     const modalOpen = !!document.querySelector('#hud .modal-wrap:not(.hidden)');
     const fpsCap = Math.min(game?.graphics?.fps || 60, modalOpen ? GRAPHICS.modalFps : 60);
-    if (fpsCap < 60 && t - lastDraw < 1000 / fpsCap - 2) return;
+    // (0.29) màn hình 90/120 Hz cũng chỉ vẽ tối đa 60 khung ⇒ đỡ nóng máy, khung hình đều hơn
+    if (t - lastDraw < 1000 / fpsCap - 3) return;
+    const frameDt = (t - lastDraw) / 1000;
     lastDraw = t;
     const dt = Math.min((t - last) / 1000, 60 * 60 * 24);
     last = t;
     if (game) game.update(dt);
+    frameNo++;
+    if (stage.sun.castShadow && frameNo % GRAPHICS.shadowEvery === 0) stage.renderer.shadowMap.needsUpdate = true;
+    if (frameNo === 1) stage.renderer.shadowMap.needsUpdate = true;
     stage.renderer.render(stage.scene, stage.camera);
+    // độ nét tự co giãn (chỉ khi đang chơi, không mở bảng, khung hình liền mạch)
+    if (game && !modalOpen && fpsCap >= 60 && frameDt < 0.25 && document.visibilityState === 'visible') {
+      dr.ema += (frameDt - dr.ema) * 0.1;
+      const fps = 1 / dr.ema, D = GRAPHICS.dynamicRes;
+      if (fps < D.lowFps) { dr.slow += frameDt; dr.fast = 0; } else if (fps > D.highFps) { dr.fast += frameDt; dr.slow = 0; } else { dr.slow = 0; dr.fast = 0; }
+      if (dr.slow > D.downAfter) { stage.nudgeResolution(-1); dr.slow = 0; dr.ema = 1 / 60; }
+      if (dr.fast > D.upAfter) { stage.nudgeResolution(1); dr.fast = 0; }
+    }
     // đo tốc độ máy (chế độ đồ họa Tự động)
     if (game && t > perf.startAt && !modalOpen && document.visibilityState === 'visible') {
       perf.frames++;
       if (t - perf.since > 4000) {
         const fps = (perf.frames * 1000) / (t - perf.since);
-        if (fps < fpsCap * 0.95) game.reportFps(fps);
+        // chỉ hạ bậc đồ họa khi độ nét đã hạ hết mức mà vẫn chậm
+        if (fps < fpsCap * 0.95 && stage.dyn.ratio <= Math.min(GRAPHICS.dynamicRes.minRatio, stage.dyn.max) + 0.01) game.reportFps(fps);
         perf.frames = 0; perf.since = t;
       }
     } else { perf.frames = 0; perf.since = t; }

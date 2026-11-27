@@ -10,7 +10,8 @@ export function createStage(container) {
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, isMobile ? 1.75 : 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = isMobile ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap; // (0.29) điện thoại: bóng nhẹ hơn
+  renderer.shadowMap.autoUpdate = false; // (0.29) vòng vẽ tự bật needsUpdate theo GRAPHICS.shadowEvery
   container.appendChild(renderer.domElement);
   renderer.domElement.style.touchAction = 'none';
 
@@ -51,9 +52,12 @@ export function createStage(container) {
   visualViewport?.addEventListener('resize', resize);
 
   /** Áp dụng mức đồ họa: 'high' | 'medium' | 'low' */
+  const dyn = { max: 1, ratio: 1 };
   function applyQuality(level) {
     const q = GRAPHICS.levels[level] || GRAPHICS.levels.medium;
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, q.pixelRatio));
+    dyn.max = Math.min(devicePixelRatio || 1, q.pixelRatio);
+    dyn.ratio = dyn.max;
+    renderer.setPixelRatio(dyn.ratio);
     const size = isMobile ? Math.min(q.shadowSize, 1024) : q.shadowSize;
     sun.castShadow = size > 0;
     if (size > 0 && sun.shadow.mapSize.x !== size) {
@@ -65,5 +69,16 @@ export function createStage(container) {
     return q;
   }
 
-  return { renderer, scene, camera, sun, hemi, resize, isMobile, applyQuality };
+  /** (0.29) Độ nét tự co giãn: dir = -1 hạ, +1 nâng. Trả về true nếu có đổi */
+  function nudgeResolution(dir) {
+    const D = GRAPHICS.dynamicRes;
+    const next = Math.max(Math.min(D.minRatio, dyn.max), Math.min(dyn.max, +(dyn.ratio + dir * D.step).toFixed(2)));
+    if (Math.abs(next - dyn.ratio) < 0.01) return false;
+    dyn.ratio = next;
+    renderer.setPixelRatio(next);
+    resize();
+    return true;
+  }
+
+  return { renderer, scene, camera, sun, hemi, resize, isMobile, applyQuality, nudgeResolution, dyn };
 }

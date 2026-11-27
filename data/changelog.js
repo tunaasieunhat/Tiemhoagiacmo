@@ -4,6 +4,19 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.29.0',
+    notes: [
+      '🌾 Gấp đôi số lô đất mua ở Chợ: thêm 4 lô ở "Ruộng Ven Rừng" (bìa rừng đông nam, có đường đá nối về nông trại)',
+      '🧵 Bà Tư nhờ việc mới: "May đồ cùng bà" — giữ ngón tay lên cây kim rồi kéo theo đường chỉ chấm (khăn tay, váy, thêu trái tim, bông hoa...), thay cho game Xỏ kim',
+      '🧑‍🌾 Nhân vật chi tiết hơn: tai, lông mày, mắt long lanh, miệng cười, tóc mái nhiều lọn, giày có đế, cổ áo, thắt lưng, cổ tay áo',
+      '🎀 Phụ kiện 3D chi tiết: mũ rơm có vân đan + hoa, mũ lưỡi trai có đường may, mũ len sọc + quả bông xù, vương miện đính đá, kính có tròng + gọng, ba lô có quai & nắp, giỏ hoa có quai xách',
+      '🪑 Đồ trang trí chi tiết hơn: ghế có gối & tay vịn, hòm thư có lá thư, nhà chim có chú chim, bàn trà có ấm, tách & bánh quy, cối xay có cửa sổ & ban công, đài phun có lá súng & cá vàng...',
+      '⛰️ Địa hình mới: Thác Mây đổ xuống hồ trong rừng tây nam, cột đá & vòm đá ngoài khơi Mũi Én, cụm đá bazan ở Cồn Lặng, mỏm đá gần Công Viên',
+      '⚡ Mượt hơn: luôn nhắm 60 khung hình/giây (tự hạ/nâng độ nét theo sức máy), chỉ vẽ phần đang nhìn thấy, mức đồ họa mới "Thấp" vẫn chạy 60 khung',
+      '👆 Chạm nhạy hơn: chạm nhanh hơi lệch tay vẫn tính là chạm, kéo bản đồ bám sát ngón tay và trôi nhẹ khi vuốt; nhân vật đi nhanh hơn, làm việc nhanh hơn',
+    ],
+  },
+  {
     version: '0.28.0',
     notes: [
       '🎣 Câu cá làm lại hoàn toàn: khung cảnh vẽ động có trời, mây, mặt nước gợn sóng, cá bơi dưới nước, nhân vật mặc đúng đồ của bạn đứng trên cầu tàu',

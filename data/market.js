@@ -57,4 +57,9 @@ export const PLOT_UNLOCKS = [
   { slot: 1, price: 1000, level: 2 },
   { slot: 2, price: 3000, level: 4 },
   { slot: 3, price: 7500, level: 6 },
+  // (0.29) Ruộng Ven Rừng (bìa rừng đông nam) — gấp đôi số lô mua ở Chợ
+  { slot: 4, price: 12000, level: 9 },
+  { slot: 5, price: 18000, level: 12 },
+  { slot: 6, price: 26000, level: 15 },
+  { slot: 7, price: 36000, level: 18 },
 ];

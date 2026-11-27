@@ -5,6 +5,9 @@ import { CAM_OFFSET } from './stage.js';
 
 const GROUND = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const TAP_MOVE_PX = 12; // ngón tay xê dịch dưới mức này vẫn tính là "chạm" (không phải kéo bản đồ)
+// (0.29) chạm nhanh (dưới QUICK_TAP_MS) mà xê dịch chưa quá QUICK_TAP_PX vẫn tính là chạm ⇒ chạm nhạy hơn trên điện thoại
+const QUICK_TAP_MS = 260, QUICK_TAP_PX = 22;
+const FLING_DECAY = 5.5; // (0.29) vuốt nhanh rồi thả: bản đồ trôi thêm một chút rồi dừng (càng lớn dừng càng nhanh)
 
 export class CameraControls {
   /**
@@ -64,8 +67,9 @@ export class CameraControls {
     this.dom.setPointerCapture?.(e.pointerId);
     this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     this.focusAnim = null;
+    this.vel = null; // chạm vào là dừng trôi
     if (this.pointers.size === 1) {
-      this.gesture = { moved: false, startX: e.clientX, startY: e.clientY, multi: false };
+      this.gesture = { moved: false, startX: e.clientX, startY: e.clientY, multi: false, t0: performance.now(), maxD: 0 };
       if (this.onDragStart?.(e.clientX, e.clientY)) this.dragId = e.pointerId;
     } else if (this.gesture) {
       this.gesture.multi = true;
@@ -81,13 +85,23 @@ export class CameraControls {
     }
     if (this.pointers.size === 1) {
       const g = this.gesture;
-      if (g && !g.moved && Math.hypot(e.clientX - g.startX, e.clientY - g.startY) > TAP_MOVE_PX) g.moved = true;
+      let from = prev;
+      if (g) g.maxD = Math.max(g.maxD, Math.hypot(e.clientX - g.startX, e.clientY - g.startY));
+      if (g && !g.moved && g.maxD > TAP_MOVE_PX) { g.moved = true; from = { x: g.startX, y: g.startY }; } // (0.29) bản đồ bám đúng ngón tay, không bị hụt 12px đầu
       if (this.dragId === e.pointerId) {
         if (g?.moved) this.onDrag?.(e.clientX, e.clientY);
       } else if (g?.moved) {
-        const a = this.groundPoint(prev.x, prev.y);
+        const a = this.groundPoint(from.x, from.y);
         const b = this.groundPoint(e.clientX, e.clientY);
-        if (a && b) this.target.add(a.sub(b));
+        if (a && b) {
+          const d = a.sub(b);
+          this.target.add(d);
+          // vận tốc kéo (để trôi tiếp khi thả tay)
+          const now = performance.now(), dtm = Math.max(1, now - (this.lastMoveT || now - 16)) / 1000;
+          this.lastMoveT = now;
+          const v = { x: d.x / dtm, z: d.z / dtm };
+          this.dragVel = this.dragVel ? { x: this.dragVel.x * 0.6 + v.x * 0.4, z: this.dragVel.z * 0.6 + v.z * 0.4 } : v;
+        }
         this.clamp();
         this.apply();
       }
@@ -122,7 +136,13 @@ export class CameraControls {
       if (g?.moved) { if (this.pointers.size === 0) this.gesture = null; return; }
     }
     if (this.pointers.size === 0) {
-      if (!cancelled && g && !g.moved && !g.multi) this.onTap?.(e.clientX, e.clientY);
+      const quick = g && !g.multi && g.maxD <= QUICK_TAP_PX && performance.now() - g.t0 < QUICK_TAP_MS;
+      if (!cancelled && g && !g.multi && (!g.moved || quick)) this.onTap?.(e.clientX, e.clientY);
+      else if (g?.moved && !g.multi && this.dragVel && performance.now() - (this.lastMoveT || 0) < 80) {
+        const sp = Math.hypot(this.dragVel.x, this.dragVel.z), max = 40 / this.zoom;
+        if (sp > 2) this.vel = sp > max ? { x: (this.dragVel.x / sp) * max, z: (this.dragVel.z / sp) * max } : this.dragVel;
+      }
+      this.dragVel = null; this.lastMoveT = 0;
       this.gesture = null;
     }
   }
@@ -144,6 +164,7 @@ export class CameraControls {
   }
 
   focusOn(point, zoom = null) {
+    this.vel = null;
     this.focusAnim = { to: point.clone().setY(0), zoom };
   }
 
@@ -196,6 +217,15 @@ export class CameraControls {
       this.target.x += (dx / l) * sp;
       this.target.z += (dz / l) * sp;
       this.focusAnim = null;
+      this.clamp();
+      this.apply();
+    }
+    // (0.29) trôi tiếp sau khi vuốt
+    if (this.vel && !this.locked) {
+      this.target.x += this.vel.x * dt; this.target.z += this.vel.z * dt;
+      const k = Math.exp(-FLING_DECAY * dt);
+      this.vel.x *= k; this.vel.z *= k;
+      if (Math.hypot(this.vel.x, this.vel.z) < 0.3) this.vel = null;
       this.clamp();
       this.apply();
     }

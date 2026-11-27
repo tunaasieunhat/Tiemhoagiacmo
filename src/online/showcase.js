@@ -52,12 +52,12 @@ export function buildSnapshot(save) {
 
 /** Dựng lại dữ liệu kiểu "save" tối thiểu để vẽ nông trại của bạn bè */
 export function snapshotToFarm(snap) {
-  const plots = (snap?.plots?.length ? snap.plots : [{ tiles: Array.from({ length: 9 }, () => ({ s: 0 })) }]).slice(0, 8);
+  const plots = (snap?.plots?.length ? snap.plots : [{ tiles: Array.from({ length: 9 }, () => ({ s: 0 })) }]).slice(0, 12);
   return {
     time: { gameMinutes: 0 },
     farm: {
       plots: plots.map((p) => ({
-        cols: 3, rows: 3, slot: Number.isInteger(p.sl) && p.sl >= 0 && p.sl < 4 ? p.sl : undefined,
+        cols: 3, rows: 3, slot: Number.isInteger(p.sl) && p.sl >= 0 && p.sl < 8 ? p.sl : undefined,
         parcel: typeof p.pc === 'string' && PARCELS[p.pc] ? p.pc : undefined, greenhouse: !!p.gh, coverUntil: p.cv ? Infinity : -1, machines: { sprinkler: !!p.mc, feeder: !!p.mf },
         tiles: (p.tiles || []).slice(0, 9).map((t) => {
           const state = STATE_BACK[t.s] || 'untilled';

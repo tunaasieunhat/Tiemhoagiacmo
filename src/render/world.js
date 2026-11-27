@@ -13,6 +13,7 @@ import { mat } from '../models/materials.js';
 import { buildCharacter } from '../models/character.js';
 import { HomeModel } from '../models/home.js';
 import { ForestView } from './forest.js';
+import { TerrainView } from './terrain.js';
 import { LOBES, ISLAND_ZONES, ISLAND_EXITS, FOREST } from '../../data/island.js';
 import { FISH_SPOTS } from '../../data/fishing.js';
 import { CHAPTERS } from '../../data/story.js';
@@ -49,7 +50,16 @@ export const PLOT_SLOTS = [
   new THREE.Vector3(2.6, 0, 4.5),
   new THREE.Vector3(-2.6, 0, -0.5),
   new THREE.Vector3(2.6, 0, -0.5),
+  // (0.29) Ruộng Ven Rừng — 4 lô mới ở bìa rừng đông nam (gần nông trại nhất xếp trước)
+  new THREE.Vector3(18.4, 0, 16.5),
+  new THREE.Vector3(23.6, 0, 16.5),
+  new THREE.Vector3(18.4, 0, 21.5),
+  new THREE.Vector3(23.6, 0, 21.5),
 ];
+// (0.29) Ruộng Ven Rừng: tâm, nửa rộng hàng rào, đường đá nối về nông trại
+export const FIELD2 = { x: 21, z: 19, hx: 5.6, hz: 5.4, path: [[15.0, 19], [9.6, 12.2], [6.4, 8.4]] };
+const nearField2 = (x, z, pad = 0) => (Math.abs(x - FIELD2.x) < FIELD2.hx + 0.6 + pad && Math.abs(z - FIELD2.z) < FIELD2.hz + 0.6 + pad)
+  || FIELD2.path.slice(1).some((b, i) => distToSeg(x, z, { x: FIELD2.path[i][0], z: FIELD2.path[i][1] }, { x: b[0], z: b[1] }) < 1.3 + pad);
 
 const ISLAND_R = 25;
 
@@ -124,6 +134,8 @@ export function buildWorld(scene) {
   sc.rotation.y = 1.2;
   world.add(sc);
   block(sc.position.x, sc.position.z, 0.6, 'bù nhìn');
+
+  buildField2(world, decorMap);
 
   const lockedSlots = [];
   PLOT_SLOTS.forEach((p, i) => {
@@ -319,7 +331,7 @@ export function buildWorld(scene) {
     t.rotation.y = rand() * 6;
     avoid.push({ c: t.position, r: 1.6 });
     // giữ nguyên thứ tự ngẫu nhiên như bản cũ (cây cũ không đổi chỗ); chỉ bỏ cây nằm trên đường / đất làng mới
-    if (!inVillageZone(x, z) && !inParcelZone(x, z, 0.4) && !onNew(x, z, 0.4)) { world.add(t); block(x, z, 0.95, 'cây'); }
+    if (!inVillageZone(x, z) && !inParcelZone(x, z, 0.4) && !onNew(x, z, 0.4) && !nearField2(x, z, 0.4)) { world.add(t); block(x, z, 0.95, 'cây'); }
     placed++;
   }
   const flowerColors = [null, '#ffc4d6', '#fff0a8', '#d9c4ff', '#ffffff'];
@@ -329,7 +341,7 @@ export function buildWorld(scene) {
     const b = rand() > 0.35 ? bush('#93d48d', flowerColors[Math.floor(rand() * flowerColors.length)], 0.7 + rand() * 0.6) : rock(0.6 + rand() * 0.8);
     b.position.x = x; b.position.z = z;
     b.rotation.y = rand() * 6;
-    if (!inVillageZone(x, z, -0.3) && !inParcelZone(x, z) && !onNew(x, z)) { world.add(b); block(x, z, 0.45, 'bụi cây'); }
+    if (!inVillageZone(x, z, -0.3) && !inParcelZone(x, z) && !onNew(x, z) && !nearField2(x, z)) { world.add(b); block(x, z, 0.45, 'bụi cây'); }
   }
   for (let i = 0; i < 90; i++) {
     const x = (rand() - 0.5) * 2 * (ISLAND_R - 1), z = (rand() - 0.5) * 2 * (ISLAND_R - 1);
@@ -337,7 +349,7 @@ export function buildWorld(scene) {
     if (Math.abs(x - fc.x) < fx + 0.5 && Math.abs(z - fc.z) < fz + 0.5) continue;
     const t = grassTuft(rand() > 0.5 ? '#86c47a' : '#9bd38a');
     t.position.set(x, 0, z);
-    if (!inVillageZone(x, z, -0.8) && !inParcelZone(x, z, -0.3)) world.add(t);
+    if (!inVillageZone(x, z, -0.8) && !inParcelZone(x, z, -0.3) && !nearField2(x, z, -0.3)) world.add(t);
   }
   // bụi hoa ven hàng rào nông trại
   for (let i = 0; i < 6; i++) {
@@ -355,6 +367,7 @@ export function buildWorld(scene) {
     { text: ISLAND_ZONES.park.name, sub: ISLAND_ZONES.park.sub, pos: new THREE.Vector3(ISLAND_ZONES.park.at[0] - 1, 4.2, ISLAND_ZONES.park.at[1] - 3), scale: 0.9 },
     { text: ISLAND_ZONES.fun.name, sub: ISLAND_ZONES.fun.sub, pos: new THREE.Vector3(ISLAND_ZONES.fun.at[0], 6.6, ISLAND_ZONES.fun.at[1]), scale: 1.0 },
     { text: 'Nhà Lai Tạo', sub: 'Lai ra màu hoa mới', pos: new THREE.Vector3(-8.8, 3.6, -1.6), scale: 0.8 },
+    { text: 'Ruộng Ven Rừng', sub: 'Lô đất mở rộng mua ở Chợ', pos: new THREE.Vector3(FIELD2.x - FIELD2.hx, 2.6, FIELD2.z - FIELD2.hz), scale: 0.9 },
   ];
   for (const l of labels) {
     const sp = textSprite(l.text, { sub: l.sub, scale: l.scale || 1.1 });
@@ -363,13 +376,17 @@ export function buildWorld(scene) {
   }
 
   // ----- (GĐ24) rừng bao quanh: rải theo lưới dọc bờ + 2 khu rừng, tránh lối ra / đường / công trình -----
-  const forestSpots = forestLayout(decorMap, [...paths.map(([a, b]) => [a, b]), ...newPaths], zone.spots);
+  // (0.29) địa hình đặc biệt: vách đá + thác, cột đá giữa biển... (trước khi rải rừng để rừng chừa chỗ)
+  const terrain = new TerrainView(scene, decorMap);
+  mergeStatic(terrain.still);
+  const f2Paths = FIELD2.path.slice(1).map((b, i) => [{ x: FIELD2.path[i][0], z: FIELD2.path[i][1] }, { x: b[0], z: b[1] }]);
+  const forestSpots = forestLayout(decorMap, [...paths.map(([a, b]) => [a, b]), ...newPaths, ...f2Paths], zone.spots);
   for (const [x, z] of forestSpots) block(x, z, 0.9, 'rừng');
   const forest = new ForestView(scene, forestSpots);
 
   mergeStatic(world);
 
-  return { world, lampLights, fireflyAnchors, lockedSlots, shop, market: marketG, lab, decorMap, village, parcels, home, forest };
+  return { world, lampLights, fireflyAnchors, lockedSlots, shop, market: marketG, lab, decorMap, village, parcels, home, forest, terrain };
 }
 
 function distToSeg(x, z, a, b) {
@@ -382,36 +399,45 @@ function distToSeg(x, z, a, b) {
  * Gộp các vật thể tĩnh cùng vật liệu thành 1 khối để giảm số lệnh vẽ (chạy mượt hơn trên điện thoại).
  * Bỏ qua những nhóm có thể chạm vào (userData.pick), chữ (sprite) và đèn.
  */
+const MERGE_CELL = 14; // (0.29) cỡ ô gộp vật tĩnh (đơn vị 3D)
 export function mergeStatic(world) {
   world.updateMatrixWorld(true);
   const buckets = new Map();
-  const victims = [];
   const visit = (o) => {
     if (o.userData?.pick) return;
     for (const c of o.children) {
       if (c.isMesh && !c.isSprite && c.material && !Array.isArray(c.material)) {
-        const key = `${c.material.uuid}|${c.castShadow}|${c.receiveShadow}`;
-        if (!buckets.has(key)) buckets.set(key, { mat: c.material, cast: c.castShadow, receive: c.receiveShadow, geos: [] });
         let g = c.geometry.index ? c.geometry.toNonIndexed() : c.geometry.clone();
         for (const name of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(name)) g.deleteAttribute(name);
+        if (!c.material.map) g.deleteAttribute('uv'); // (0.29) vật liệu không có ảnh thì bỏ uv ⇒ gộp được cả khối đã gộp sẵn (đồ trang trí, nhân vật)
         g.applyMatrix4(c.matrixWorld);
+        // (0.29) gộp theo ô lưới MERGE_CELL × MERGE_CELL ⇒ phần ngoài màn hình được bỏ qua khi vẽ (trước đây cả đảo là 1 khối, luôn bị vẽ)
+        g.computeBoundingBox();
+        const bb = g.boundingBox, big = bb.max.x - bb.min.x > MERGE_CELL || bb.max.z - bb.min.z > MERGE_CELL;
+        const cell = big ? 'big' : `${Math.floor((bb.min.x + bb.max.x) / 2 / MERGE_CELL)},${Math.floor((bb.min.z + bb.max.z) / 2 / MERGE_CELL)}`;
+        const key = `${c.material.uuid}|${c.castShadow}|${c.receiveShadow}|${cell}`;
+        if (!buckets.has(key)) buckets.set(key, { mat: c.material, cast: c.castShadow, receive: c.receiveShadow, geos: [], src: [] });
         buckets.get(key).geos.push(g);
-        victims.push(c);
+        buckets.get(key).src.push(c);
       } else if (!c.isLight && !c.isSprite) {
         visit(c);
       }
     }
   };
   visit(world);
-  for (const v of victims) v.parent.remove(v);
+  const merges = [];
+  for (const b of buckets.values()) {
+    const merged = mergeGeometries(b.geos, false);
+    b.geos.forEach((g) => g.dispose());
+    if (!merged) continue; // không gộp được thì giữ nguyên các khối cũ (không làm mất đồ)
+    for (const v of b.src) v.parent.remove(v);
+    merges.push([b, merged]);
+  }
   // xóa các nhóm rỗng
   const prune = (o) => { [...o.children].forEach(prune); if (o !== world && o.type === 'Group' && o.children.length === 0 && !o.userData?.pick) o.parent?.remove(o); };
   prune(world);
   const inv = new THREE.Matrix4().copy(world.matrixWorld).invert();
-  for (const b of buckets.values()) {
-    const merged = mergeGeometries(b.geos, false);
-    b.geos.forEach((g) => g.dispose());
-    if (!merged) continue;
+  for (const [b, merged] of merges) {
     merged.applyMatrix4(inv);
     const m = new THREE.Mesh(merged, b.mat);
     m.castShadow = b.cast;
@@ -510,6 +536,54 @@ function buildZones(world, decorMap, block, rand) {
 }
 
 /** Vị trí cây rừng: dải sát bờ + 2 khu rừng đông nam / tây nam. Trả về [[x, z, loại, cỡ]] */
+/** (0.29) Ruộng Ven Rừng: nền cỏ, hàng rào (cổng phía tây, nhìn về nông trại), đường đá, vài khúc gỗ & bụi hoa.
+ *  Dùng chuỗi ngẫu nhiên riêng ⇒ cây cũ của đảo không đổi chỗ. */
+function buildField2(world, decorMap) {
+  const r = rng(2929);
+  const { x: cx, z: cz, hx, hz } = FIELD2;
+  const ground = rbox(hx * 2 + 0.4, 0.08, hz * 2 + 0.4, '#a5d98a', 0.04, { cast: false, receive: true });
+  ground.position.set(cx, 0.02, cz);
+  world.add(ground);
+  decorMap.rects.push({ x: cx, z: cz, hx: hx + 0.15, hz: hz + 0.15, name: 'Ruộng Ven Rừng' });
+  world.add(fence(cx - hx, cz - hz, cx + hx, cz - hz));
+  world.add(fence(cx - hx, cz + hz, cx + hx, cz + hz));
+  world.add(fence(cx + hx, cz - hz, cx + hx, cz + hz));
+  world.add(fence(cx - hx, cz - hz, cx - hx, cz - 1.2));
+  world.add(fence(cx - hx, cz + 1.2, cx - hx, cz + hz));
+  // cổng gỗ có mái lá
+  const gate = new THREE.Group();
+  gate.add(at(rbox(0.25, 2.1, 0.25, '#c9a27e', 0.08), 0, 1.05, -1.25));
+  gate.add(at(rbox(0.25, 2.1, 0.25, '#c9a27e', 0.08), 0, 1.05, 1.25));
+  gate.add(at(rbox(0.5, 0.35, 3.0, '#8fc27a', 0.15), 0, 2.2, 0));
+  for (let i = 0; i < 6; i++) gate.add(at(sphere(0.13, ['#ffd34e', '#ffffff', '#f6a6b9'][i % 3], 8), 0.2, 2.42, -1.0 + i * 0.4));
+  gate.position.set(cx - hx, 0, cz);
+  world.add(gate);
+  // đường đá về nông trại
+  const pts = FIELD2.path.map(([x, z]) => new THREE.Vector3(x, 0, z));
+  for (let k = 1; k < pts.length; k++) {
+    const a = pts[k - 1], b = pts[k];
+    decorMap.paths.push([{ x: a.x, z: a.z }, { x: b.x, z: b.z }]);
+    const n = Math.floor(a.distanceTo(b) / 0.85);
+    for (let i = 0; i <= n; i++) {
+      const p = a.clone().lerp(b, i / n);
+      const st = cyl(0.36 + r() * 0.08, 0.38, 0.07, r() > 0.5 ? '#efe4d6' : '#e6d8c6', 9, { cast: false, receive: true });
+      st.position.set(p.x + (r() - 0.5) * 0.35, 0.04, p.z + (r() - 0.5) * 0.35);
+      world.add(st);
+    }
+  }
+  // bụi hoa dọc hàng rào phía nam + đống củi
+  for (let i = 0; i < 5; i++) {
+    const b = bush('#8fd18b', ['#ffc4d6', '#fff0a8', '#d9c4ff'][i % 3], 0.6);
+    b.position.set(cx - hx + 1.2 + i * 2.3, 0, cz + hz + 0.9);
+    world.add(b);
+  }
+  const logs = new THREE.Group();
+  for (let i = 0; i < 3; i++) { const l = cyl(0.18, 0.18, 1.3, '#b98a5e', 10); l.rotation.z = Math.PI / 2; l.position.set(0, 0.18 + (i === 2 ? 0.3 : 0), (i === 2 ? 0 : i * 0.38 - 0.19)); logs.add(l); }
+  logs.position.set(cx - hx - 1.2, 0, cz - 2.6);
+  world.add(logs);
+  decorMap.circles.push({ x: logs.position.x, z: logs.position.z, r: 0.8, name: 'đống củi' });
+}
+
 function forestLayout(decorMap, allPaths, zoneSpots) {
   const rand = rng(777001);
   const shapes = [...ISLAND_SHAPES, { x: VILLAGE.center.x, z: VILLAGE.center.z, r: VILLAGE.radius }];

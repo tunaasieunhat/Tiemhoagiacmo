@@ -79,7 +79,8 @@ export class Player {
       if (d < 0.05) {
         this.startAct();
       } else {
-        const step = Math.min(d, PLAYER.walkSpeed * this.speedMult * dt);
+        const run = 1 + Math.min(1.2, Math.max(0, d - PLAYER.runFar) / 8); // (0.29) ô xa thì chạy nhanh dần
+        const step = Math.min(d, PLAYER.walkSpeed * run * this.speedMult * dt);
         pos.x += ((to.x - pos.x) / d) * step;
         pos.z += ((to.z - pos.z) / d) * step;
         this.faceTowards(to.x - pos.x, to.z - pos.z, dt);
@@ -98,7 +99,7 @@ export class Player {
       m.armR.rotation.x = -1.2 - Math.sin(k * Math.PI * 2) * 0.5;
       m.body.position.y = Math.sin(k * Math.PI) * 0.06;
       m.head.rotation.x = 0.15;
-      if (!this.job.done && k >= 0.5) {
+      if (!this.job.done && k >= PLAYER.actionHit) {
         this.job.done = true;
         try { this.job.run?.(); } catch (e) { console.error(e); }
       }

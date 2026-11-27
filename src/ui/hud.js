@@ -1567,8 +1567,8 @@ export class Hud {
       <div class="two-cols"><div>
       ${account}
       <h3>🎨 Đồ họa</h3>
-      <div class="seg">${[['auto', 'Tự động'], ['high', 'Cao'], ['medium', 'Vừa'], ['low', 'Tiết kiệm pin']].map(([v, l]) => `<button class="${(s.settings.quality || 'auto') === v ? 'on' : ''}" data-act="quality" data-level="${v}">${l}</button>`).join('')}</div>
-      <p class="muted small">Đang dùng: ${GRAPHICS.levels[g.graphicsLevel].name}${(s.settings.quality || 'auto') === 'auto' ? ' (tự giảm khi máy chậm)' : ''}. "Tiết kiệm pin" tắt bóng đổ, giảm độ nét và chạy 30 khung hình/giây.</p>
+      <div class="seg">${[['auto', 'Tự động'], ['high', 'Cao'], ['medium', 'Vừa'], ['low', 'Thấp'], ['battery', 'Tiết kiệm pin']].map(([v, l]) => `<button class="${(s.settings.quality || 'auto') === v ? 'on' : ''}" data-act="quality" data-level="${v}">${l}</button>`).join('')}</div>
+      <p class="muted small">Đang dùng: ${GRAPHICS.levels[g.graphicsLevel].name}${(s.settings.quality || 'auto') === 'auto' ? ' (tự giảm khi máy chậm)' : ''}. Game tự hạ/nâng độ nét để luôn chạy 60 khung hình/giây. "Thấp" tắt bóng đổ (vẫn 60 khung hình); "Tiết kiệm pin" chỉ chạy 30 khung hình/giây.</p>
       </div><div>
       ${this.audioSettingsHTML()}
       <p class="muted small">Đã lưu trên máy lúc ${last}.</p>

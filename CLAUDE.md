@@ -176,6 +176,15 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   `en_off|en_on` (đèn hải đăng). 3D `src/render/muien.js` (`game.muien.sync` trong `syncStoryWorld`). `game.sail()` chỉ là lia camera
   (`game.atEn` = camera x > 40); nhân vật ở xa ô đất > 22 thì "có mặt" ngay cạnh lô (không lội biển).
   Sửa `flowers.js`/`variants.js` ở GĐ này ⇒ đã chạy `npm run build:functions` (người dùng cần dán lại Edge Function nếu chưa bật tự deploy).
+- **Bản 0.29** (bản thử): `PLOT_SLOTS` 8 vị trí (4 lô mới ở Ruộng Ven Rừng `FIELD2` trong world.js, `buildField2` dùng rng riêng), `PLOT_UNLOCKS` slot 4–7,
+  ảnh chụp bạn bè nhận `sl` < 8 và tối đa 12 lô. Mini game `sew` (`src/ui/sewGame.js`, kéo kim theo đường may, `window.__sew` cho bot — bot phải phát
+  PointerEvent TRONG trang) thay `needle` trong việc nhờ của Bà Tư (`FAVORS.ba_tu` id `sew`). Nhân vật: `buildCharacter` thêm chi tiết + `compact()` gộp khối
+  cùng màu trong từng bộ phận chuyển động (đầu/tay/chân/thân; `hand` giữ riêng). Đồ trang trí: `DETAILS[id]` thêm chi tiết + `mergeStill` gộp phần đứng yên
+  (bỏ qua các nút trong userData spin/bob/...). `mergeStatic` gộp theo ô lưới `MERGE_CELL` (để bỏ qua phần ngoài màn hình) và bỏ `uv` khi vật liệu không có ảnh;
+  gộp lỗi thì giữ nguyên khối cũ. Địa hình `data/terrain.js` + `src/render/terrain.js` (`TerrainView`: cliff/stack/arch/basalt, `world.terrain.update`).
+  Hiệu năng: `GRAPHICS.dynamicRes` (độ nét tự co giãn trong vòng vẽ ở main.js, `stage.nudgeResolution`), `shadowEvery` (shadowMap.autoUpdate = false),
+  mức `low` 60 khung + mức `battery` 30 khung, màn hình 120 Hz cũng giới hạn 60. Chạm: `QUICK_TAP_*`, kéo không hụt 12px đầu, trôi khi vuốt (`controls.vel`);
+  `PLAYER.walkSpeed/runFar/actionSeconds/actionHit`.
 - **Câu cá làm lại** (0.28): `src/ui/fishingGame.js` vẽ cảnh bằng canvas (`startScene/draw`, pha power → throwBob → wait → reel → result;
   thẻ kết quả `.fs-overlay` nổi trên cảnh, nút "Câu tiếp" `data-fs="quick"`). Luật/số liệu không đổi. Bot thử phải chạy TRONG trang (setInterval đọc
   `window.__fishing`) vì swiftshader chậm, gọi từ ngoài sẽ lỡ cửa sổ cắn câu.
