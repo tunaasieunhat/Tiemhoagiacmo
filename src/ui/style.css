@@ -1647,3 +1647,27 @@ body.cine-sepia #game canvas { filter: sepia(.85) saturate(.75) contrast(.95) br
   .sy-grid, .fn-prizes { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
   .ps-day i, .ps-tier i { display: none; }
 }
+
+/* ---------- 🎣 câu cá làm lại (0.28): cảnh vẽ canvas ---------- */
+.fs-card.play { width: min(860px, 100%); height: min(440px, calc(100vh - 20px)); padding: 0; overflow: hidden; display: block; background: #8fd0f5; border-color: #9fd6f0; cursor: pointer; min-height: 0; }
+.fs-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.fs-top { position: absolute; left: 12px; right: 56px; top: 10px; display: flex; flex-direction: column; gap: 2px; pointer-events: none; }
+.fs-top .fs-hint { align-self: flex-start; background: rgba(255,255,255,.88); border-radius: 12px; padding: 4px 10px; font-size: 14px; font-weight: 700; color: #3b2a22; }
+.fs-top .fs-kind:not(:empty) { align-self: flex-start; background: rgba(255,255,255,.75); border-radius: 10px; padding: 2px 8px; font-size: 12px; font-weight: 800; }
+.fs-bang { color: #e8384f; font-size: 16px; animation: nudge .25s linear infinite; display: inline-block; }
+.fs-bottom { position: absolute; left: 0; right: 0; bottom: 14px; display: flex; justify-content: center; pointer-events: none; }
+.fs-bottom .fs-power { width: min(380px, 70%); background: rgba(255,255,255,.9); }
+.fs-reelbtn.on { background: #ffe6ef; border-color: #f6a6b9; transform: scale(.96); }
+.fs-reelbtn.danger { background: #ffd6d6; border-color: #ec6b6b; animation: nudge .2s linear infinite; }
+.fs-card.play .fs-x { z-index: 3; }
+.fs-overlay { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(420px, 86%); background: var(--card); border: 2px solid var(--line); border-radius: 20px; padding: 12px 14px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 8px; cursor: default; animation: pop .3s ease-out; z-index: 2; }
+.fs-overlay .row-btns { justify-content: center; flex-wrap: wrap; }
+@media (max-height: 480px) {
+  .fs-card.play { height: calc(100vh - 16px); border-radius: 16px; }
+  .fs-top .fs-hint { font-size: 12px; }
+  .fs-overlay { padding: 8px 10px; gap: 5px; }
+  .fs-overlay .fs-big { font-size: 34px; }
+}
+/* 🧪 nhãn bản thử (chỉ hiện khi build VITE_TEST_BUILD=1) */
+.test-badge { position: fixed; right: calc(6px + var(--safe-right)); bottom: calc(4px + var(--safe-bottom)); z-index: 90; pointer-events: none; background: rgba(255, 236, 160, .92); color: #7a4e1a; border: 1.5px solid #f2c14e; border-radius: 10px; padding: 1px 10px; font-size: 11px; font-weight: 800; }
+.fs-top .fs-hint:empty { display: none; }

@@ -1,4 +1,5 @@
 // Điểm khởi động game.
+import { applyTestUnlock, TEST_BUILD } from './testBuild.js';
 import './ui/fonts.js';
 import './ui/style.css';
 import { Emitter } from './core/events.js';
@@ -130,6 +131,7 @@ async function boot() {
     await saveMgr.load();
   }
   const save = saveMgr.save;
+  if (!session) applyTestUnlock(save); // 🧪 chỉ có tác dụng ở BẢN THỬ (VITE_TEST_BUILD=1)
   if (profile) {
     save.player.name = profile.display_name;
     save.player.avatar = { ...save.player.avatar, ...profile.avatar };
@@ -202,6 +204,7 @@ async function boot() {
     },
   });
   if (isNative()) document.body.classList.add('native');
+  if (TEST_BUILD) { const t = document.createElement('div'); t.className = 'test-badge'; t.textContent = '🧪 BẢN THỬ · chưa phát hành'; document.body.appendChild(t); }
 
   window.__game = game; // để thử nghiệm trong console trình duyệt
   console.info('Khởi động từ:', startSource);

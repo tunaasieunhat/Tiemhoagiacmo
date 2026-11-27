@@ -176,6 +176,9 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   `en_off|en_on` (đèn hải đăng). 3D `src/render/muien.js` (`game.muien.sync` trong `syncStoryWorld`). `game.sail()` chỉ là lia camera
   (`game.atEn` = camera x > 40); nhân vật ở xa ô đất > 22 thì "có mặt" ngay cạnh lô (không lội biển).
   Sửa `flowers.js`/`variants.js` ở GĐ này ⇒ đã chạy `npm run build:functions` (người dùng cần dán lại Edge Function nếu chưa bật tự deploy).
+- **Câu cá làm lại** (0.28): `src/ui/fishingGame.js` vẽ cảnh bằng canvas (`startScene/draw`, pha power → throwBob → wait → reel → result;
+  thẻ kết quả `.fs-overlay` nổi trên cảnh, nút "Câu tiếp" `data-fs="quick"`). Luật/số liệu không đổi. Bot thử phải chạy TRONG trang (setInterval đọc
+  `window.__fishing`) vì swiftshader chậm, gọi từ ngoài sẽ lỡ cửa sổ cắn câu.
 - **Cồn Lặng & câu cá** (GĐ22): số liệu `data/fishing.js` (FISH_RULES, FISH_SPOTS, BAITS, RODS, GEAR, 40 loài `FISH`, MONG, JUNK…).
   Logic thuần `src/systems/fishing.js` (`cast` → `reelConfig` → `land`; `sellFish/tradeSeed/tradeFert`, `isLowTide`, `isFullMoon`,
   `spotOpen`); save `save.fish` (fillDefaults tự bổ sung, KHÔNG tăng SAVE_VERSION). UI `src/ui/fishingGame.js` (`#fishing`, pha
@@ -333,6 +336,11 @@ Chưa có test tự động trong repo. Các giai đoạn trước được ki�
 Sau mỗi thay đổi lớn: build, kiểm các luồng cũ không hỏng (trồng → bán → chợ → thời tiết → lai tạo → online).
 
 ## Bản chơi thử cho người dùng
+
+**Quy trình từ 27/11/2026 (người dùng yêu cầu):** mọi cập nhật mới chỉ đưa lên **bản thử** = Artifact ở link dưới, build với
+`VITE_TEST_BUILD=1 npm run build` (`src/testBuild.js`: save khách tự mở hết tính năng 1 lần — cấp 30, tiền, các đảo/khu, mồi, trứng…, nhãn
+"🧪 BẢN THỬ"). **KHÔNG push lên nhánh `ccr-845954e0-2hh7a1`** (push = Netlify + APK phát hành) cho tới khi người dùng **chốt**; trong lúc chờ
+chỉ commit ở máy (hoặc nhánh riêng nếu người dùng cho phép). Khi chốt: build thường (không cờ), push nhánh chính.
 
 Người dùng xem game qua một Artifact riêng tư (https://claude.ai/artifact/VeiUX3dnuamNi5qF6LctGu). Cách cập nhật:
 `npm run build`, ghép `dist/assets/*.js` + `*.css` thành 1 file HTML (JS inline, thay `</script` bằng `<\/script`,
