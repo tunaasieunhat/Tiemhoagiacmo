@@ -11,6 +11,7 @@ export const CHANGELOG = [
       '🎯 Quăng cần thấy phao bay theo đường cong; cá bơi lại gần mồi, nhử phao, cắn câu thì nước bắn tung + rung máy',
       '💪 Kéo cá: đồng hồ lực căng hình vòng cung, cần câu cong theo sức kéo, dây đỏ khi sắp đứt, cá vùng vẫy dưới nước và vào bờ dần; câu được thì cá nhảy khỏi mặt nước',
       '⚡ Nút “Câu tiếp” ngay trên thẻ kết quả (giữ mồi đang chọn)',
+      '🌫️ Mũi Én: kéo bản đồ được rộng hơn ra biển để nhìn bao quát cả đảo, và kéo thẳng qua lại giữa Khu Mua Bán ↔ Mũi Én (không cần bấm ⛵)',
     ],
   },
   {

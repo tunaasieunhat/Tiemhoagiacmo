@@ -2382,7 +2382,11 @@ export class Game {
       this.controls.regions.push(...this.hgRegion);
     }
     // mở vùng camera Mũi Én khi đã có thuyền
-    if (f.boat_ready && this.controls && !this.enRegion) { this.enRegion = { x: EN.center[0], z: EN.center[1], r: EN.camRadius }; this.controls.regions.push(this.enRegion); }
+    // (0.28) vùng quanh đảo rộng ra biển + dải biển nối từ mũi chợ phía đông của đảo chính sang Mũi Én (kéo bản đồ qua lại được)
+    if (f.boat_ready && this.controls && !this.enRegion) {
+      this.enRegion = [{ x: EN.center[0], z: EN.center[1], r: EN.camRadius }, { x: ISLAND_ZONES.market.at[0], z: ISLAND_ZONES.market.at[1], r: EN.seaLane, x2: EN.center[0], z2: EN.center[1], r2: EN.seaLane }];
+      this.controls.regions.push(...this.enRegion);
+    }
   }
 
   // ---------------- 🏡 Nhà của bạn & đảo chính mới (GĐ24) ----------------

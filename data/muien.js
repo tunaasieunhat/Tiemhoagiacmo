@@ -7,7 +7,8 @@
 export const EN = {
   center: [62, 4],       // tâm đảo
   radius: 13,            // bán kính đảo
-  camRadius: 10.5,       // camera được kéo tới đâu trên đảo
+  camRadius: 17,         // camera được kéo tới đâu quanh đảo (0.28: nới rộng ra biển để nhìn bao quát cả đảo)
+  seaLane: 16,           // bề rộng dải biển nối đảo chính ↔ Mũi Én (kéo bản đồ sang thẳng, không cần bấm ⛵)
   dock: [51.2, 6.2],     // bến thuyền (phía tây, hướng về Đảo Mây)
   homeDock: [2.6, 50.2], // chỗ thuyền đậu ở cầu tàu Làng Hoa
   lighthouse: [69, -3],
