@@ -20,6 +20,12 @@ import * as variants from './systems/variants.js';
 import * as notebook from './systems/notebook.js';
 import * as breeding from './systems/breeding.js';
 import * as regulars from './systems/regulars.js';
+import * as talesSys from './systems/tales.js';
+import * as gardenSys from './systems/garden.js';
+import * as econ from './systems/economy.js';
+import { ISLANDS, SUPPLY_RULES } from '../data/economy.js';
+import { STRAIN_RULES, GENES } from '../data/garden.js';
+import { TALES, TALE_RULES, STYLES } from '../data/tales.js';
 import { REGULAR_RULES } from '../data/regulars.js';
 import { MEANINGS } from '../data/variants.js';
 import * as quests from './systems/quests.js';
@@ -57,7 +63,7 @@ import { BugView } from './render/bugs.js';
 import * as goals from './systems/goals.js';
 import { shopUpgrades } from './models/environment.js';
 import { shopDisplayBaskets, swayBaskets } from './models/shopDisplay.js';
-import { DISPLAY, SMART } from '../data/shop.js';
+import { DISPLAY, SMART, SHOP as SHOP_DATA } from '../data/shop.js';
 import * as story from './systems/story.js';
 import { StoryView } from './render/storyView.js';
 import { Director } from './render/director.js';
@@ -106,7 +112,7 @@ import { TICKET_SOURCES } from '../data/luck.js';
 
 const ACTIONS = {
   till: (t, s) => farming.till(t, s),
-  plant: (t, s, o, now) => farming.plant(t, o.seed, s, now, { plot: o.plot }),
+  plant: (t, s, o, now) => (gardenSys.isStrainKey(o.seed) ? gardenSys.plantStrain(t, s, o.seed.slice(2), now, { plot: o.plot }) : farming.plant(t, o.seed, s, now, { plot: o.plot })), // (0.31) hạt dòng giống 'S:id'
   water: (t, s) => farming.water(t, s),
   fertilize: (t, s) => farming.fertilize(t, s),
   harvest: (t, s) => farming.harvest(t, s),
@@ -266,13 +272,19 @@ export class Game {
       for (const e of weather.weatherTick(s, from, to, { offline })) this.onWeatherEvent(e, ev, offline);
       const day = dayOf(to);
       const cap = farming.waterCapacity(s);
+      const seasonId = calendar.calendarOf(day).season.id;
       s.farm.plots.forEach((plot, pi) => {
         const env = weather.plotEnv(s, plot);
+        gardenSys.driftPh(plot, pi, step); // (0.31) pH đất trôi dần về tự nhiên
+        const ph = gardenSys.phOf(plot, pi);
         plot.tiles.forEach((tile, ti) => {
           if (env.rain && ['tilled', 'growing', 'ready'].includes(tile.state)) tile.water = Math.max(tile.water, cap);
           automation.runMachines(s, plot, tile, cap);
-          const growMult = tile.flower ? calendar.seasonGrowMult(tile.flower, day, plot.greenhouse) : 1;
-          const e = farming.simulateTile(tile, step, { offline, env: { growMult, waterMult: env.waterMult } });
+          // (0.31) pH đất, gen, ong, đa dạng loài; cây lâu năm nghỉ mùa
+          if (tile.flower) { tile.qBonus = gardenSys.tileBonus(s, plot, pi, tile); if (tile.strain) gardenSys.applyStrain(tile, gardenSys.G(s).strains[tile.strain]); }
+          const growMult = tile.flower ? calendar.seasonGrowMult(tile.flower, day, plot.greenhouse) * gardenSys.phGrowMult(tile.flower, ph) : 1;
+          const dormant = tile.flower && !plot.greenhouse && gardenSys.isDormant(tile.flower, seasonId);
+          const e = farming.simulateTile(tile, step, { offline, env: { growMult, waterMult: env.waterMult, dormant } });
           if (!e) return;
           ev[e]++;
           if (!offline) {
@@ -295,7 +307,9 @@ export class Game {
       // 🌸 Tiệm Hương Nhài: khách du lịch mua hàng trên kệ (GĐ23)
       const sold = craft.shopTick(s, from, to, { open: story.has(s, 'hg_shop'), offline });
       if (sold.length) {
-        const coins = sold.reduce((a, x) => a + x.coins, 0);
+        let coins = sold.reduce((a, x) => a + x.coins, 0);
+        const extra = Math.round(coins * (econ.perkMult(s, 'craft') - 1)); // (0.31) Ngàn Hương phát triển: khách trả cao hơn
+        if (extra > 0) { s.player.coins += extra; coins += extra; }
         s.stats.coinsEarned = (s.stats.coinsEarned || 0) + coins;
         if (!offline) this.toast(`🧳 Khách du lịch mua ${sold.map((x) => PRODUCTS[x.id].icon).join('')} ở Tiệm Hương Nhài: +${coins.toLocaleString('vi-VN')} 💰`, 'good');
         this.hgProgress();
@@ -304,8 +318,18 @@ export class Game {
       const shopEv = shop.shopTick(s, {
         offline, hourFloat: this.clock.hourFloat, flowerIds: this.unlockedFlowers(),
         festival: calendar.festivalOn(day), seasonal: calendar.seasonFlowers(day), day,
-        spawnMult: (WEATHER[s.weather?.today?.type]?.spawnMult ?? 1) / planSys.effect(day, 'spawn'), // Chủ Nhật đông khách (hệ số này nhân vào khoảng cách giữa 2 khách)
+        spawnMult: (WEATHER[s.weather?.today?.type]?.spawnMult ?? 1) / planSys.effect(day, 'spawn') / econ.perkMult(s, 'spawn'), // (0.31) Làng Hoa phát triển: đông khách // Chủ Nhật đông khách (hệ số này nhân vào khoảng cách giữa 2 khách)
         preorder: (npcId, flower) => orders.makePreorder(s, to, Math.random, npcId, flower),
+        // (0.31) khách tâm sự & phong cách tiệm
+        tale: () => {
+          if (Math.random() >= TALE_RULES.chance) return null;
+          const ids = talesSys.availableTales(s, day);
+          if (!ids.length) return null;
+          const used = new Set(s.shop.customers.map((c) => c.spot));
+          let spot = 0; while (used.has(spot)) spot++;
+          return talesSys.spawnTale(s, ids[Math.floor(Math.random() * ids.length)], { spot, patience: SHOP_DATA.patience[1] });
+        },
+        styleBias: talesSys.styleBias(s),
       });
       for (const e of shopEv) {
         if (e.type === 'preorder') {
@@ -318,13 +342,15 @@ export class Game {
         }
         const npc = shop.npcOf(e.customer.npc);
         if (e.type === 'arrive') {
-          this.toast(e.customer.regular ? `💌 Khách quen ${npc.name} ghé tiệm, có chuyện muốn kể!` : `🔔 ${npc.name} vừa đến tiệm hoa!`, e.customer.regular ? 'good' : 'info');
+          this.toast(e.customer.regular ? `💌 Khách quen ${npc.name} ghé tiệm, có chuyện muốn kể!` : e.customer.tale ? `💌 ${npc.name} ghé tiệm, có chuyện muốn tâm sự… (chọn hoa theo ý nghĩa nhé)` : `🔔 ${npc.name} vừa đến tiệm hoa!`, e.customer.regular || e.customer.tale ? 'good' : 'info');
           this.customers.sync(s);
         } else if (e.type === 'timeout') {
           this.customers.leave(e.customer.id, e.customer.regular ? 'sad' : 'angry');
           if (e.customer.regular) {
             regulars.finishRegularVisit(s, e.customer.regular, false, day);
             if (!e.silent) this.toast(`${npc.name} phải về rồi, hôm khác ${npc.self} sẽ ghé lại nhé.`, 'info');
+          } else if (e.customer.tale) {
+            if (!e.silent) this.toast(`${npc.name} phải đi rồi, vài hôm nữa ${npc.self} ghé lại kể tiếp nhé.`, 'info');
           } else if (e.comeBack) {
             if (!e.silent) this.toast(`📝 ${npc.name}: “Tiệm chưa có hoa cô cần. Mai cô quay lại lấy ${e.comeBack.items[0].n} cành ${FLOWERS[e.comeBack.items[0].sp].name.toLowerCase()} nhé!” (xem 📋 › Đơn hàng)`, 'info');
             this.emitter.emit('quests');
@@ -672,6 +698,45 @@ export class Game {
 
   setSeed(id) { this.seed = id; this.emitter.emit('tool', this.tool); }
 
+  /** (0.31) 📈 Giá bán sỉ 1 cành hôm nay (giá chợ dao động × chợ phiên Thứ Hai) */
+  wholesaleEach(key) { return Math.max(1, Math.round(econ.wholesaleNow(this.save, key, dayOf(this.now)) * planSys.effect(dayOf(this.now), 'wholesale'))); }
+
+  /** (0.31) Giao hàng cho đảo */
+  econDeliver(id, i) {
+    const r = econ.deliver(this.save, id, +i);
+    this.toast(r.msg, r.ok ? 'good' : 'warn');
+    if (r.ok) {
+      if (r.levelUp) setTimeout(() => this.toast(`🎉 ${ISLANDS[id].name} lên cấp ${r.levelUp}: “${SUPPLY_RULES.levelNames[r.levelUp]}”! Ưu đãi: ${ISLANDS[id].perk.text} (+${Math.round(ISLANDS[id].perk.perLevel * r.levelUp * 100)}%)`, 'good'), 900);
+      this.gainXp(5);
+      this.saveMgr.markDirty(); this.emitter.emit('inventory');
+    }
+    return r;
+  }
+
+  /** (0.31) 🌿 Vườn ươm */
+  gardenBreed(a, b) { const r = gardenSys.startBreed(this.save, a, b, this.now); this.toast(r.msg, r.ok ? 'good' : 'warn'); if (r.ok) this.saveMgr.markDirty(); return r; }
+  gardenCollect() {
+    const r = gardenSys.collectBreed(this.save, this.now, Math.random, this.save.player.name?.split(' ').pop() || 'Vườn');
+    this.toast(r.msg, r.ok ? 'good' : 'warn');
+    if (r.ok) { this.saveMgr.markDirty(); this.emitter.emit('tool', this.tool); }
+    return r;
+  }
+  gardenAmend(pi, kind) {
+    const r = gardenSys.amend(this.save, pi, kind);
+    this.toast(r.msg, r.ok ? 'good' : 'warn');
+    if (r.ok) { this.saveMgr.markDirty(); this.emitter.emit('inventory'); }
+    return r;
+  }
+
+  /** (0.31) Nhổ cây ở ô đang chọn */
+  uprootSelected() {
+    const t = this.selected?.kind === 'tile' ? this.getTile(this.selected) : null;
+    if (!t || this.visit) return;
+    const r = farming.uproot(t);
+    this.toast(r.msg, r.ok ? 'info' : 'warn');
+    if (r.ok) { this.refreshFarm(); this.saveMgr.markDirty(); }
+  }
+
   // ---------------- thao tác ----------------
   /** Kiểm tra trước rồi cho nhân vật đi tới làm */
   requestAction(pick, action, opt = {}) {
@@ -682,7 +747,7 @@ export class Game {
     if (action === 'plant' && !opt.seed) opt.seed = this.seed;
     const s = this.save;
     if (action === 'plant') opt.plot = s.farm.plots[pick.plot];
-    const test = fn(structuredClone(tile), structuredClone({ tools: s.tools, inventory: s.inventory, stats: s.stats, upgrades: s.upgrades }), opt, this.now);
+    const test = fn(structuredClone(tile), structuredClone({ tools: s.tools, inventory: s.inventory, stats: s.stats, upgrades: s.upgrades, garden: s.garden, player: s.player, weather: s.weather }), opt, this.now);
     if (!test.ok) { this.toast(test.msg, 'warn'); return false; }
     const pos = this.farmView.tileWorldPos(pick.plot, pick.tile);
     // (GĐ21) ô ở đảo khác / rất xa: nhân vật có mặt ngay bên lô đó thay vì lội bộ qua biển
@@ -699,6 +764,7 @@ export class Game {
 
   applyAction(pick, action, opt, pos) {
     const tile = this.getTile(pick);
+    const before = action === 'harvest' ? { ...tile } : null; // (0.31) để biết gen / dòng giống của cây vừa hái
     const res = ACTIONS[action](tile, this.save, opt, this.now);
     if (!res.ok) { this.toast(res.msg, 'warn'); return; }
     this.particles.spawn(FX[action], pos);
@@ -709,7 +775,12 @@ export class Game {
       if (tile.offSeason) setTimeout(() => this.toast(`🍂 ${fname} đang trái mùa: lớn chậm và khó đạt 3★ (trừ khi có nhà kính)`, 'warn'), 600);
     }
     if (action === 'harvest') {
-      this.emitter.emit('float', { pos: pos.clone().setY(1.2), text: `+1 ${FLOWERS[res.flower].icon} ${'★'.repeat(res.quality)}${res.bonus ? ' 🌈' : ''}${res.golden ? ' ✨' : ''}${res.stale ? ' 🥀' : ''}` });
+      // (0.31) gen Sai hoa, giữ giống, nhà ong
+      const gx = gardenSys.afterHarvest(this.save, before, res, this.save.farm.plots[pick.plot]);
+      const got = (res.count || 1) + (gx.extra || 0);
+      this.emitter.emit('float', { pos: pos.clone().setY(1.2), text: `+${got} ${FLOWERS[res.flower].icon} ${'★'.repeat(res.quality)}${res.bonus ? ' 🌈' : ''}${res.golden ? ' ✨' : ''}${res.stale ? ' 🥀' : ''}${gx.extra ? ' 💐' : ''}` });
+      if (gx.newStrain) setTimeout(() => this.toast(`🧬 Giữ giống thành công! Cây ${'★'.repeat(3)} này thành dòng giống mới: ${gardenSys.strainName(this.save, gx.newStrain)} (${gardenSys.geneStars(gardenSys.G(this.save).strains[gx.newStrain].g)}). Xem ở 🌿 Vườn ươm`, 'good'), 900);
+      if (gx.hiveSeed) setTimeout(() => this.toast('🐝 Ong thụ phấn: rơi thêm 1 hạt giống!', 'good'), 1300);
       if (res.bonus || res.golden) this.particles.spawn('sparkle', pos);
       this.harvestFun(res, pos);
       this.eventPts('harvest', { species: res.flower });
@@ -763,7 +834,7 @@ export class Game {
     if (!c) return { ok: false, msg: 'Khách đã rời đi' };
     const ev = shop.evaluateDelivery(c.request, sel);
     if (!ev.ok) return { ok: false, msg: 'Chưa đúng yêu cầu của khách' };
-    if (ev.sub && c.regular) return { ok: false, msg: 'Khách quen đang chờ đúng loài hoa của câu chuyện, không đổi hoa khác được' };
+    if (ev.sub && (c.regular || c.tale)) return { ok: false, msg: 'Khách đang chờ bó hoa cho câu chuyện của mình, không đổi hoa khác được' };
     // kiểm tra kho
     for (const [k, n] of Object.entries(sel.items)) if (n > 0 && !((s.inventory.flowers[k] || 0) >= n)) return { ok: false, msg: 'Không đủ hoa trong kho' };
     const bouquet = c.request.type === 'bouquet';
@@ -778,8 +849,11 @@ export class Game {
       if (!PAPERS[sel.paper].free) s.inventory.papers[sel.paper] -= 1;
       if (!RIBBONS[sel.ribbon].free) s.inventory.ribbons[sel.ribbon] -= 1;
     }
+    // (0.31) phong cách tiệm: bó hoa đúng phong cách tiệm nổi tiếng thì giá & tiền bo cao hơn
+    const styleId = bouquet ? talesSys.styleOfBouquet(ev) : null;
+    if (styleId) ev.price = Math.round(ev.price * talesSys.stylePriceMult(s, styleId));
     const tier = shop.tierOf(s.player.reputation);
-    const tip = ev.sub ? 0 : Math.round(shop.tipAmount(Math.random, tier, ev) * planSys.effect(dayOf(this.now), 'tips')); // Thứ Bảy chợ đêm · hoa thay thế: không bo
+    const tip = ev.sub ? 0 : Math.round(shop.tipAmount(Math.random, tier, ev) * planSys.effect(dayOf(this.now), 'tips') * talesSys.styleTipMult(s, styleId)); // Thứ Bảy chợ đêm · hoa thay thế: không bo
     s.player.coins += ev.price + tip;
     const oldTier = tier;
     const vipHappy = c.vip && (ev.mood === 'perfect' || ev.mood === 'good');
@@ -803,6 +877,13 @@ export class Game {
       setTimeout(() => this.toast(`💬 ${npc.name}: “${variants.variantName(species, variant)} mang ý nghĩa ${ms} đó!”${learned.length > 1 ? ` (+${learned.length - 1} ý nghĩa khác vào Sổ tay)` : ''}`, 'good'), 1600);
       this.emitter.emit('book');
     }
+    // (0.31) cộng điểm phong cách + khách tâm sự đi tiếp câu chuyện
+    if (styleId) {
+      const st = talesSys.styleFromSale(s, ev);
+      if (st?.levelUp) setTimeout(() => this.toast(`🏷️ Tiệm lên cấp phong cách ${STYLES[st.id].icon} ${STYLES[st.id].name}: “${['', 'Có tiếng', 'Nổi tiếng', 'Bậc thầy', 'Huyền thoại'][st.levelUp]}”! Khách hỏi kiểu hoa này nhiều hơn, trả giá cao hơn.`, 'good'), 2400);
+    }
+    let taleOut = null;
+    if (c.tale) taleOut = talesSys.resolve(s, c.tale, ev.items, ev.score, dayOf(this.now), this.now);
     let story = null;
     if (c.regular) {
       const ok = ev.score >= REGULAR_RULES.successScore;
@@ -828,7 +909,8 @@ export class Game {
     this.emitter.emit('inventory');
     this.emitter.emit('shop');
     if (story) setTimeout(() => this.emitter.emit('regular-story', story), 400);
-    return { ok: true, ev, tip, story };
+    if (taleOut) setTimeout(() => this.emitter.emit('tale-story', taleOut), 400);
+    return { ok: true, ev, tip, story, tale: taleOut };
   }
 
   declineCustomer(customerId) {
@@ -837,6 +919,7 @@ export class Game {
     if (!c) return;
     s.shop.customers.splice(s.shop.customers.indexOf(c), 1);
     if (c.regular) regulars.finishRegularVisit(s, c.regular, false, dayOf(this.now));
+    else if (c.tale) { /* khách tâm sự: hôm khác ghé lại */ }
     else s.player.reputation = Math.max(0, s.player.reputation + shop.SHOP_REP.decline);
     this.customers.leave(c.id, 'sad');
     this.toast(`${shop.npcOf(c.npc).name}: “${shop.reactionText('decline', c.npc)}”`, 'info');
@@ -851,7 +934,7 @@ export class Game {
     const n = Math.min(count, s.inventory.flowers[key] || 0);
     if (!n) return 0;
     const flower = variants.parseFlowerKey(key).species;
-    const total = Math.round(shop.wholesalePrice(key) * planSys.effect(dayOf(this.now), 'wholesale')) * n; // Thứ Hai chợ phiên
+    const total = this.wholesaleEach(key) * n; // Thứ Hai chợ phiên · (0.31) giá chợ dao động
     s.inventory.flowers[key] -= n;
     if (!s.inventory.flowers[key]) delete s.inventory.flowers[key];
     s.player.coins += total;
@@ -1173,8 +1256,8 @@ export class Game {
       const prep = Math.max(1, STAFF.clerk.react - ck.skill); // phút chuẩn bị trước khi ra quầy
       let served = 0, tried = false;
       // khách quen có chuyện riêng: nhân viên mời chủ tiệm ra (nhắc 1 lần)
-      for (const c of s.shop.customers.filter((x) => x.regular && !x.clerkNote && now - x.arrivedAt >= prep)) { c.clerkNote = 1; this.toast(`👩‍💼 ${ck.name}: “${shop.npcOf(c.npc).name} là khách quen, muốn chính chủ tiệm gói hoa. Chủ tiệm ra quầy nhé!”`, 'info'); this.staffBubble('clerk', '💌'); }
-      for (const c of s.shop.customers.filter((x) => !x.regular && now - x.arrivedAt >= prep)) {
+      for (const c of s.shop.customers.filter((x) => (x.regular || x.tale) && !x.clerkNote && now - x.arrivedAt >= prep)) { c.clerkNote = 1; this.toast(`👩‍💼 ${ck.name}: “${shop.npcOf(c.npc).name} ${c.tale ? 'có chuyện muốn tâm sự' : 'là khách quen'}, muốn chính chủ tiệm gói hoa. Chủ tiệm ra quầy nhé!”`, 'info'); this.staffBubble('clerk', '💌'); }
+      for (const c of s.shop.customers.filter((x) => !x.regular && !x.tale && now - x.arrivedAt >= prep)) {
         if (served >= per) break;
         tried = true;
         const known = ck.skill >= 4 ? ALL_KNOWN : s.book?.meanings;
@@ -1696,7 +1779,8 @@ export class Game {
     if (this.bugs.size >= BUGS.max || Math.random() > BUGS.chance) return;
     const spots = [];
     this.save.farm.plots.forEach((p, pi) => p.tiles.forEach((t, ti) => {
-      if ((t.state === 'growing' || t.state === 'ready') && (t.guardUntil || 0) < now && ![...this.bugs.values()].some((b) => b.pi === pi && b.ti === ti)) spots.push([pi, ti]);
+      // (0.31) nhà chim / trồng xen nhiều loài ⇒ lô ít sâu
+      if ((t.state === 'growing' || t.state === 'ready') && (t.guardUntil || 0) < now && ![...this.bugs.values()].some((b) => b.pi === pi && b.ti === ti) && Math.random() < gardenSys.bugMult(p)) spots.push([pi, ti]);
     }));
     if (!spots.length) return;
     const [pi, ti] = spots[Math.floor(Math.random() * spots.length)];
@@ -2207,7 +2291,9 @@ export class Game {
     // 🍡 quầy ăn vặt
     const sold = funSys.snackTick(s, from, to, { open: this.funOpen(), offline, saturdayNight: (m) => this.isFestivalAt(m) });
     if (sold.length) {
-      const coins = sold.reduce((a, x) => a + x.coins, 0);
+      let coins = sold.reduce((a, x) => a + x.coins, 0);
+      const extra = Math.round(coins * (econ.perkMult(s, 'snack') - 1)); // (0.31) Khu Vui Chơi phát triển
+      if (extra > 0) { s.player.coins += extra; coins += extra; }
       if (!offline) this.toast(`🍡 Khách đi chơi mua ${sold.map((x) => SNACKS[x.id].icon).join('')} ở quầy ăn vặt: +${coins.toLocaleString('vi-VN')} 💰`, 'good');
       this.passAdd('snack', sold.length);
       this.hgProgress();
@@ -2529,6 +2615,7 @@ export class Game {
   /** Sau khi mua / đổi ở quầy cá */
   afterFishTrade(res) {
     if (!res.ok) { if (res.msg) this.toast(res.msg, 'warn'); return res; }
+    if (res.coins) { const extra = Math.round(res.coins * (econ.perkMult(this.save, 'fish') - 1)); if (extra > 0) { this.save.player.coins += extra; res.coins += extra; } } // (0.31) Cồn Lặng phát triển
     if (res.msg) this.toast(res.msg, 'good');
     if (res.coins) { this.toast(`🐟 Bán ${res.n} con cá: +${res.coins.toLocaleString('vi-VN')} 💰`, 'good'); }
     this.saveMgr.markDirty();
@@ -2737,9 +2824,31 @@ export class Game {
     this.emitter.emit('quests');
   }
 
+  /** (0.31) Thư kết cục của khách tâm sự: nhận quà + điểm phong cách, hiện thư */
+  taleLetters() {
+    if (this.visit || this.cine) return;
+    const br = gardenSys.G(this.save).breed;
+    if (br && this.now >= br.readyAt && this.breedNote !== br.readyAt) { this.breedNote = br.readyAt; this.toast('🧬 Hạt lai ở 🌿 Vườn ươm đã sẵn sàng — vào nhận nhé!', 'good'); }
+    const due = talesSys.takeLetters(this.save, this.now);
+    for (const l of due) {
+      const rw = l.def.reward || {};
+      this.grantReward({ coins: rw.coins || 0 });
+      if (rw.xp) this.gainXp(rw.xp);
+      if (rw.rep) this.save.player.reputation += rw.rep;
+      for (const [k, v] of Object.entries(rw.style || {})) talesSys.addStyle(this.save, k, v);
+      this.saveMgr.markDirty();
+      setTimeout(() => this.emitter.emit('tale-letter', l), 600);
+    }
+  }
+
   checkGoals() {
     const s = this.save;
     this.manageTick(); // (GĐ25) kế hoạch hôm nay, hợp đồng tiệc mới
+    this.taleLetters(); // (0.31) thư kết cục của khách tâm sự
+    // (0.31) chuỗi cung ứng: đảo sang chu kỳ mới
+    for (const c of econ.ensureCycles(this.save, dayOf(this.now), (f) => story.has(this.save, f))) {
+      if (c.decayed && !this.visit) this.toast(`${ISLANDS[c.id].icon} ${ISLANDS[c.id].name} vắng dần vì lâu không nhận hàng (−${c.decayed} phát triển). Xem 📈 › Quần đảo`, 'warn');
+    }
     this.syncFun(); // (GĐ26) Khu Vui Chơi: mở cửa / lễ hội tối Thứ Bảy
     if (!this.visit && passSys.canCheckin(this.save) && this.checkinNote !== passSys.vnDate() && this.save.player.level >= 2) {
       this.checkinNote = passSys.vnDate();

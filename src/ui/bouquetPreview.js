@@ -70,6 +70,12 @@ export function flowerSVG(id, variant, x, y, s) {
       + e(-0.5, -0.1, 0.5, 0.4, -15, c.petal) + e(0.5, -0.1, 0.5, 0.4, 15, c.petal)
       + e(0, 0.3, 0.2, 0.28, 0, c.petalDark) + `<circle cx="${x}" cy="${y - s * 0.05}" r="${s * 0.12}" fill="#fff3c2"/>`;
   }
+  if (shape === 'blossomtree') { // (0.31) mai / đào: hoa 5 cánh tròn
+    let p = '';
+    for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2 - Math.PI / 2; p += `<circle cx="${x + Math.cos(a) * s * 0.55}" cy="${y + Math.sin(a) * s * 0.55}" r="${s * 0.48}" fill="${c.petal}" stroke="${c.petalDark}" stroke-width=".8"/>`; }
+    for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; p += `<line x1="${x}" y1="${y}" x2="${x + Math.cos(a) * s * 0.4}" y2="${y + Math.sin(a) * s * 0.4}" stroke="${c.center || c.petalDark}" stroke-width="1"/>`; }
+    return p + `<circle cx="${x}" cy="${y}" r="${s * 0.2}" fill="${c.center || '#e8781f'}"/>`;
+  }
   // ---- 🍀 Cây Vận May ----
   if (shape === 'crystal') {
     let p = '';

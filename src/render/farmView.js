@@ -11,7 +11,7 @@ import { SOIL as SOIL_RULES } from '../../data/care.js';
 import { uniqueMat } from '../models/materials.js';
 import { PLOT_SLOTS, plotPosition } from './world.js';
 import { iconMaterial } from './icons.js';
-import { buildSprinkler, buildFeeder } from '../models/decor.js';
+import { buildSprinkler, buildFeeder, buildHive, buildBirdbox } from '../models/decor.js';
 
 const SOIL = {
   untilled: '#cfae86',
@@ -139,8 +139,17 @@ export class FarmView {
       feeder.position.set(w / 2 + 0.3, 0, -d / 2 + 0.3);
       feeder.visible = false;
       g.add(feeder);
+      // (0.31) nhà ong, nhà chim
+      const hive = buildHive();
+      hive.position.set(-w / 2 - 0.35, 0, d / 2 + 0.2);
+      hive.visible = false;
+      g.add(hive);
+      const birdbox = buildBirdbox();
+      birdbox.position.set(w / 2 + 0.3, 0, d / 2 + 0.3);
+      birdbox.visible = false;
+      g.add(birdbox);
       this.root.add(g);
-      this.plots.push({ group: g, tiles, greenhouse, cover, sprinkler, feeder });
+      this.plots.push({ group: g, tiles, greenhouse, cover, sprinkler, feeder, hive, birdbox });
     });
     this.sync(save, true);
   }
@@ -181,6 +190,8 @@ export class FarmView {
       pv.cover.visible = !plot.greenhouse && (plot.coverUntil || 0) >= now;
       pv.sprinkler.visible = !!plot.machines?.sprinkler;
       pv.feeder.visible = !!plot.machines?.feeder;
+      pv.hive.visible = !!plot.machines?.hive;
+      pv.birdbox.visible = !!plot.machines?.birdhouse;
       plot.tiles.forEach((tile, ti) => this.syncTile(pv.tiles[ti], tile, instant));
     });
   }
@@ -198,13 +209,13 @@ export class FarmView {
     const hasPlant = tile.state === 'growing' || tile.state === 'ready' || tile.state === 'dead';
     const fr = freshnessOf(tile);
     const wilted = isWilted(tile) || !!fr?.stale; // hoa để quá lâu cũng rũ xuống
-    const key = hasPlant ? `${tile.flower}:${tile.variant}|${tile.state === 'dead' ? 'dead' : stage}|${wilted ? 1 : 0}` : '';
+    const key = hasPlant ? `${tile.flower}:${tile.variant}|${tile.state === 'dead' ? 'dead' : stage}|${wilted ? 1 : 0}|${tile.age || 0}` : '';
     if (key !== v.key) {
       if (v.plant) { v.plantHolder.remove(v.plant); disposeLuckFx(v.plant.userData.fx); }
       v.plant = null;
       if (hasPlant) {
         const dead = tile.state === 'dead';
-        v.plant = buildPlant(tile.flower, dead ? 3 : stage, { wilted, dead, variant: tile.variant });
+        v.plant = buildPlant(tile.flower, dead ? 3 : stage, { wilted, dead, variant: tile.variant, age: tile.age || 0 });
         v.plantHolder.add(v.plant);
         v.pop = instant ? 1 : 0;
       }
@@ -232,6 +243,8 @@ export class FarmView {
     this.time += dt;
     const t = this.time;
     for (const pv of this.plots) {
+      // (0.31) ong bay vòng quanh tổ
+      if (pv.hive?.visible) pv.hive.userData.bees.children.forEach((b) => { const a = t * 1.8 + b.userData.phase; b.position.set(Math.cos(a) * b.userData.r, Math.sin(a * 2.3) * 0.12, Math.sin(a) * b.userData.r); b.rotation.y = -a; });
       for (const v of pv.tiles) {
         if (v.plant) {
           const sway = v.plant.userData.sway;

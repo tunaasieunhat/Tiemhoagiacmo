@@ -190,6 +190,18 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   pearl/chest; không có hình ⇒ null, dùng emoji). SVG có xmlns ⇒ vẽ lên canvas được (`artImage` trong fishingGame: cá nhảy khỏi mặt nước). CSS `.art` = 1em.
   Cây trồng: `buildPlant(..., { bare })` (bare = không ụ đất, dùng cho giỏ treo), gộp khối bằng `compactInto` (`src/models/mergeParts.js`; cây Vận May không gộp).
   Rừng: hình gộp `cluster()` có màu đỉnh (vertexColors) trong forest.js.
+- **Bản 0.31 – chiều sâu** (bản thử, gói A+B+C): mọi save mới đều lazy (`save.tales`, `save.garden`, `save.econ`, `plot.ph`, `tile.age/strain/qBonus/gMult/hardy`), KHÔNG tăng SAVE_VERSION.
+  **B** `data/tales.js` (TALES: steps `{ask,tone,min,max,paths:[{m,go}],fallback,react,next}` → `end:<kết>`; STYLES/STYLE_RULES), `src/systems/tales.js`
+  (`spawnTale` do `shopTick({tale})` gọi, khách có `c.tale` — không trừ uy tín, nhân viên không phục vụ; `resolve` chọn nhánh theo ý nghĩa nhiều cành nhất; thư kết cục
+  `takeLetters` → `game.taleLetters` (trong checkGoals) → hud `tale-letter`; `req.allow` để ý nghĩa xấu của truyện không bị trừ điểm trong `scoreBouquet`).
+  Phong cách: `styleFromSale` sau mỗi bó hoa, `stylePriceMult/TipMult`, `styleBias` → `generateRequest(ctx.styleBias)`. UI thẻ 🏷️ trong managePanel.
+  **A** `data/garden.js` (GENES, STRAIN_RULES, SOIL_PH, FLOWER_PH, AMENDMENTS, INSECTS), `src/systems/garden.js` (hạt dòng giống mã `S:<id>` ⇒ ACTIONS.plant gọi
+  `plantStrain`; `afterHarvest` = gen Sai hoa / giữ giống / ong; pH lô `phOf/nativePh/driftPh/amend`; `tileBonus` → `tile.qBonus` cộng trong `qualityOf`; `bugMult`).
+  Cây lâu năm: `perennial` trong data/flowers.js — `farming.harvest` giữ cây (tuổi, yield), `env.dormant` (mùa nghỉ), `farming.uproot`; model `blossomtree`.
+  Nhà ong/chim = MACHINES `hive`/`birdhouse` (farmView dựng `buildHive/buildBirdbox`). UI `src/ui/gardenPanel.js` (`data-gd`, nút 🌿).
+  **C** `data/economy.js` (PRICE, RUMORS, SUPPLY_RULES, ISLANDS), `src/systems/economy.js` (giá & tin đồn tính từ số ngày bằng hash — không lưu; `priceIndex`,
+  `wholesaleNow` → `game.wholesaleEach` dùng cho mọi chỗ bán sỉ; `ensureCycles/deliver/islandLevel/perkMult` — ưu đãi spawn/salt/fish/craft/snack).
+  UI `src/ui/econPanel.js` (`data-ec`, nút 📈). Hàm hash phải có bước trộn bit (FNV trơn cho giá trị gần nhau với chuỗi gần nhau).
 - **Câu cá làm lại** (0.28): `src/ui/fishingGame.js` vẽ cảnh bằng canvas (`startScene/draw`, pha power → throwBob → wait → reel → result;
   thẻ kết quả `.fs-overlay` nổi trên cảnh, nút "Câu tiếp" `data-fs="quick"`). Luật/số liệu không đổi. Bot thử phải chạy TRONG trang (setInterval đọc
   `window.__fishing`) vì swiftshader chậm, gọi từ ngoài sẽ lỡ cửa sổ cắn câu.

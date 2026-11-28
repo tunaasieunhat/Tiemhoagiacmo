@@ -2,6 +2,7 @@
 //  LOGIC CỬA HÀNG (thuần dữ liệu): khách, yêu cầu, chấm điểm, giá, uy tín
 //  -> có thể chạy lại trên máy chủ để kiểm tra gian lận sau này
 // =============================================================
+import { TALES } from '../../data/tales.js';
 import { FLOWERS } from '../../data/flowers.js';
 import { SHOP, DISPLAY, REP_TIERS, REQUEST_MIX, REQUEST_SIZE, QUALITY_DEMAND, TONES, OCCASIONS, MEANING_DEMAND, COLOR_DEMAND, SMART } from '../../data/shop.js';
 import { MEANINGS } from '../../data/variants.js';
@@ -93,7 +94,7 @@ export function isOpenHour(hourFloat) {
   return hourFloat >= SHOP.openHour && hourFloat < SHOP.closeHour;
 }
 
-export const npcOf = (id) => (REGULARS[id] ? { id, ...REGULARS[id] } : CUSTOMERS.find((c) => c.id === id) || CUSTOMERS[0]);
+export const npcOf = (id) => (REGULARS[id] ? { id, ...REGULARS[id] } : TALES[id] ? { id, ...TALES[id] } : CUSTOMERS.find((c) => c.id === id) || CUSTOMERS[0]);
 
 // ------------------- tạo khách -------------------
 /**
@@ -125,6 +126,8 @@ export function generateRequest(rng, tier, flowerIds, ctx = {}) {
     const occ = OCCASIONS[req.occasion];
     if (fest?.meaning && rng() < 0.8) req.meaning = fest.meaning;
     else if (rng() < MEANING_DEMAND[Math.min(tier, MEANING_DEMAND.length - 1)]) req.meaning = occ.meaning;
+    // (0.31) tiệm nổi tiếng phong cách nào thì khách hỏi bó hoa phong cách đó nhiều hơn
+    if (ctx.styleBias && rng() < ctx.styleBias.chance) req.meaning = pick(rng, ctx.styleBias.meanings);
   } else {
     // đặt đúng màu (chỉ những màu người chơi đã từng trồng ra)
     let colors = (ctx.found || []).filter((k) => k.startsWith(req.flower + ':') && !k.endsWith(':' + DEFAULT_VARIANT[req.flower]));
@@ -229,7 +232,7 @@ export function spawnRegular(save, id) {
 
 /** Cho thời gian trôi ở cửa hàng. Trả về danh sách sự kiện [{type:'arrive'|'timeout', customer} | {type:'preorder', order}]
  *  preorder(npcId, flowerId): hàm tạo đơn đặt trước (do game truyền vào, dùng orders.makePreorder) — không có thì bỏ qua */
-export function shopTick(save, { offline = false, rng = Math.random, hourFloat, flowerIds, festival = null, seasonal = [], day = 1, spawnMult = 1, preorder = null }) {
+export function shopTick(save, { offline = false, rng = Math.random, hourFloat, flowerIds, festival = null, seasonal = [], day = 1, spawnMult = 1, preorder = null, tale = null, styleBias = null }) {
   const sh = save.shop;
   const now = save.time.gameMinutes;
   const events = [];
@@ -237,9 +240,9 @@ export function shopTick(save, { offline = false, rng = Math.random, hourFloat, 
     if (now - c.arrivedAt > c.patience) {
       sh.customers.splice(sh.customers.indexOf(c), 1);
       // (0.26.1) D: kho không có gì đưa được ⇒ khách hẹn mai quay lại (đơn đặt trước), không mất uy tín
-      const nothing = SMART.comeBack && !c.regular && canServe(c.request, save.inventory) === 'no';
+      const nothing = SMART.comeBack && !c.regular && !c.tale && canServe(c.request, save.inventory) === 'no';
       const back = nothing && c.request.type !== 'bouquet' && preorder ? preorder(c.npc, c.request.flower) : null;
-      if (!offline && !c.regular && !nothing) save.player.reputation = Math.max(0, save.player.reputation + SHOP.rep.timeout);
+      if (!offline && !c.regular && !c.tale && !nothing) save.player.reputation = Math.max(0, save.player.reputation + SHOP.rep.timeout);
       events.push({ type: 'timeout', customer: c, silent: offline, comeBack: back, excused: nothing });
     }
   }
@@ -271,9 +274,11 @@ export function shopTick(save, { offline = false, rng = Math.random, hourFloat, 
         return events;
       }
     }
-    const customer = isReg
+    // (0.31) khách tâm sự (truyện nhiều kết) — tale() do game truyền vào, trả về khách hoặc null
+    const taleC = !isReg && tale ? tale() : null;
+    const customer = taleC || (isReg
       ? spawnRegular(save, pick(rng, regs))
-      : spawnCustomer(save, rng, shown.length ? shown : flowerIds, { festival, seasonal, found: Object.keys(save.book?.found || {}), ...stockInfo(save) });
+      : spawnCustomer(save, rng, shown.length ? shown : flowerIds, { festival, seasonal, found: Object.keys(save.book?.found || {}), ...stockInfo(save), styleBias }));
     events.push({ type: 'arrive', customer });
     sh.nextSpawnAt = now + randRange(rng, SHOP.spawnEvery) * (1 - SHOP.spawnFasterPerTier) ** tier * (festival ? festival.spawnMult : 1) * spawnMult * shopTierOf(save).spawnMult;
   } else if (now >= sh.nextSpawnAt) {

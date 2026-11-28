@@ -171,6 +171,27 @@ Object.assign(VARIANTS, {
     lilac: { name: "t\xEDm nh\u1EA1t", petal: "#cdb4f0", petalDark: "#a98ad9", tones: ["cool", "pastel"], meanings: ["respect", "loyalty"], rarity: "uncommon", breed: [["pink", "pink", 0.2]] }
   }
 });
+Object.assign(VARIANTS, {
+  climbrose: {
+    pink: { name: "ph\u1EA5n", petal: "#f78fb3", petalDark: "#dd5f8e", tones: ["warm", "pastel"], meanings: ["love", "loyalty"], rarity: "common", default: true },
+    red: { name: "nhung", petal: "#c7324f", petalDark: "#9c1f37", tones: ["warm"], meanings: ["love", "longing"], rarity: "uncommon", breed: [["pink", "pink", 0.22]] },
+    white: { name: "b\u1EA1ch", petal: "#fff8f0", petalDark: "#eadccb", tones: ["pastel", "natural"], meanings: ["purity", "loyalty"], rarity: "rare", breed: [["pink", "red", 0.08]] }
+  },
+  bougain: {
+    magenta: { name: "h\u1ED3ng sen", petal: "#e0408f", petalDark: "#b82a6f", tones: ["warm"], meanings: ["joy", "friendship"], rarity: "common", default: true },
+    orange: { name: "cam", petal: "#ff9a4d", petalDark: "#e0762a", tones: ["warm"], meanings: ["congrats", "joy"], rarity: "uncommon", breed: [["magenta", "magenta", 0.22]] },
+    white: { name: "tr\u1EAFng", petal: "#fbf7f2", petalDark: "#e6ddd2", tones: ["pastel", "natural"], meanings: ["purity", "health"], rarity: "rare", breed: [["magenta", "orange", 0.08]] }
+  },
+  mai: {
+    yellow: { name: "v\xE0ng", petal: "#ffd23f", petalDark: "#f0a81f", tones: ["warm", "natural"], meanings: ["congrats", "hope"], rarity: "common", default: true },
+    white: { name: "tr\u1EAFng (mai chi\u1EBFu th\u1EE7y)", petal: "#fffbf0", petalDark: "#ebe2cf", tones: ["pastel", "natural"], meanings: ["purity", "respect"], rarity: "rare", breed: [["yellow", "yellow", 0.1]] }
+  },
+  dao: {
+    pink: { name: "phai", petal: "#ffb3c8", petalDark: "#f2869f", tones: ["pastel", "warm"], meanings: ["joy", "hope"], rarity: "common", default: true },
+    red: { name: "b\xEDch", petal: "#e8506f", petalDark: "#c2334f", tones: ["warm"], meanings: ["love", "congrats"], rarity: "uncommon", breed: [["pink", "pink", 0.2]] },
+    white: { name: "b\u1EA1ch", petal: "#fffafa", petalDark: "#efe2e6", tones: ["pastel", "natural"], meanings: ["purity", "health"], rarity: "rare", breed: [["pink", "red", 0.08]] }
+  }
+});
 
 // data/flowers.js
 var FLOWERS = {
@@ -372,6 +393,78 @@ var FLOWERS = {
     meaning: "Sang tr\u1ECDng, t\xECnh y\xEAu \u0111\u1EB9p",
     tones: ["cool", "pastel"],
     colors: { petal: "#c98be0", petalDark: "#a865c7", center: "#ffd34e", stem: "#4f8f5a", leaf: "#5fa86a" }
+  },
+  // ---------------- 🌳 CÂY LÂU NĂM (0.31) ----------------
+  // perennial: hái hoa KHÔNG mất cây — cây ra hoa lại sau regrowHours, càng nhiều năm (tuổi) càng sai hoa (yield theo tuổi).
+  //   maxAge: tuổi tối đa · yield: số bông mỗi lần hái theo tuổi [tuổi 0, 1, 2, ...] · weakBelow: hái lúc cây yếu (sức khỏe dưới mức này) thì cây giảm 1 tuổi
+  //   dormant: mùa cây nghỉ (không lớn nhưng không chết). Muốn bỏ cây: chạm ô › 🪓 Nhổ cây.
+  climbrose: {
+    id: "climbrose",
+    name: "H\u1ED3ng leo",
+    icon: "\u{1F940}",
+    model: "rose",
+    growHours: 12,
+    waterPerDay: 2,
+    fertilizerNeeded: 2,
+    seasons: ["xuan", "ha", "thu"],
+    basePrice: 40,
+    seedPrice: 140,
+    unlockLevel: 8,
+    meaning: "T\xECnh y\xEAu b\u1EC1n l\xE2u, g\u1EAFn b\xF3",
+    tones: ["warm", "pastel"],
+    perennial: { regrowHours: 6, maxAge: 5, yield: [1, 1, 2, 2, 3, 3], weakBelow: 35, dormant: ["dong"] },
+    colors: { petal: "#f78fb3", petalDark: "#dd5f8e", stem: "#5a8f4a", leaf: "#6fae5f" }
+  },
+  bougain: {
+    id: "bougain",
+    name: "Hoa gi\u1EA5y",
+    icon: "\u{1F33A}",
+    model: "carnation",
+    growHours: 10,
+    waterPerDay: 1,
+    fertilizerNeeded: 1,
+    seasons: ["xuan", "ha", "thu"],
+    basePrice: 32,
+    seedPrice: 110,
+    unlockLevel: 9,
+    meaning: "R\u1EF1c r\u1EE1, b\u1EC1n b\u1EC9",
+    tones: ["warm"],
+    perennial: { regrowHours: 5, maxAge: 5, yield: [1, 2, 2, 3, 3, 3], weakBelow: 30, dormant: ["dong"] },
+    colors: { petal: "#e0408f", petalDark: "#b82a6f", stem: "#6a7a3a", leaf: "#7cae58" }
+  },
+  mai: {
+    id: "mai",
+    name: "Hoa mai",
+    icon: "\u{1F33C}",
+    model: "blossomtree",
+    growHours: 16,
+    waterPerDay: 1,
+    fertilizerNeeded: 2,
+    seasons: ["xuan", "dong"],
+    basePrice: 72,
+    seedPrice: 220,
+    unlockLevel: 11,
+    meaning: "Ph\xFA qu\xFD, may m\u1EAFn \u0111\u1EA7u n\u0103m",
+    tones: ["warm", "natural"],
+    perennial: { regrowHours: 8, maxAge: 6, yield: [1, 1, 2, 2, 3, 3, 4], weakBelow: 35, dormant: ["ha"] },
+    colors: { petal: "#ffd23f", petalDark: "#f0a81f", center: "#e8781f", stem: "#7a5a3a", leaf: "#7cbf6a" }
+  },
+  dao: {
+    id: "dao",
+    name: "Hoa \u0111\xE0o",
+    icon: "\u{1F338}",
+    model: "blossomtree",
+    growHours: 16,
+    waterPerDay: 1,
+    fertilizerNeeded: 2,
+    seasons: ["xuan", "dong"],
+    basePrice: 72,
+    seedPrice: 220,
+    unlockLevel: 11,
+    meaning: "Xu\xE2n v\u1EC1, \u0111o\xE0n vi\xEAn",
+    tones: ["pastel", "warm"],
+    perennial: { regrowHours: 8, maxAge: 6, yield: [1, 1, 2, 2, 3, 3, 4], weakBelow: 35, dormant: ["ha"] },
+    colors: { petal: "#ffb3c8", petalDark: "#f2869f", center: "#d94f6f", stem: "#6b4a3a", leaf: "#8fc87a" }
   },
   // ---------------- 🌫️ HOA CHỊU MẶN CỦA MŨI ÉN (GĐ21) ----------------
   // salt: true = chỉ mọc trên đất mặn Mũi Én (và đất Mũi Én chỉ trồng được các loài này). Dùng lại mô hình loài có sẵn (model).
@@ -586,7 +679,7 @@ function scoreBouquet(req, items, paperId, ribbonId) {
   if (harmony < 0.5) tips.push("B\u1EDBt s\u1ED1 m\xE0u hoa cho \u0111\u1EE1 r\u1ED1i m\u1EAFt");
   const negatives = /* @__PURE__ */ new Set();
   items.forEach((it) => meaningsOf(it.species, it.variant).forEach((m) => {
-    if (MEANINGS[m]?.negative && m !== req.meaning) negatives.add(m);
+    if (MEANINGS[m]?.negative && m !== req.meaning && !(req.allow || []).includes(m)) negatives.add(m);
   }));
   let meaning;
   if (req.meaning) {

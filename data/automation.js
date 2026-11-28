@@ -11,6 +11,15 @@ export const MACHINES = {
     name: 'Máy bón phân', icon: '⚙️', price: 2400, level: 5,
     desc: 'Tự bón phân cho cây khi cây cần (dùng phân bón trong kho)',
   },
+  // (0.31) côn trùng có ích — hiệu ứng ở data/garden.js (INSECTS)
+  hive: {
+    name: 'Nhà ong', icon: '🐝', price: 2200, level: 7,
+    desc: 'Ong thụ phấn: hoa trong lô đẹp hơn một chút, đôi khi rơi thêm hạt khi hái',
+  },
+  birdhouse: {
+    name: 'Nhà chim', icon: '🐦', price: 1600, level: 6,
+    desc: 'Chim sẻ bắt sâu giúp bạn: lô này ít sâu hẳn',
+  },
 };
 
 // =============================================================

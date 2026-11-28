@@ -16,6 +16,8 @@ import * as passSys from '../systems/pass.js';
 import { PASS_RULES, CHECKIN_WEEK, CHECKIN_MILESTONES } from '../../data/pass.js';
 import { WARDROBE } from '../../data/wardrobe.js';
 import { EGGS } from '../../data/pets.js';
+import { TALES, STYLES, STYLE_RULES } from '../../data/tales.js';
+import * as talesSys from '../systems/tales.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const money = (n) => Math.round(n).toLocaleString('vi-VN');
@@ -27,6 +29,7 @@ const bar = (v, max, color = '#7cc27f') => `<div class="track sm"><i style="widt
 const TABS = [
   { id: 'today', label: '📅 Hôm nay' },
   { id: 'party', label: '🎉 Tiệc' },
+  { id: 'style', label: '🏷️ Phong cách' },
   { id: 'branch', label: '🏪 Chi nhánh' },
   { id: 'staff', label: '👥 Nhân viên' },
   { id: 'pass', label: '📖 Sổ mùa' },
@@ -58,7 +61,7 @@ export class ManagePanel {
     const s = this.save;
     const head = `<div class="mk-wallet"><span>💰 <b>${money(s.player.coins)}</b></span><span>💗 <b>${s.player.reputation}</b></span></div>`;
     const tabs = `<div class="mk-tabs" role="tablist">${TABS.map((t) => `<button class="${t.id === this.tab ? 'on' : ''}" data-ql="tab" data-id="${t.id}" role="tab">${t.label}</button>`).join('')}</div>`;
-    const body = { today: () => this.today(), party: () => this.party(), branch: () => this.branches(), staff: () => this.staff(), pass: () => this.pass() }[this.tab]();
+    const body = { today: () => this.today(), party: () => this.party(), branch: () => this.branches(), staff: () => this.staff(), pass: () => this.pass(), style: () => this.style() }[this.tab]();
     this.hud.openModal('manage', `<h2>🗓️ Sổ quản lý</h2>${head}${tabs}<div class="mk-body ql-body">${body}</div>`, 'wide');
     // ô chọn (select) dùng sự kiện change
     for (const el of this.hud.root.querySelectorAll('.m-manage select[data-ql]')) el.addEventListener('change', () => this.onAction(el.dataset.ql, el));
@@ -66,6 +69,30 @@ export class ManagePanel {
   }
 
   // ---------------- 📅 Hôm nay ----------------
+  /** (0.31) 🏷️ Phong cách tiệm + nhật ký khách tâm sự */
+  style() {
+    const s = this.save;
+    const t = talesSys.T(s);
+    const top = talesSys.topStyle(s);
+    const rows = Object.entries(STYLES).map(([id, S]) => {
+      const p = t.styles[id] || 0, lv = talesSys.styleLevel(s, id), next = STYLE_RULES.levels[lv + 1];
+      return `<div class="mk-item ${top?.id === id ? 'done' : ''}"><div class="mk-icon">${S.icon}</div><div class="mk-info"><b>${esc(S.name)} <small class="muted">cấp ${lv} · ${esc(STYLE_RULES.levelNames[lv])}</small></b>
+        <small>${esc(S.desc)}${S.meanings.length ? ` · ý nghĩa: ${S.meanings.map((m) => MEANINGS[m].icon).join(' ')}` : ''}</small>
+        ${bar(next ? p - STYLE_RULES.levels[lv] : 1, next ? next - STYLE_RULES.levels[lv] : 1, '#f6a6b9')}<small>${Math.round(p)} điểm${next ? ` · cấp sau: ${next}` : ' · tối đa'}${lv ? ` · giá +${Math.round(STYLE_RULES.priceBonus * lv * 100)}%` : ''}</small></div></div>`;
+    }).join('');
+    const tales = talesSys.journal(s).map(({ id, tale, state, st, total }) => {
+      const seen = talesSys.endingsSeen(s, id);
+      const lock = s.player.level < tale.level;
+      const status = lock ? `🔒 cấp ${tale.level}` : state === 'new' ? 'Chưa gặp — sẽ ghé tiệm khi bạn đủ cấp' : state === 'going' ? `Đang kể dở (bước ${st.path.length + 1}) — ${esc(tale.self)} sẽ ghé lại` : `Đã kết: “${esc(tale.endings[st.ending]?.title || '')}”`;
+      return `<div class="mk-item"><div class="mk-icon">💌</div><div class="mk-info"><b>${esc(tale.name)} <small class="muted">kết cục ${seen.length}/${total}</small></b><small>${esc(tale.intro)}</small><small>${status}</small>
+        ${seen.length ? `<small class="muted">Đã biết: ${seen.map((e) => `“${esc(tale.endings[e].title)}”`).join(', ')}</small>` : ''}</div>
+        ${state === 'done' && seen.length < total ? `<div class="mk-buy"><button class="btn" data-ql="tale-again" data-id="${id}">🔁 Kể lại</button></div>` : ''}</div>`;
+    }).join('');
+    return `<p class="muted small">Bán bó hoa mang ý nghĩa nào thì tiệm nổi tiếng về phong cách đó. Phong cách mạnh nhất có thêm khách hỏi kiểu hoa ấy, bó hoa đúng phong cách được giá & tiền bo cao hơn. Chuyên sâu một hướng thì các hướng khác phai dần — không thể giỏi tất cả!</p>
+      <h3>🏷️ Phong cách tiệm${top ? ` <small class="muted">· nổi tiếng nhất: ${STYLES[top.id].icon} ${esc(STYLES[top.id].name)}</small>` : ''}</h3><div class="mk-body">${rows}</div>
+      <h3>💌 Khách tâm sự <small class="muted">· mỗi câu chuyện có nhiều kết, tùy bó hoa bạn gói</small></h3><div class="mk-body">${tales}</div>`;
+  }
+
   today() {
     const v = this.game.planView();
     const dow = (WEEKDAYS.indexOf(v.wd));
@@ -262,6 +289,7 @@ export class ManagePanel {
       case 'tab': this.tab = id; this.shipTo = null; this.render(); return;
       case 'trader': g.buyTrader(id); break;
       case 'checkin': g.doCheckin(); break;
+      case 'tale-again': if (talesSys.restart(this.save, id)) { g.toast(`💌 ${TALES[id].name} sẽ ghé lại kể từ đầu — thử bó hoa khác để mở kết mới!`, 'info'); g.saveMgr.markDirty(); } break;
       case 'pclaim': g.passClaim(+id); break;
       case 'accept': g.partyAccept(+id); break;
       case 'slot': g.partySet(+el.dataset.i, el.value || null); break;

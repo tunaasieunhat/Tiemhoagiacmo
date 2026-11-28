@@ -644,6 +644,41 @@ export function buildSprinkler() {
   return g;
 }
 
+/** (0.31) Nhà ong gỗ trên cọc + ong bay quanh (userData.bees) */
+export function buildHive() {
+  const g = new THREE.Group();
+  g.add(at(cyl(0.04, 0.05, 0.5, '#8a6446', 6), 0, 0.25, 0));
+  for (let i = 0; i < 3; i++) g.add(at(rbox(0.42 - i * 0.03, 0.14, 0.32 - i * 0.02, i % 2 ? '#f2c14e' : '#e6a93a', 0.03), 0, 0.57 + i * 0.14, 0));
+  g.add(at(rbox(0.5, 0.05, 0.4, '#c98a5a', 0.02), 0, 0.98, 0));
+  g.add(at(rbox(0.12, 0.03, 0.02, '#5a3d2b', 0.01), 0, 0.56, 0.17));
+  const bees = new THREE.Group(); bees.position.y = 0.85;
+  for (let i = 0; i < 4; i++) {
+    const b = new THREE.Group();
+    const body = sphere(0.045, '#ffd34e', 6); body.scale.set(1.3, 1, 1); b.add(body);
+    b.add(at(sphere(0.02, '#3b2a22', 5), 0.05, 0, 0));
+    for (const z of [-0.03, 0.03]) { const w = sphere(0.03, '#ffffff', 5); w.scale.set(0.8, 0.3, 1); w.position.set(0, 0.04, z); b.add(w); }
+    b.userData.phase = i * 1.6; b.userData.r = 0.35 + (i % 2) * 0.2;
+    bees.add(b);
+  }
+  g.add(bees);
+  g.userData.bees = bees;
+  return g;
+}
+
+/** (0.31) Nhà chim nhỏ trên cọc */
+export function buildBirdbox() {
+  const g = new THREE.Group();
+  g.add(at(cyl(0.035, 0.045, 0.9, '#8a6446', 6), 0, 0.45, 0));
+  g.add(at(rbox(0.3, 0.28, 0.28, '#9fd6f0', 0.04), 0, 1.0, 0));
+  const roof = cone(0.28, 0.2, '#f47a6a', 4); roof.rotation.y = Math.PI / 4; roof.position.y = 1.24; g.add(roof);
+  g.add(at(sphere(0.05, '#3b2a22', 6), 0, 1.02, 0.14));
+  const bird = new THREE.Group(); bird.position.set(0.12, 1.36, 0.05);
+  bird.add(sphere(0.06, '#c9824a', 6)); bird.add(at(sphere(0.045, '#c9824a', 6), 0.05, 0.05, 0));
+  const beak = cone(0.015, 0.04, '#f2a03d', 4); beak.rotation.z = -Math.PI / 2; beak.position.set(0.1, 0.05, 0); bird.add(beak);
+  g.add(bird);
+  return g;
+}
+
 /** Máy bón phân nhỏ */
 export function buildFeeder() {
   const g = new THREE.Group();

@@ -5,6 +5,9 @@
 
 export const SUPPLIES = {
   fertilizer: { name: 'Phân bón', icon: '🧪', price: 12, desc: 'Bón cho cây để hoa đẹp hơn và lớn nhanh hơn' },
+  // (0.31) chỉnh độ chua của đất — rải cho cả lô ở 🌿 Vườn ươm › Đất (xem data/garden.js)
+  lime: { name: 'Vôi bột', icon: '🥛', price: 40, desc: 'Rải cho cả lô: đất bớt chua (pH +0,6). Hợp oải hương, cẩm chướng, mẫu đơn.' },
+  peat: { name: 'Than bùn', icon: '🟫', price: 40, desc: 'Rải cho cả lô: đất chua hơn (pH −0,6). Hợp tú cầu, ly, lan, hồng.' },
 };
 
 // Mỗi nâng cấp có nhiều bậc. Bậc 0 là đồ có sẵn (miễn phí).

@@ -4,6 +4,20 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.31.0',
+    notes: [
+      '💌 Khách tâm sự: 4 người kể chuyện riêng (xin lỗi mẹ, tỏ tình, tiễn bạn, mở tiệm bánh). Chọn hoa theo Ý NGHĨA — câu chuyện rẽ nhánh theo bó hoa bạn gói, vài ngày sau khách quay lại kể tiếp, cuối cùng gửi thư báo kết cục. Mỗi truyện nhiều kết, kể lại được để tìm kết khác',
+      '🏷️ Phong cách tiệm: hoa cưới · tình yêu · tri ân · tiễn biệt · sang trọng. Bán kiểu hoa nào thì tiệm nổi tiếng kiểu đó (giá & tiền bo cao hơn, khách hỏi kiểu đó nhiều hơn) — chuyên sâu 1 hướng thì hướng khác phai dần (🗓️ › Phong cách)',
+      '🧬 Dòng giống có gen: hái hoa 3★ có thể "giữ giống" thành dòng mới với 4 gen Bông to · Sai hoa · Khỏe · Lớn nhanh; lai 2 dòng ở 🌿 Vườn ươm, đôi khi đột biến',
+      '🧪 Đất có độ chua (pH): mỗi lô khác nhau, mỗi loài hoa thích một khoảng pH. Rải vôi bột / than bùn để chỉnh, phân cá để bồi màu đất',
+      '🌳 Cây lâu năm: Hồng leo, Hoa giấy, Hoa mai, Hoa đào — hái không mất cây, càng nhiều tuổi càng sai hoa, nghỉ mùa không chết khát. Thêm nút 🪓 Nhổ cây',
+      '🐝 Côn trùng có ích: Nhà ong (hoa đẹp hơn, rơi thêm hạt) & Nhà chim (ít sâu) mua ở Chợ › Tự động; trồng xen ≥ 3 loài trong 1 lô cũng ít sâu hơn',
+      '📈 Giá chợ dao động: mỗi loài lên xuống theo ngày, đúng mùa rẻ – trái mùa đắt, có biểu đồ 7 ngày & dự báo (nút 📈)',
+      '📰 Tin đồn: báo trước 2–3 ngày đám cưới, hội chợ, thuyền hàng, bão… làm giá loài hoa nào đó vọt lên hoặc rớt',
+      '🏝️ Chuỗi cung ứng: Làng Hoa, Mũi Én, Cồn Lặng, Ngàn Hương, Khu Vui Chơi cần hàng mỗi 3 ngày. Giao đều thì đảo phát triển (5 cấp) và cho ưu đãi: đông khách, cá giá cao, hàng hương, ăn vặt, hoa mặn được giá hơn',
+    ],
+  },
+  {
     version: '0.30.0',
     notes: [
       '🐟 40 loài cá được vẽ riêng từng con (vảy, vây, sọc, đốm, râu…): cá koi ba màu, cá kiếm có mỏ, cua hoàng đế đầy gai, sứa phát sáng, cá ngựa, rồng biển… — hiện trong Sổ cá, quầy cá và lúc câu được',

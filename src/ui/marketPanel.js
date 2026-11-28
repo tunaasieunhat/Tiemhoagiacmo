@@ -218,7 +218,7 @@ export class MarketPanel {
     if (!stacks.length) return '<p class="muted">Kho chưa có hoa để bán.</p>';
     return `<p class="muted small">Thương lái mua sỉ với giá thấp (khoảng một nửa). Bán cho khách ở Tiệm Hoa sẽ lời hơn và được uy tín.</p>` + stacks.map(([k, n]) => {
       const f = variants.parseFlowerKey(k);
-      const each = wholesalePrice(k);
+      const each = this.game.wholesaleEach(k); // (0.31) giá chợ dao động
       return this.card({
         icon: FLOWERS[f.species].icon, name: `${variants.variantName(f.species, f.variant)} ${'★'.repeat(f.q)}`, desc: `${each} 💰 / cành`, owned: n,
         buttons: `<button class="btn" data-mk="sell1" data-k="${k}">Bán 1</button><button class="btn primary" data-act="sell" data-k="${k}" data-n="${n}" data-total="${each * n}">Bán hết</button>`,

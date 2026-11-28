@@ -1,6 +1,6 @@
 // Quầy bán hoa: danh sách khách, chọn hoa / gói bó, giao hoa.
 import { FLOWERS } from '../../data/flowers.js';
-import { SHOP, DISPLAY, SMART } from '../../data/shop.js';
+import { SHOP, DISPLAY, SMART, TONES } from '../../data/shop.js';
 import { PAPERS, RIBBONS } from '../../data/wrapping.js';
 import * as shop from '../systems/shop.js';
 import { avatarSVG } from './avatar.js';
@@ -8,6 +8,8 @@ import { bouquetSVG } from './bouquetPreview.js';
 import * as variants from '../systems/variants.js';
 import { MEANINGS } from '../../data/variants.js';
 import { REGULARS } from '../../data/regulars.js';
+import { TALES } from '../../data/tales.js';
+import * as talesSys from '../systems/tales.js';
 import { PART_NAMES } from '../systems/bouquet.js';
 import { regularChapter } from '../systems/regulars.js';
 
@@ -96,12 +98,13 @@ export class ShopPanel {
       const hearts = reg ? '❤️'.repeat(s.regulars[c.regular].hearts) + '🤍'.repeat(reg.chapters.length - s.regulars[c.regular].hearts) : '';
       const st = shop.canServe(c.request, s.inventory, s.book?.meanings);
       const later = st === 'no' && !reg && c.request.type !== 'bouquet';
-      return `<div class="cust ${reg ? 'regular' : ''}">
+      const tl = c.tale ? TALES[c.tale] : null;
+      return `<div class="cust ${reg ? 'regular' : ''} ${tl ? 'tale' : ''}">
         <div class="cust-av">${avatarSVG(npc.look, 52)}</div>
         <div class="cust-body">
-          <div class="cust-top"><b>${esc(npc.name)}</b>${c.vip ? '<span class="tag vip">👑 VIP</span>' : ''}${reg ? `<span class="tag reg">Khách quen ${hearts}</span>` : `<span class="tag">${typeLabel}</span>`}<span class="reward">~${shop.estimateReward(c.request)} 💰</span></div>
+          <div class="cust-top"><b>${esc(npc.name)}</b>${c.vip ? '<span class="tag vip">👑 VIP</span>' : ''}${reg ? `<span class="tag reg">Khách quen ${hearts}</span>` : tl ? '<span class="tag reg">💌 Tâm sự</span>' : `<span class="tag">${typeLabel}</span>`}<span class="reward">~${shop.estimateReward(c.request)} 💰</span></div>
           ${reg ? `<p class="story-snip">${esc(regularChapter(c.regular, s).intro)}</p>` : ''}
-          <p>“${esc(shop.requestText(c.request, c.npc))}”</p>
+          <p>“${esc(tl ? taleAsk(s, c) : shop.requestText(c.request, c.npc))}”</p>
           <div class="chips">${c.request.meaning ? meaningChip(c.request.meaning) : ''}${serveTag(reg && st === 'sub' ? 'no' : st)}</div>
           <div class="track sm"><i data-pbar="${c.id}" style="width:${f * 100}%;background:${f > 0.5 ? '#7cc27f' : f > 0.25 ? '#f6c84a' : '#ec6b6b'}"></i></div>
           <div class="cust-btns">
@@ -235,7 +238,7 @@ export class ShopPanel {
     }).join('')}</div>${ev.tips.length ? `<ul class="tips">${ev.tips.slice(0, 3).map((t) => `<li>💡 ${esc(t)}</li>`).join('')}</ul>` : ''}` : '';
     const reg = c.regular ? REGULARS[c.regular] : null;
     const [mIcon, mText] = MOOD[ev.mood];
-    const subBtn = !reg && !ev.exact;
+    const subBtn = !reg && !c.tale && !ev.exact;
     const deliverLabel = ev.sub ? `🔁 Giao hoa thay thế (${Math.round(SMART.sub.priceMult * 100)}% giá)` : req.type === 'bouquet' ? '💐 Gói & giao' : '🌸 Giao hoa';
     const total = items.reduce((a, b) => a + b.n, 0);
     return `
@@ -243,9 +246,10 @@ export class ShopPanel {
       <div class="comp-head">
         <button class="round sm" data-sp="back" aria-label="Quay lại">←</button>
         <div class="cust-av">${avatarSVG(npc.look, 44)}</div>
-        <div><b>${esc(npc.name)}${c.vip ? ' <span class="tag vip">👑 VIP</span>' : ''}${reg ? ' <span class="tag reg">Khách quen</span>' : ''}</b>
+        <div><b>${esc(npc.name)}${c.vip ? ' <span class="tag vip">👑 VIP</span>' : ''}${reg ? ' <span class="tag reg">Khách quen</span>' : ''}${c.tale ? ' <span class="tag reg">💌 Tâm sự</span>' : ''}</b>
           ${reg ? `<p class="story-snip">${esc(regularChapter(c.regular, s).intro)}</p>` : ''}
-          <p>“${esc(shop.requestText(req, c.npc))}”</p>
+          <p>“${esc(c.tale ? taleAsk(s, c) : shop.requestText(req, c.npc))}”</p>
+          ${c.tale ? `<p class="muted small">💡 Không có đáp án đúng/sai: chọn hoa mang ý nghĩa bạn thấy hợp (📖 Sổ tay › Ngôn ngữ hoa) — câu chuyện sẽ rẽ theo bó hoa của bạn. Bó ${req.min}–${req.max} cành, ${esc(TONES[req.tone]?.name || req.tone)}.${(() => { const w = talesSys.meaningWeights(ev.items.filter((it) => known[variants.vkey(it.species, it.variant)])); /* chỉ ý nghĩa đã biết */ const top = Object.entries(w).sort((a, b) => b[1] - a[1]).slice(0, 3); return top.length ? ` Bó hoa đang nói: ${top.map(([m, n]) => `${MEANINGS[m]?.icon || ''} ${MEANINGS[m]?.name || m} ×${n}`).join(' · ')}` : ''; })()}</p>` : ''}
           ${req.meaning ? `<div class="chips">${meaningChip(req.meaning)}<span class="muted small">${Object.keys(known).some((k) => known[k] && variants.meaningsOf(...k.split(':')).includes(req.meaning)) ? '' : 'Chưa biết hoa nào mang ý nghĩa này — thử đoán xem!'}</span></div>` : ''}
           <div class="track sm"><i data-pbar="${c.id}" style="width:100%"></i></div></div>
       </div>
@@ -356,4 +360,10 @@ export class ShopPanel {
     const m2 = this.hud.scrollBox();
     if (m2) m2.scrollTop = top;
   }
+}
+
+/** (0.31) Lời khách tâm sự ở bước hiện tại */
+function taleAsk(save, c) {
+  const st = talesSys.T(save).st[c.tale];
+  return TALES[c.tale].steps[st?.step || 's1']?.ask || '';
 }

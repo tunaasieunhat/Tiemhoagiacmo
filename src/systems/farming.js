@@ -48,7 +48,7 @@ function resetCrop(tile, extra = {}) {
 /** Hệ số lớn theo đất (bạc màu lớn chậm, luân canh lớn nhanh) */
 export function soilGrowMult(tile) {
   const s = Math.max(0, Math.min(100, tile.soil ?? 100)) / 100;
-  return (SOIL.minGrow + (1 - SOIL.minGrow) * s) * (tile.rotation ? SOIL.rotationGrow : 1);
+  return (SOIL.minGrow + (1 - SOIL.minGrow) * s) * (tile.rotation ? SOIL.rotationGrow : 1) * (tile.gMult || 1); // gMult: gen Lớn nhanh (0.31)
 }
 
 /** Độ tươi của hoa đã nở: { golden, stale, lose, goldenLeft, staleIn } (phút game) */
@@ -105,7 +105,7 @@ export function qualityOf(tile) {
   const fertRatio = def.fertilizerNeeded > 0 ? Math.min(1, tile.fert / def.fertilizerNeeded) : 1;
   const soilLoss = (1 - Math.max(0, Math.min(100, tile.soil ?? 100)) / 100) * SOIL.qualityLoss;
   const score = (tile.health / 100) * 0.6 + fertRatio * 0.4 - (tile.offSeason ? SEASON_EFFECT.outSeasonQualityPenalty : 0)
-    - soilLoss + (tile.rotation ? SOIL.rotationQuality : 0);
+    - soilLoss + (tile.rotation ? SOIL.rotationQuality : 0) + (tile.qBonus || 0); // qBonus (0.31): pH đất, gen, ong, đa dạng loài
   if (score >= CARE.quality3Stars) return 3;
   if (score >= CARE.quality2Stars) return 2;
   return 1;
@@ -147,6 +147,7 @@ export function simulateTile(tile, dMin, opts = {}) {
 function stepTile(tile, d, { offline = false, env = {} }) {
   const growMult = env.growMult ?? 1;
   const waterMult = env.waterMult ?? 1;
+  const hardy = tile.hardy || 1; // (0.31) gen Khỏe: mất máu ít hơn
   if (tile.state === 'tilled') {
     tile.water = Math.max(0, tile.water - d * TILLED_SOIL_DRY_PER_MIN);
     tile.soil = Math.min(100, (tile.soil ?? 100) + (d / 60) * SOIL.restPerHour); // đất nghỉ thì hồi màu
@@ -164,6 +165,10 @@ function stepTile(tile, d, { offline = false, env = {} }) {
   let event = null;
   const dis = tile.sick ? DISEASES[tile.sick] : null;
   const sickGrow = dis ? (dis.growMult ?? 0) : 1; // bệnh làm cây ngừng / chậm lớn
+  if (env.dormant && tile.state === 'growing') { // (0.31) cây lâu năm nghỉ mùa: không lớn, không héo vì khát
+    tile.water = Math.max(tile.water, 0.2);
+    return null;
+  }
   if (tile.state === 'growing' && sickGrow > 0) {
     const growMin = CARE.growWhenDry ? d : wetMin;
     tile.growth += growMin * growSpeed(tile) * growMult * sickGrow * soilGrowMult(tile);
@@ -175,8 +180,8 @@ function stepTile(tile, d, { offline = false, env = {} }) {
     }
   }
   const factor = offline ? CARE.offlineDryFactor : 1;
-  if (dis) tile.health = Math.max(0, tile.health - (d / 60) * (dis.healthLoss ?? DISEASE.healthLossPerHour) * factor);
-  if (dryMin > 0) tile.health = Math.max(0, tile.health - (dryMin / 60) * CARE.dryHealthLossPerHour * factor);
+  if (dis) tile.health = Math.max(0, tile.health - (d / 60) * (dis.healthLoss ?? DISEASE.healthLossPerHour) * factor * hardy);
+  if (dryMin > 0) tile.health = Math.max(0, tile.health - (dryMin / 60) * CARE.dryHealthLossPerHour * factor * hardy);
   if (tile.sick || dryMin > 0) {
     if (tile.health <= 0) {
       tile.state = 'dead';
@@ -219,7 +224,7 @@ export function plant(tile, seedKey, save, nowMin, opts = {}) {
   save.inventory.seeds[vkey] -= 1;
   const rotation = !!tile.last && tile.last !== species;
   Object.assign(tile, {
-    state: 'growing', flower: species, variant, growth: 0, health: 100, fert: 0, lastFertStage: -1, plantedAt: nowMin, readyFor: 0, rotation,
+    state: 'growing', flower: species, variant, growth: 0, health: 100, fert: 0, lastFertStage: -1, plantedAt: nowMin, readyFor: 0, rotation, age: 0,
   });
   return { ok: true, msg: `Đã gieo ${name}${rotation ? ' · 🔄 luân canh: lớn nhanh hơn' : ''}`, rotation };
 }
@@ -280,15 +285,38 @@ export function harvest(tile, save, opts = {}) {
   let bonus = false;
   if (W?.bonusStarChance && quality < 3 && rng() < W.bonusStarChance) { quality += 1; bonus = true; note += ` ${W.icon} +1⭐`; }
   const key = flowerKey(flower, variant, quality);
-  save.inventory.flowers[key] = (save.inventory.flowers[key] || 0) + 1;
-  save.stats.harvested = (save.stats.harvested || 0) + 1;
+  // (0.31) cây lâu năm: số bông theo tuổi cây
+  const per = FLOWERS[flower].perennial;
+  const count = per ? per.yield[Math.min(tile.age || 0, per.yield.length - 1)] : 1;
+  save.inventory.flowers[key] = (save.inventory.flowers[key] || 0) + count;
+  save.stats.harvested = (save.stats.harvested || 0) + count;
   // đất: mỗi vụ mất màu, trồng cùng loài liên tiếp mất nhiều hơn
   const same = tile.last === flower;
   const streak = same ? (tile.streak || 0) + 1 : 1;
   const soil = Math.max(0, (tile.soil ?? 100) - SOIL.harvestCost * (same ? SOIL.sameSpeciesMult : 1));
-  resetCrop(tile);
-  Object.assign(tile, { soil, last: flower, streak });
-  return { ok: true, msg: `Thu hoạch ${variantName(flower, variant)} ${'★'.repeat(quality)}${note}`, flower, variant: parseVkey(key.split('|')[0]).variant, quality, bonus, golden, stale: !!fr?.lose, soil };
+  if (per) {
+    // cây vẫn ở lại: ra hoa lại sau regrowHours; hái lúc cây yếu thì cây giảm 1 tuổi
+    const weak = tile.health < per.weakBelow;
+    const age = weak ? Math.max(0, (tile.age || 0) - 1) : Math.min(per.maxAge, (tile.age || 0) + 1);
+    Object.assign(tile, {
+      state: 'growing', growth: Math.max(0, growMinutes(flower) - per.regrowHours * 60), fert: 0, lastFertStage: -1, readyFor: 0,
+      age, health: Math.min(100, tile.health + 15), soil, last: flower, streak,
+    });
+    if (weak) note += ' (🥀 cây yếu, giảm 1 tuổi)';
+    else if (age > 0) note += ` · 🌳 cây ${age} tuổi`;
+  } else {
+    resetCrop(tile);
+    Object.assign(tile, { soil, last: flower, streak });
+  }
+  return { ok: true, msg: `Thu hoạch ${count > 1 ? `${count} bông ` : ''}${variantName(flower, variant)} ${'★'.repeat(quality)}${note}`, flower, variant: parseVkey(key.split('|')[0]).variant, quality, bonus, golden, stale: !!fr?.lose, soil, count, perennial: !!per };
+}
+
+/** (0.31) Nhổ cây (cây lâu năm / cây đang lớn) để trồng thứ khác — đất giữ nguyên độ màu */
+export function uproot(tile) {
+  if (!['growing', 'ready'].includes(tile.state)) return fail('Ô này không có cây để nhổ');
+  const name = FLOWERS[tile.flower]?.name || 'cây';
+  resetCrop(tile, { state: 'tilled' });
+  return { ok: true, msg: `🪓 Đã nhổ ${name}. Ô đất sẵn sàng để gieo hạt mới.` };
 }
 
 /** Phun thuốc: chữa bệnh, hoặc phòng bệnh đến hết ngày mai */

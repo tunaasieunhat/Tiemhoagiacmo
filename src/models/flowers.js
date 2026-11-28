@@ -38,7 +38,7 @@ function stem(h, color, r = 0.04) {
  * @param {number} stage 0 hạt, 1 mầm, 2 nụ, 3 nở
  * @param {{wilted?: boolean, dead?: boolean}} cond
  */
-export function buildPlant(flowerId, stage, { wilted = false, dead = false, variant = null, bare = false } = {}) {
+export function buildPlant(flowerId, stage, { wilted = false, dead = false, variant = null, bare = false, age = 0 } = {}) {
   const def = FLOWERS[flowerId];
   const base = variantColors(flowerId, variant);
   const t = dead ? 0.85 : wilted ? 0.45 : 0;
@@ -87,7 +87,7 @@ export function buildPlant(flowerId, stage, { wilted = false, dead = false, vari
   }
 
   // từ giai đoạn 2 trở đi: thân + lá + nụ/hoa
-  const h = { rose: 0.75, tulip: 0.7, sunflower: 1.15, daisy: 0.6, lavender: 0.55, hydrangea: 0.5, cosmos: 0.7, carnation: 0.62, marigold: 0.45, lily: 1.0, peony: 0.58, orchid: 0.18, crystal: 0.72, firefly: 0.78, prism: 0.7, wisp: 0.66, snowbell: 0.62 }[def.model] ?? 0.8;
+  const h = { rose: 0.75, tulip: 0.7, sunflower: 1.15, daisy: 0.6, lavender: 0.55, hydrangea: 0.5, cosmos: 0.7, carnation: 0.62, marigold: 0.45, lily: 1.0, peony: 0.58, orchid: 0.18, blossomtree: 0.9, crystal: 0.72, firefly: 0.78, prism: 0.7, wisp: 0.66, snowbell: 0.62 }[def.model] ?? 0.8;
   const H = stage === 2 ? h * 0.8 : h;
   const r = def.model === 'sunflower' ? 0.055 : 0.04;
   sway.add(stem(H, C.stem, r));
@@ -157,11 +157,23 @@ export function buildPlant(flowerId, stage, { wilted = false, dead = false, vari
     buildPeony(head, C);
   } else if (def.model === 'orchid') {
     buildOrchid(head, sway, C, H);
+  } else if (def.model === 'blossomtree') {
+    buildBlossomTree(head, sway, C, H);
   } else if (def.luck) {
     const fx = buildLuckHead(def.model, head, C);
     if (!dead) root.userData.fx = fx;
   }
 
+  // (0.31) cây lâu năm: gốc gỗ + cọc tre đỡ (hồng leo, hoa giấy có giàn nhỏ); càng nhiều tuổi càng to
+  if (def.perennial) {
+    const k = 1 + Math.min(4, age) * 0.06;
+    sway.add(at(cyl(0.045 * k, 0.07 * k, H * 0.45, '#8a6446', 6), 0, H * 0.22, 0));
+    if (def.model !== 'blossomtree') {
+      sway.add(at(cyl(0.012, 0.012, H + 0.25, '#c9b27e', 5), 0.12, (H + 0.25) / 2, -0.08));
+      for (const y of [H * 0.35, H * 0.7]) { const t = cyl(0.008, 0.008, 0.2, '#c9b27e', 4); t.rotation.z = Math.PI / 2; t.position.set(0.06, y, -0.06); sway.add(t); }
+      for (let i = 0; i < Math.min(3, age); i++) { const a = i * 2.1 + 0.5; sway.add(at(sphere(0.05, C.petal, 6), Math.cos(a) * 0.14, H * (0.45 + i * 0.12), Math.sin(a) * 0.14)); } // nụ phụ theo tuổi
+    }
+  }
   // (0.30) đốt thân + 2 lá non nhỏ sát gốc
   if (def.model !== 'orchid') {
     for (const y of [H * 0.3, H * 0.62]) sway.add(at(sphere(r * 1.25, mixColor(C.stem, '#3f6f3a', 0.25), 6), 0, y, 0));
@@ -494,6 +506,23 @@ function buildOrchid(head, sway, C, H) {
 }
 
 /** Hạt giống (hiển thị nhỏ trong giao diện, không dùng 3D) */
+/** (0.31) Mai / đào: cây nhỏ dáng bonsai, cành nở đầy hoa 5 cánh */
+function buildBlossomTree(head, sway, C, H) {
+  head.position.y = H * 0.55;
+  const branches = [[0.5, 0.35, 0.6], [2.6, 0.3, 0.7], [4.4, 0.38, 0.5]];
+  for (const [a, len, tilt] of branches) {
+    const b = new THREE.Group(); b.rotation.set(Math.sin(a) * tilt, 0, -Math.cos(a) * tilt); head.add(b);
+    b.add(at(cyl(0.018, 0.03, len, C.stem, 5), 0, len / 2, 0));
+    for (let i = 0; i < 4; i++) {
+      const f = new THREE.Group(); f.position.set((i % 2 ? 0.05 : -0.05), len * (0.4 + i * 0.18), (i % 2 ? -0.03 : 0.04));
+      for (let k = 0; k < 5; k++) { const ang = (k / 5) * Math.PI * 2; const p = sphere(0.035, C.petal, 6); p.scale.set(1, 0.4, 1); p.position.set(Math.cos(ang) * 0.035, 0, Math.sin(ang) * 0.035); f.add(p); }
+      f.add(at(sphere(0.018, C.center || C.petalDark, 5), 0, 0.01, 0));
+      b.add(f);
+    }
+  }
+  head.add(at(sphere(0.06, C.leaf, 6), 0.05, 0.05, 0.05));
+}
+
 export function flowerIcon(id) { return FLOWERS[id]?.icon ?? '🌼'; }
 
 export { group };

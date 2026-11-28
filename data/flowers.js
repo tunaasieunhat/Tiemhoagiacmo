@@ -163,6 +163,43 @@ export const FLOWERS = {
     colors: { petal: '#c98be0', petalDark: '#a865c7', center: '#ffd34e', stem: '#4f8f5a', leaf: '#5fa86a' },
   },
 
+  // ---------------- 🌳 CÂY LÂU NĂM (0.31) ----------------
+  // perennial: hái hoa KHÔNG mất cây — cây ra hoa lại sau regrowHours, càng nhiều năm (tuổi) càng sai hoa (yield theo tuổi).
+  //   maxAge: tuổi tối đa · yield: số bông mỗi lần hái theo tuổi [tuổi 0, 1, 2, ...] · weakBelow: hái lúc cây yếu (sức khỏe dưới mức này) thì cây giảm 1 tuổi
+  //   dormant: mùa cây nghỉ (không lớn nhưng không chết). Muốn bỏ cây: chạm ô › 🪓 Nhổ cây.
+  climbrose: {
+    id: 'climbrose', name: 'Hồng leo', icon: '🥀', model: 'rose',
+    growHours: 12, waterPerDay: 2, fertilizerNeeded: 2,
+    seasons: ['xuan', 'ha', 'thu'], basePrice: 40, seedPrice: 140, unlockLevel: 8,
+    meaning: 'Tình yêu bền lâu, gắn bó', tones: ['warm', 'pastel'],
+    perennial: { regrowHours: 6, maxAge: 5, yield: [1, 1, 2, 2, 3, 3], weakBelow: 35, dormant: ['dong'] },
+    colors: { petal: '#f78fb3', petalDark: '#dd5f8e', stem: '#5a8f4a', leaf: '#6fae5f' },
+  },
+  bougain: {
+    id: 'bougain', name: 'Hoa giấy', icon: '🌺', model: 'carnation',
+    growHours: 10, waterPerDay: 1, fertilizerNeeded: 1,
+    seasons: ['xuan', 'ha', 'thu'], basePrice: 32, seedPrice: 110, unlockLevel: 9,
+    meaning: 'Rực rỡ, bền bỉ', tones: ['warm'],
+    perennial: { regrowHours: 5, maxAge: 5, yield: [1, 2, 2, 3, 3, 3], weakBelow: 30, dormant: ['dong'] },
+    colors: { petal: '#e0408f', petalDark: '#b82a6f', stem: '#6a7a3a', leaf: '#7cae58' },
+  },
+  mai: {
+    id: 'mai', name: 'Hoa mai', icon: '🌼', model: 'blossomtree',
+    growHours: 16, waterPerDay: 1, fertilizerNeeded: 2,
+    seasons: ['xuan', 'dong'], basePrice: 72, seedPrice: 220, unlockLevel: 11,
+    meaning: 'Phú quý, may mắn đầu năm', tones: ['warm', 'natural'],
+    perennial: { regrowHours: 8, maxAge: 6, yield: [1, 1, 2, 2, 3, 3, 4], weakBelow: 35, dormant: ['ha'] },
+    colors: { petal: '#ffd23f', petalDark: '#f0a81f', center: '#e8781f', stem: '#7a5a3a', leaf: '#7cbf6a' },
+  },
+  dao: {
+    id: 'dao', name: 'Hoa đào', icon: '🌸', model: 'blossomtree',
+    growHours: 16, waterPerDay: 1, fertilizerNeeded: 2,
+    seasons: ['xuan', 'dong'], basePrice: 72, seedPrice: 220, unlockLevel: 11,
+    meaning: 'Xuân về, đoàn viên', tones: ['pastel', 'warm'],
+    perennial: { regrowHours: 8, maxAge: 6, yield: [1, 1, 2, 2, 3, 3, 4], weakBelow: 35, dormant: ['ha'] },
+    colors: { petal: '#ffb3c8', petalDark: '#f2869f', center: '#d94f6f', stem: '#6b4a3a', leaf: '#8fc87a' },
+  },
+
   // ---------------- 🌫️ HOA CHỊU MẶN CỦA MŨI ÉN (GĐ21) ----------------
   // salt: true = chỉ mọc trên đất mặn Mũi Én (và đất Mũi Én chỉ trồng được các loài này). Dùng lại mô hình loài có sẵn (model).
   sealavender: {

@@ -228,7 +228,8 @@ export function tradeFert(save, id, n = 1) {
   takeSpecies(st, id, n);
   const fert = FISH_RULES.fertPer[f.t] * n;
   save.inventory.items.fertilizer = (save.inventory.items.fertilizer || 0) + fert;
-  return { ok: true, fert, msg: `Ủ ${n} ${f.name} được ${fert} 🧪 phân cá` };
+  save.inventory.items.fishmeal = (save.inventory.items.fishmeal || 0) + n; // (0.31) phân cá ủ đất cho cả lô (🌿 Vườn ươm › Đất)
+  return { ok: true, fert, msg: `Ủ ${n} ${f.name} được ${fert} 🧪 phân bón + ${n} 🐟 phân cá (bón đất cả lô)` };
 }
 
 // ---------------- thống kê ----------------

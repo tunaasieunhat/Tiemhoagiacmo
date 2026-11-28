@@ -64,7 +64,7 @@ export function scoreBouquet(req, items, paperId, ribbonId) {
 
   // --- ý nghĩa ---
   const negatives = new Set();
-  items.forEach((it) => meaningsOf(it.species, it.variant).forEach((m) => { if (MEANINGS[m]?.negative && m !== req.meaning) negatives.add(m); }));
+  items.forEach((it) => meaningsOf(it.species, it.variant).forEach((m) => { if (MEANINGS[m]?.negative && m !== req.meaning && !(req.allow || []).includes(m)) negatives.add(m); /* (0.31) khách tâm sự: ý nghĩa của câu chuyện không bị trừ */ }));
   let meaning;
   if (req.meaning) {
     const match = items.filter((it) => meaningsOf(it.species, it.variant).includes(req.meaning)).reduce((a, b) => a + b.n, 0) / total;

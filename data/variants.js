@@ -160,3 +160,26 @@ export const BOOK_MILESTONES = [
   { pct: 75, coins: 1500, text: 'Bậc thầy lai tạo' },
   { pct: 100, coins: 4000, text: 'Huyền thoại sổ tay hoa' },
 ];
+
+// ---- 🌳 Cây lâu năm (0.31) ----
+Object.assign(VARIANTS, {
+  climbrose: {
+    pink: { name: 'phấn', petal: '#f78fb3', petalDark: '#dd5f8e', tones: ['warm', 'pastel'], meanings: ['love', 'loyalty'], rarity: 'common', default: true },
+    red: { name: 'nhung', petal: '#c7324f', petalDark: '#9c1f37', tones: ['warm'], meanings: ['love', 'longing'], rarity: 'uncommon', breed: [['pink', 'pink', 0.22]] },
+    white: { name: 'bạch', petal: '#fff8f0', petalDark: '#eadccb', tones: ['pastel', 'natural'], meanings: ['purity', 'loyalty'], rarity: 'rare', breed: [['pink', 'red', 0.08]] },
+  },
+  bougain: {
+    magenta: { name: 'hồng sen', petal: '#e0408f', petalDark: '#b82a6f', tones: ['warm'], meanings: ['joy', 'friendship'], rarity: 'common', default: true },
+    orange: { name: 'cam', petal: '#ff9a4d', petalDark: '#e0762a', tones: ['warm'], meanings: ['congrats', 'joy'], rarity: 'uncommon', breed: [['magenta', 'magenta', 0.22]] },
+    white: { name: 'trắng', petal: '#fbf7f2', petalDark: '#e6ddd2', tones: ['pastel', 'natural'], meanings: ['purity', 'health'], rarity: 'rare', breed: [['magenta', 'orange', 0.08]] },
+  },
+  mai: {
+    yellow: { name: 'vàng', petal: '#ffd23f', petalDark: '#f0a81f', tones: ['warm', 'natural'], meanings: ['congrats', 'hope'], rarity: 'common', default: true },
+    white: { name: 'trắng (mai chiếu thủy)', petal: '#fffbf0', petalDark: '#ebe2cf', tones: ['pastel', 'natural'], meanings: ['purity', 'respect'], rarity: 'rare', breed: [['yellow', 'yellow', 0.1]] },
+  },
+  dao: {
+    pink: { name: 'phai', petal: '#ffb3c8', petalDark: '#f2869f', tones: ['pastel', 'warm'], meanings: ['joy', 'hope'], rarity: 'common', default: true },
+    red: { name: 'bích', petal: '#e8506f', petalDark: '#c2334f', tones: ['warm'], meanings: ['love', 'congrats'], rarity: 'uncommon', breed: [['pink', 'pink', 0.2]] },
+    white: { name: 'bạch', petal: '#fffafa', petalDark: '#efe2e6', tones: ['pastel', 'natural'], meanings: ['purity', 'health'], rarity: 'rare', breed: [['pink', 'red', 0.08]] },
+  },
+});

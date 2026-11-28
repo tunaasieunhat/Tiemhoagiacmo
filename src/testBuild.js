@@ -9,8 +9,15 @@ const FLAGS = ['boat_ready', 'e1_sao', 'co_open', 'co_fish', 'hg_bridge', 'hg_sh
 
 /** Gọi 1 lần cho mỗi save (đánh dấu save.testUnlocked) */
 export function applyTestUnlock(save) {
-  if (!TEST_BUILD || save.testUnlocked) return false;
-  save.testUnlocked = 1;
+  if (!TEST_BUILD) return false;
+  if (save.testUnlocked) { // save thử từ bản cũ: chỉ bổ sung đồ thử của bản mới
+    if ((save.testUnlocked || 0) >= 2) return false;
+    save.testUnlocked = 2;
+    extras031(save);
+    return true;
+  }
+  save.testUnlocked = 2;
+  extras031(save);
   const lv = 30;
   save.player.level = lv;
   save.player.xp = xpForLevel(lv);
@@ -36,4 +43,18 @@ export function applyTestUnlock(save) {
   save.luck = save.luck || {};
   save.luck.tickets = { ...(save.luck.tickets || {}), luck: (save.luck.tickets?.luck || 0) + 20, gold: (save.luck.tickets?.gold || 0) + 5 };
   return true;
+}
+
+/** (0.31) đồ thử cho gói chiều sâu */
+function extras031(save) {
+  // (0.31) đồ thử cho gói chiều sâu: cây lâu năm, vật tư chỉnh đất, 2 dòng giống, vài bông hoa có ý nghĩa để gói cho khách tâm sự
+  for (const k of ['climbrose:pink', 'bougain:magenta', 'mai:yellow', 'dao:pink']) save.inventory.seeds[k] = (save.inventory.seeds[k] || 0) + 3;
+  save.inventory.items = save.inventory.items || {};
+  for (const [k, n] of [['lime', 5], ['peat', 5], ['fishmeal', 5]]) save.inventory.items[k] = (save.inventory.items[k] || 0) + n;
+  save.garden = save.garden || { strains: {}, sseeds: {}, next: 1, breed: null };
+  save.garden.strains = save.garden.strains || {}; save.garden.sseeds = save.garden.sseeds || {};
+  save.garden.strains.t1 = { sp: 'rose', v: 'pink', g: { size: 3, bloom: 2, hardy: 3, speed: 2 }, gen: 1, from: null, name: 'dòng Thử F1·A' };
+  save.garden.strains.t2 = { sp: 'rose', v: 'red', g: { size: 2, bloom: 4, hardy: 2, speed: 3 }, gen: 1, from: null, name: 'dòng Thử F1·B' };
+  save.garden.sseeds.t1 = 3; save.garden.sseeds.t2 = 3;
+  for (const [k, n] of [['tulip:white|2', 6], ['rose:red|2', 6], ['daisy:white|2', 6], ['sunflower:yellow|2', 6], ['lavender:purple|2', 5]]) save.inventory.flowers[k] = (save.inventory.flowers[k] || 0) + n;
 }

@@ -1,4 +1,8 @@
 // Giao diện HTML phủ lên trên 3D: thanh trên, thanh công cụ, bảng ô đất, kho đồ, cài đặt, thông báo.
+import * as gardenSys from '../systems/garden.js';
+import { GENES, FLOWER_PH } from '../../data/garden.js';
+import { TALES, STYLES } from '../../data/tales.js';
+import * as talesSys from '../systems/tales.js';
 import { FLOWERS, FLOWER_IDS } from '../../data/flowers.js';
 import { SOIL as SOIL_RULES } from '../../data/care.js';
 import { canDeliver as orderCanDeliver } from '../systems/orders.js';
@@ -26,6 +30,8 @@ import { ShopPanel } from './shopPanel.js';
 import { MarketPanel } from './marketPanel.js';
 import { ManagePanel } from './managePanel.js';
 import { StylePanel } from './stylePanel.js';
+import { GardenPanel } from './gardenPanel.js';
+import { EconPanel } from './econPanel.js';
 import { FunPanel } from './funPanel.js';
 import { WARDROBE } from '../../data/wardrobe.js';
 import * as passSys from '../systems/pass.js';
@@ -110,6 +116,8 @@ export class Hud {
     em.on('lab', () => { this.updateLabBadge(); if (this.modal === 'lab') this.lab.render(); });
     em.on('book', () => { if (this.modal === 'notebook') this.notebook.render(); });
     em.on('regular-story', (st) => this.showStory(st));
+    em.on('tale-story', (t) => this.showTale(t));
+    em.on('tale-letter', (l) => this.showTaleLetter(l));
     em.on('social', () => this.updateFriendBadge());
     em.on('visit', (v) => this.updateVisit(v));
     em.on('update-available', (v) => this.showUpdate(v, false));
@@ -162,6 +170,8 @@ export class Hud {
     this.marketPanel = new MarketPanel(this);
     this.manage = new ManagePanel(this); // GĐ25: 🗓️ Sổ quản lý
     this.style = new StylePanel(this); // GĐ26: 🎀 Phong cách
+    this.garden = new GardenPanel(this); // 0.31: 🌿 Vườn ươm
+    this.econ = new EconPanel(this); // 0.31: 📈 Chợ & Quần đảo
     this.fun = new FunPanel(this); // GĐ26: 🎡 Khu Vui Chơi
     this.lab = new LabPanel(this);
     this.notebook = new NotebookPanel(this);
@@ -210,6 +220,8 @@ export class Hud {
         <button class="round" data-act="quests" aria-label="Nhiệm vụ">📋<span class="badge hidden q-badge"></span></button>
         <button class="round" data-act="manage" aria-label="Sổ quản lý: kế hoạch hôm nay, tiệc, chi nhánh, nhân viên, sổ thưởng mùa">🗓️<span class="badge hidden ql-badge"></span></button>
         <button class="round" data-act="style" aria-label="Phong cách: tủ đồ, thú cưng, trứng">🎀</button>
+        <button class="round" data-act="garden" aria-label="Vườn ươm: dòng giống, đất, sinh thái">🌿</button>
+        <button class="round" data-act="econ" aria-label="Chợ & Quần đảo: giá chợ, tin đồn, giao hàng các đảo">📈</button>
         <button class="round" data-act="go-fun" aria-label="Khu Vui Chơi">🎡</button>
         <button class="round" data-act="rank" aria-label="Xếp hạng và cuộc thi">🏆</button>
         <button class="round" data-act="decor-mode" aria-label="Trang trí">🎨</button>
@@ -278,6 +290,10 @@ export class Hud {
     if (lb) { this.lab.onAction(lb.dataset.lab, lb); return; }
     const nb = e.target.closest('[data-nb]');
     if (nb) { this.notebook.onAction(nb.dataset.nb, nb); return; }
+    const ec = e.target.closest('[data-ec]');
+    if (ec) { this.econ.onAction(ec.dataset.ec, ec); return; }
+    const gd = e.target.closest('[data-gd]');
+    if (gd) { this.garden.onAction(gd.dataset.gd, gd); return; }
     const sy = e.target.closest('[data-sy]');
     if (sy) { this.style.onAction(sy.dataset.sy, sy); return; }
     const fn = e.target.closest('[data-fn]');
@@ -297,6 +313,11 @@ export class Hud {
     if (b.dataset.tool) { g.setTool(b.dataset.tool); return; }
     if (b.dataset.seed) { g.setSeed(b.dataset.seed); if (b.dataset.do) this.doAction('plant', b.dataset.seed); this.updateSeedbar(); return; }
     if (b.dataset.do) { this.doAction(b.dataset.do); return; }
+    if (b.dataset.act === 'uproot') {
+      const key = `${g.selected?.plot}:${g.selected?.tile}`;
+      if (this.uprootArm !== key) { this.uprootArm = key; this.lastPanelHtml = ''; this.updateTilePanel(); return; }
+      this.uprootArm = null; g.uprootSelected(); this.lastPanelHtml = ''; this.updateTilePanel(); return;
+    }
     switch (b.dataset.act) {
       case 'inventory': this.openInventory(); break;
       case 'inv-tab': this.invTab = b.dataset.id; this.openInventory(); break;
@@ -333,6 +354,8 @@ export class Hud {
       case 'go-market': this.openMarket(b.dataset.tab); break;
       case 'manage': this.manage.open(b.dataset.tab || null); break;
       case 'style': this.style.open(b.dataset.tab || null); break;
+      case 'garden': this.garden.open(b.dataset.tab || null); break;
+      case 'econ': this.econ.open(b.dataset.tab || null); break;
       case 'go-fun': this.closeModal(); g.goFun(); if (g.funOpen()) setTimeout(() => this.fun.open(), 500); else g.tapFun({ kind: 'fungate', nav: true }); break;
       case 'forecast': this.openForecast(); break;
       case 'quality': g.setQuality(b.dataset.level); this.openSettings(); break;
@@ -1207,6 +1230,30 @@ export class Hud {
   }
 
   /** Truyện khách quen sau khi giao hoa */
+  /** (0.31) Khách tâm sự nhận hoa: lời khách + hẹn quay lại / chờ thư */
+  showTale(t) {
+    const tale = TALES[t.id];
+    this.openModal('story', `<div class="story tale-story">
+      <div class="story-av">${avatarSVG(tale.look, 72)}</div><h2>${esc(tale.name)}</h2>
+      <p class="story-text">“${esc(t.react)}”</p>
+      <p class="muted small">${t.ending ? '📬 Câu chuyện đã khép lại. Vài giờ nữa sẽ có thư kể kết cục gửi tới tiệm.' : `🕰️ Khoảng ${t.nextDays} ngày nữa ${esc(tale.self)} sẽ ghé lại kể tiếp…`}</p>
+      <button class="btn wide" data-act="close-modal">Tiếp tục</button></div>`);
+  }
+
+  /** (0.31) Thư kết cục */
+  showTaleLetter(l) {
+    const tale = TALES[l.id], rw = l.def.reward || {};
+    const gifts = [rw.coins ? `+${rw.coins} 💰` : '', rw.xp ? `+${rw.xp} XP` : '', rw.rep ? `+${rw.rep} 💗` : '', ...Object.entries(rw.style || {}).map(([k, v]) => `${STYLES[k].icon} ${STYLES[k].name} +${v}`)].filter(Boolean);
+    const seen = talesSys.endingsSeen(this.game.save, l.id).length, total = Object.keys(tale.endings).length;
+    this.openModal('story', `<div class="story tale-letter">
+      <div class="letter-paper"><div class="story-av">${avatarSVG(tale.look, 60)}</div>
+        <h2>💌 Thư của ${esc(tale.name)}</h2><h3>“${esc(l.def.title)}”</h3>
+        <p class="story-text">${esc(l.def.text)}</p></div>
+      ${gifts.length ? `<h3>🎁 Quà gửi kèm</h3><ul class="unlocks">${gifts.map((g) => `<li>${esc(g)}</li>`).join('')}</ul>` : ''}
+      <p class="muted small">Kết cục đã khám phá: ${seen}/${total}. Xem lại & chơi lại tìm kết khác ở 🗓️ › 🏷️ Phong cách.</p>
+      <button class="btn wide" data-act="close-modal">Cất thư</button></div>`);
+  }
+
   showStory(st) {
     const r = REGULARS[st.id];
     const npc = { ...r };
@@ -1381,10 +1428,9 @@ export class Hud {
     bar.classList.toggle('hidden', g.tool !== 'plant');
     if (g.tool !== 'plant') return;
     bar.innerHTML = this.seedList().map((k) => {
-      const { species, variant } = variants.parseVkey(k);
-      const n = g.save.inventory.seeds[k] || 0;
-      return `<button class="seed ${g.seed === k ? 'active' : ''} ${n ? '' : 'empty'}" data-seed="${k}" title="${esc(variants.variantName(species, variant))}">
-        <span class="seed-art">${seedArt(k)}${vdot(species, variant)}</span><small>${FLOWERS[species].greenhouseOnly ? '🏠' : ''}${esc(variants.variantName(species, variant))}</small><b>${n}</b></button>`;
+      const { species, variant, n, name, strain, art } = this.seedInfo(k);
+      return `<button class="seed ${g.seed === k ? 'active' : ''} ${n ? '' : 'empty'} ${strain ? 'strain' : ''}" data-seed="${k}" title="${esc(strain ? `${strain.name}: ${gardenSys.geneStars(strain.g)}` : name)}">
+        <span class="seed-art">${art}${vdot(species, variant)}</span><small>${FLOWERS[species].greenhouseOnly ? '🏠' : ''}${FLOWERS[species].perennial ? '🌳' : ''}${esc(name)}</small><b>${n}</b></button>`;
     }).join('');
   }
 
@@ -1393,7 +1439,20 @@ export class Hud {
     const g = this.game;
     const set = new Set(g.unlockedFlowers().map((id) => variants.vkey(id)));
     Object.entries(g.save.inventory.seeds).forEach(([k, n]) => { if (n > 0) set.add(k); });
+    // (0.31) hạt dòng giống 'S:id'
+    Object.entries(gardenSys.G(g.save).sseeds).forEach(([id, n]) => { if (n > 0 && gardenSys.G(g.save).strains[id]) set.add(gardenSys.strainKey(id)); });
     return [...set];
+  }
+
+  /** (0.31) thông tin 1 loại hạt (thường hoặc dòng giống): { species, variant, n, name, strain } */
+  seedInfo(k) {
+    const s = this.game.save;
+    if (gardenSys.isStrainKey(k)) {
+      const id = k.slice(2), st = gardenSys.G(s).strains[id];
+      return { species: st.sp, variant: st.v, n: gardenSys.G(s).sseeds[id] || 0, name: `${variants.variantName(st.sp, st.v)} 🧬${gardenSys.geneTotal(st.g)}`, strain: st, art: seedArt(variants.vkey(st.sp, st.v)) };
+    }
+    const { species, variant } = variants.parseVkey(k);
+    return { species, variant, n: s.inventory.seeds[k] || 0, name: variants.variantName(species, variant), art: seedArt(k) };
   }
 
   updateTutorial() {
@@ -1457,6 +1516,21 @@ export class Hud {
       else if (!inS && !plot.greenhouse) notes.push('<div class="note warn">🍂 Đang trái mùa: lớn chậm hơn</div>');
       else if (inS) notes.push('<div class="note good">🌸 Đúng mùa: lớn nhanh hơn</div>');
     }
+    // (0.31) độ chua đất, dòng giống, cây lâu năm, côn trùng
+    const ph = gardenSys.phOf(plot, g.selected.plot);
+    if (tile.state !== 'untilled') {
+      const fit = tile.flower && FLOWER_PH[tile.flower];
+      const off = tile.flower ? gardenSys.phOff(tile.flower, ph) : 0;
+      notes.push(`<div class="note ${fit ? (off ? 'warn' : 'good') : ''}">🧪 Đất lô ${g.selected.plot + 1}: pH ${ph.toFixed(1)} (${gardenSys.phName(ph)})${fit ? (off ? ` — ${FLOWERS[tile.flower].name} thích pH ${fit[0]}–${fit[1]}: lớn chậm, khó 3★. Chỉnh ở 🌿 Vườn ươm › Đất` : ` — vừa ý ${FLOWERS[tile.flower].name} 👍`) : ''}</div>`);
+    }
+    const genes = gardenSys.tileGenes(g.save, tile);
+    if (genes && ['growing', 'ready'].includes(tile.state)) notes.push(`<div class="note good">🧬 ${esc(gardenSys.G(g.save).strains[tile.strain].name)}: ${Object.entries(GENES).map(([k, G2]) => `${G2.icon} ${G2.name} ${genes[k]}`).join(' · ')}</div>`);
+    if (def?.perennial && ['growing', 'ready'].includes(tile.state)) {
+      const per = def.perennial, dorm = !plot.greenhouse && gardenSys.isDormant(tile.flower, calendar.calendarOf(calendar.dayOf(now)).season.id);
+      notes.push(`<div class="note ${dorm ? 'warn' : 'good'}">🌳 Cây lâu năm · ${tile.age || 0}/${per.maxAge} tuổi · mỗi lần hái ${per.yield[Math.min(tile.age || 0, per.yield.length - 1)]} bông${dorm ? ' · 💤 đang nghỉ mùa (không lớn, không chết khát)' : ''} · hái lúc cây yếu (dưới ${per.weakBelow}❤️) sẽ giảm tuổi</div>`);
+    }
+    if (plot.machines?.hive) notes.push('<div class="note good">🐝 Lô có nhà ong: hoa đẹp hơn, hay rơi thêm hạt</div>');
+    if (gardenSys.plotDiversity(plot) >= 3) notes.push('<div class="note good">🌈 Lô trồng xen ≥ 3 loài: ít sâu, hoa đẹp hơn chút</div>');
     // GĐ16: độ tươi, đất & luân canh
     const fr = farming.freshnessOf(tile);
     if (tile.rotation && ['growing', 'ready'].includes(tile.state)) notes.push('<div class="note good">🔄 Luân canh (khác loài vụ trước): lớn nhanh hơn, hoa đẹp hơn</div>');
@@ -1480,9 +1554,8 @@ export class Hud {
     const actions = farming.availableActions(tile).map((a) => {
       if (a === 'plant') {
         return `<div class="seed-row">${this.seedList().map((k) => {
-          const { species, variant } = variants.parseVkey(k);
-          const n = g.save.inventory.seeds[k] || 0;
-          return `<button class="btn seedbtn ${n ? '' : 'disabled'}" data-seed="${k}" data-do="plant">${FLOWERS[species].icon}${vdot(species, variant)} ${esc(variants.variantName(species, variant))} <b>×${n}</b></button>`;
+          const { species, variant, n, name, strain } = this.seedInfo(k);
+          return `<button class="btn seedbtn ${n ? '' : 'disabled'} ${strain ? 'strain' : ''}" data-seed="${k}" data-do="plant">${FLOWERS[species].icon}${vdot(species, variant)} ${esc(name)} <b>×${n}</b></button>`;
         }).join('')}</div>`;
       }
       let disabled = false;
@@ -1499,17 +1572,17 @@ export class Hud {
         <button class="round sm" data-act="close-tile" aria-label="Đóng">✕</button></div>
       ${notes.join('')}
       <div class="bars">${bars.join('')}</div>
-      <div class="actions">${actions}${!plot.greenhouse && (plot.coverUntil || 0) < protectUntil(now) && tile.state !== 'untilled' ? `<button class="btn" data-act="cover-plot">⛺ Che bạt cả lô (${g.save.inventory.items.cover || 0})</button>` : ''}</div>`;
+      <div class="actions">${actions}${['growing', 'ready'].includes(tile.state) ? `<button class="btn ${this.uprootArm === `${g.selected.plot}:${g.selected.tile}` ? 'danger' : ''}" data-act="uproot">🪓 ${this.uprootArm === `${g.selected.plot}:${g.selected.tile}` ? 'Bấm lần nữa để nhổ' : 'Nhổ cây'}</button>` : ''}${!plot.greenhouse && (plot.coverUntil || 0) < protectUntil(now) && tile.state !== 'untilled' ? `<button class="btn" data-act="cover-plot">⛺ Che bạt cả lô (${g.save.inventory.items.cover || 0})</button>` : ''}</div>`;
   }
 
   // ---------- kho đồ ----------
   openInventory() {
     const s = this.game.save;
-    const seeds = this.seedList().map((k) => { const { species, variant } = variants.parseVkey(k); return `<div class="cell"><span class="seed-art">${seedArt(k)}${vdot(species, variant)}</span><small>Hạt ${esc(variants.variantName(species, variant))}</small><b>×${s.inventory.seeds[k] || 0}</b></div>`; }).join('');
+    const seeds = this.seedList().map((k) => { const { species, variant, n, name, art } = this.seedInfo(k); return `<div class="cell"><span class="seed-art">${art}${vdot(species, variant)}</span><small>Hạt ${esc(name)}</small><b>×${n}</b></div>`; }).join('');
     const flowers = Object.entries(s.inventory.flowers).filter(([, n]) => n > 0).map(([k, n]) => {
       const f = variants.parseFlowerKey(k);
       return `<div class="cell"><span>${FLOWERS[f.species].icon}${vdot(f.species, f.variant)}</span><small>${esc(variants.variantName(f.species, f.variant))} <i class="stars">${'★'.repeat(f.q)}</i></small><b>×${n}</b>
-        <button class="mini" data-act="sell" data-k="${k}" data-n="${n}" data-total="${wholesalePrice(k) * n}">Bán sỉ</button></div>`;
+        <button class="mini" data-act="sell" data-k="${k}" data-n="${n}" data-total="${this.game.wholesaleEach(k) * n}">Bán sỉ</button></div>`;
     }).join('') || '<p class="muted">Chưa có hoa nào. Hãy trồng và thu hoạch nhé!</p>';
     const wraps = [
       ...Object.entries(PAPERS).map(([id, w]) => `<div class="cell"><span class="swatch-dot" style="--c:${w.color}"></span><small>${w.name}</small><b>${w.free ? '∞' : '×' + (s.inventory.papers[id] || 0)}</b></div>`),
