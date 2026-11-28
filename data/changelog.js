@@ -4,17 +4,13 @@
 // =============================================================
 export const CHANGELOG = [
   {
-    version: '0.32.0',
+    version: '0.28.0',
     notes: [
+      '🎬 Video giới thiệu bản mới hiện 1 lần khi vào game (bấm ✕ để đóng) — xem lại trong ⚙️ Cài đặt',
       '👪 Đời sống làng (nút 👪): dân làng có cuộc sống riêng — quen nhau, thân nhau, yêu nhau, cưới nhau, có em bé… hoặc giận nhau. Mỗi ngày có tin làng mới',
       '💐 Làm mai & hòa giải: tặng hoa "thay lời" cho cặp đang thích nhau, hoặc mang hoa tới làm lành cho cặp đang giận — chọn đúng ý nghĩa hoa thì thành, chọn sai (ghen tuông, chia ly…) thì hỏng chuyện',
       '⚖️ Quyết định làng: 3 chuyện khó (bãi đất sau trường, hàng hoa giấy trước quán, lời mời của xưởng mộc thành phố). Chọn rồi không đổi được — được cái này mất cái kia, dân làng nhớ và nhắc lại khi gặp bạn',
       '🎓 Học trò: nhận Bé Su, Nhum hoặc Sen làm học trò, mỗi ngày dạy 1 buổi (Trồng hoa / Cắm hoa / Buôn bán) theo cách dịu dàng hay nghiêm khắc. Ra nghề, trò mở tiệm: thân với bạn thì thành ĐỐI TÁC (gửi quà mỗi ngày), không thân thì thành ĐỐI THỦ (giành khách — thắng 3 cuộc thi cắm hoa để làm lành)',
-    ],
-  },
-  {
-    version: '0.31.0',
-    notes: [
       '💌 Khách tâm sự: 4 người kể chuyện riêng (xin lỗi mẹ, tỏ tình, tiễn bạn, mở tiệm bánh). Chọn hoa theo Ý NGHĨA — câu chuyện rẽ nhánh theo bó hoa bạn gói, vài ngày sau khách quay lại kể tiếp, cuối cùng gửi thư báo kết cục. Mỗi truyện nhiều kết, kể lại được để tìm kết khác',
       '🏷️ Phong cách tiệm: hoa cưới · tình yêu · tri ân · tiễn biệt · sang trọng. Bán kiểu hoa nào thì tiệm nổi tiếng kiểu đó (giá & tiền bo cao hơn, khách hỏi kiểu đó nhiều hơn) — chuyên sâu 1 hướng thì hướng khác phai dần (🗓️ › Phong cách)',
       '🧬 Dòng giống có gen: hái hoa 3★ có thể "giữ giống" thành dòng mới với 4 gen Bông to · Sai hoa · Khỏe · Lớn nhanh; lai 2 dòng ở 🌿 Vườn ươm, đôi khi đột biến',
@@ -24,22 +20,12 @@ export const CHANGELOG = [
       '📈 Giá chợ dao động: mỗi loài lên xuống theo ngày, đúng mùa rẻ – trái mùa đắt, có biểu đồ 7 ngày & dự báo (nút 📈)',
       '📰 Tin đồn: báo trước 2–3 ngày đám cưới, hội chợ, thuyền hàng, bão… làm giá loài hoa nào đó vọt lên hoặc rớt',
       '🏝️ Chuỗi cung ứng: Làng Hoa, Mũi Én, Cồn Lặng, Ngàn Hương, Khu Vui Chơi cần hàng mỗi 3 ngày. Giao đều thì đảo phát triển (5 cấp) và cho ưu đãi: đông khách, cá giá cao, hàng hương, ăn vặt, hoa mặn được giá hơn',
-    ],
-  },
-  {
-    version: '0.30.0',
-    notes: [
       '🐟 40 loài cá được vẽ riêng từng con (vảy, vây, sọc, đốm, râu…): cá koi ba màu, cá kiếm có mỏ, cua hoàng đế đầy gai, sứa phát sáng, cá ngựa, rồng biển… — hiện trong Sổ cá, quầy cá và lúc câu được',
       '🔍 Sổ cá: loài chưa câu hiện bóng mờ thay cho dấu ❔',
       '🌱 Hạt giống thành gói hạt in hình bông hoa đúng màu (thanh chọn hạt, Chợ)',
       '🪱 Vật phẩm vẽ mới: mồi giun / tôm / cua / hoa / đêm, bao phân bón, rương báu, ngọc trai, ủng cũ, chai thư…',
       '🌷 Cây trồng chi tiết hơn: ụ đất quanh gốc, hạt mới gieo có cọc cắm bảng màu, mầm có lá mầm, nụ có đài ôm, thân có đốt',
       '🌳 Cây & rừng chi tiết hơn: tán nhiều chùm có bóng sẫm phía dưới, thông nhiều tầng răng cưa, gốc có rễ loe, cây có quả nhỏ',
-    ],
-  },
-  {
-    version: '0.29.0',
-    notes: [
       '🌾 Gấp đôi số lô đất mua ở Chợ: thêm 4 lô ở "Ruộng Ven Rừng" (bìa rừng đông nam, có đường đá nối về nông trại)',
       '🧵 Bà Tư nhờ việc mới: "May đồ cùng bà" — giữ ngón tay lên cây kim rồi kéo theo đường chỉ chấm (khăn tay, váy, thêu trái tim, bông hoa...), thay cho game Xỏ kim',
       '🧑‍🌾 Nhân vật chi tiết hơn: tai, lông mày, mắt long lanh, miệng cười, tóc mái nhiều lọn, giày có đế, cổ áo, thắt lưng, cổ tay áo',
@@ -48,11 +34,6 @@ export const CHANGELOG = [
       '⛰️ Địa hình mới: Thác Mây đổ xuống hồ trong rừng tây nam, cột đá & vòm đá ngoài khơi Mũi Én, cụm đá bazan ở Cồn Lặng, mỏm đá gần Công Viên',
       '⚡ Mượt hơn: luôn nhắm 60 khung hình/giây (tự hạ/nâng độ nét theo sức máy), chỉ vẽ phần đang nhìn thấy, mức đồ họa mới "Thấp" vẫn chạy 60 khung',
       '👆 Chạm nhạy hơn: chạm nhanh hơi lệch tay vẫn tính là chạm, kéo bản đồ bám sát ngón tay và trôi nhẹ khi vuốt; nhân vật đi nhanh hơn, làm việc nhanh hơn',
-    ],
-  },
-  {
-    version: '0.28.0',
-    notes: [
       '🎣 Câu cá làm lại hoàn toàn: khung cảnh vẽ động có trời, mây, mặt nước gợn sóng, cá bơi dưới nước, nhân vật mặc đúng đồ của bạn đứng trên cầu tàu',
       '🌅 Cảnh đổi theo giờ & thời tiết: sáng, hoàng hôn, đêm sao + trăng (rằm thì trăng tròn), mưa, tuyết, sương; nước ngọt / biển / nước lợ có màu riêng, ao có lá sen, rặng đá có đá ngầm',
       '🎯 Quăng cần thấy phao bay theo đường cong; cá bơi lại gần mồi, nhử phao, cắn câu thì nước bắn tung + rung máy',

@@ -45,7 +45,7 @@ export class MusicPlayer {
   }
 
   get title() { return this.tracks[this.idx]?.title || ''; }
-  get wanted() { return this.started && this.prefs.music > 0 && this.broken.size < this.tracks.length; }
+  get wanted() { return this.started && !this.hold && this.prefs.music > 0 && this.broken.size < this.tracks.length; } // hold: đang xem video quảng cáo
 
   start() {
     if (this.started || !this.tracks.length) return;

@@ -1,5 +1,5 @@
 // =============================================================
-//  📈 NỀN KINH TẾ QUẦN ĐẢO SỐNG (0.31 · gói C)
+//  📈 NỀN KINH TẾ QUẦN ĐẢO SỐNG
 //  1) Giá bán sỉ mỗi loài hoa lên xuống theo ngày (sóng giá + mùa + lễ hội + tin đồn)
 //  2) Tin đồn: báo trước vài ngày một sự kiện làm giá loài hoa nào đó tăng vọt / rớt
 //  3) Chuỗi cung ứng: mỗi đảo cần hàng định kỳ; giao đều đặn thì đảo phát triển (cấp 0–5) và cho bạn ưu đãi

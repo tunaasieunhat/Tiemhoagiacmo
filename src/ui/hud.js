@@ -71,6 +71,7 @@ import { CG_TEXT } from '../../data/story.js';
 import { FISH, FISH_RULES, FISH_SPOTS, BAITS, RODS, GEAR } from '../../data/fishing.js';
 import * as storySys from '../systems/story.js';
 import { STORY_RULES, BUDS } from '../../data/story.js';
+import { openPromo, maybePromo } from './promo.js';
 
 const TOOLS = [
   { id: 'hand', icon: '✋', label: 'Xem' },
@@ -148,7 +149,7 @@ export class Hud {
     em.on('story', () => this.updateStoryBadge());
     // đang hiện bảng khác (vd vừa lên cấp nhờ XP của chương) thì đợi đóng bảng đó rồi mới hiện "Hết chương"
     em.on('story-chapter', (e) => { if (this.modal) this.afterClose = () => this.showChapterDone(e); else this.showChapterDone(e); });
-    em.on('refresh', () => this.maybeAutoStory());
+    em.on('refresh', () => { this.maybeAutoStory(); maybePromo(this); });
     em.on('buds', () => this.openBuds());
     // GĐ22: câu cá
     this.fishing = new FishingUI(this);
@@ -328,6 +329,7 @@ export class Hud {
       case 'inventory': this.openInventory(); break;
       case 'inv-tab': this.invTab = b.dataset.id; this.openInventory(); break;
       case 'settings': this.openSettings(); break;
+      case 'promo': this.closeModal(); openPromo({ music: g.audio?.music }); break;
       case 'close-modal': this.closeModal(); break;
       case 'close-tile': g.select(null); break;
       case 'zoom-in': g.controls.zoomBy(1.25); break;
@@ -1661,6 +1663,7 @@ export class Hud {
         <button class="btn danger" data-act="reset">🗑️ Chơi lại từ đầu</button>
       </div>` : ''}
       <p class="muted small">Điều khiển: kéo để di chuyển bản đồ · cuộn chuột hoặc chụm 2 ngón để phóng to/thu nhỏ · máy tính có thể dùng phím W A S D.</p>
+      <button class="btn wide" data-act="promo">🎬 Xem video giới thiệu bản mới</button>
       <p class="muted small">Tiệm Hoa Giấc Mơ · phiên bản ${GAME_VERSION} (${GAME_STAGE})</p>
       </div></div>
     `);

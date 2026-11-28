@@ -1,4 +1,4 @@
-// 📈 Chợ & Quần đảo (0.31 · gói C): giá chợ 7 ngày · tin đồn · chuỗi cung ứng các đảo. Nút điều khiển: data-ec
+// 📈 Chợ & Quần đảo: giá chợ 7 ngày · tin đồn · chuỗi cung ứng các đảo. Nút điều khiển: data-ec
 import { FLOWERS } from '../../data/flowers.js';
 import { ISLANDS, SUPPLY_RULES, PRICE } from '../../data/economy.js';
 import * as econ from '../systems/economy.js';

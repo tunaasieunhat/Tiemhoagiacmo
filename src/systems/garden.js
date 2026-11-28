@@ -1,4 +1,4 @@
-// 🌿 Nghề trồng hoa thật sự (0.31 · gói A) — LOGIC THUẦN. Số liệu: data/garden.js
+// 🌿 Nghề trồng hoa thật sự — LOGIC THUẦN. Số liệu: data/garden.js
 // save.garden = { strains: { [id]: { sp, v, g: { size, bloom, hardy, speed }, name, gen, from } }, sseeds: { [id]: n }, next, breed: null | { a, b, readyAt } }
 // plot.ph = độ pH hiện tại của lô (thiếu thì lấy pH tự nhiên)
 import { GENES, STRAIN_RULES, SOIL_PH, FLOWER_PH, AMENDMENTS, INSECTS } from '../../data/garden.js';

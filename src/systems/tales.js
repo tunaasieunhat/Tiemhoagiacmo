@@ -1,4 +1,4 @@
-// 💌 Khách tâm sự & 🏷️ phong cách tiệm (0.31 · gói B) — LOGIC THUẦN. Số liệu: data/tales.js
+// 💌 Khách tâm sự & 🏷️ phong cách tiệm — LOGIC THUẦN. Số liệu: data/tales.js
 // save.tales = { st: { [id]: { step, day, path: [], done, ending } }, letters: [{ id, ending, at }], styles: { [style]: điểm } }
 import { TALES, TALE_RULES, STYLES, STYLE_RULES } from '../../data/tales.js';
 import { meaningsOf } from './variants.js';

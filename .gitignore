@@ -11,3 +11,4 @@ android/
 *.jks
 scripts/trailer/frames/
 *.mp4
+!public/promo/*.mp4

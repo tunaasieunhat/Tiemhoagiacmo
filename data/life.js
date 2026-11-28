@@ -1,5 +1,5 @@
 // =============================================================
-//  👪 CON NGƯỜI & HỆ QUẢ (0.32 · gói D)
+//  👪 CON NGƯỜI & HỆ QUẢ
 //  1) Quyết định làng: lựa chọn có giá phải trả, chọn rồi không đổi được, dân làng nhớ mãi.
 //  2) Dân làng có cuộc sống riêng: các cặp quen biết – bạn – thân – thích – yêu – cưới – có con, hoặc giận nhau.
 //     Bạn có thể LÀM MAI (tặng hoa thay một người) hoặc HÒA GIẢI — nhưng chọn sai hoa thì làm hỏng chuyện.

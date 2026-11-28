@@ -23,6 +23,8 @@ sau này đóng gói Android. Three.js + JavaScript (Vite), backend Supabase.
   ✅ GĐ25 (0.26.0) "Tiệm Hoa Của Quần Đảo": Sổ quản lý (kế hoạch hôm nay, lịch tuần, tiệc, chi nhánh, nhân viên thông minh) + truyện "Người mua đảo".
   ✅ GĐ26 (0.27.0) "Lễ Hội Đảo Mây": Khu Vui Chơi + quầy ăn vặt, tủ đồ, thú cưng & trứng, Sổ thưởng mùa + điểm danh. Chưa làm: chơi cùng nhau trực tiếp (Realtime).
   Lồng tiếng: đã đề xuất miễn phí (Piper tạo sẵn trên GitHub Actions + "Phòng thu" tự thu), đang chờ người dùng chọn.
+  ✅ 0.28.0 (28/11/2026) phát hành chính thức: gộp các bản thử 0.28–0.32 (câu cá mới, 8 lô đất, may đồ, đồ họa chi tiết, khách tâm sự,
+  dòng giống/đất pH/cây lâu năm, giá chợ/tin đồn/chuỗi cung ứng, đời sống làng/quyết định/học trò) + video giới thiệu trong game.
   Việc tiếp theo: hỏi người dùng.
   Đề xuất đã nêu: GĐ19 nuôi ong (một phần đã có ở GĐ23), điểm danh + sổ thưởng mùa, tùy biến nhân vật, hội làng (đánh số GĐ mới khi làm).
 - Đưa lên mạng: Netlify (`netlify.toml`, `docs/HUONG_DAN_DUA_LEN_MANG.md`) — trang thật: https://tiem-hoa-giac-mo.netlify.app
@@ -176,7 +178,7 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   `en_off|en_on` (đèn hải đăng). 3D `src/render/muien.js` (`game.muien.sync` trong `syncStoryWorld`). `game.sail()` chỉ là lia camera
   (`game.atEn` = camera x > 40); nhân vật ở xa ô đất > 22 thì "có mặt" ngay cạnh lô (không lội biển).
   Sửa `flowers.js`/`variants.js` ở GĐ này ⇒ đã chạy `npm run build:functions` (người dùng cần dán lại Edge Function nếu chưa bật tự deploy).
-- **Bản 0.29** (bản thử): `PLOT_SLOTS` 8 vị trí (4 lô mới ở Ruộng Ven Rừng `FIELD2` trong world.js, `buildField2` dùng rng riêng), `PLOT_UNLOCKS` slot 4–7,
+- **Bản 0.28 — phần đất/đồ họa** (từng là bản thử 0.29): `PLOT_SLOTS` 8 vị trí (4 lô mới ở Ruộng Ven Rừng `FIELD2` trong world.js, `buildField2` dùng rng riêng), `PLOT_UNLOCKS` slot 4–7,
   ảnh chụp bạn bè nhận `sl` < 8 và tối đa 12 lô. Mini game `sew` (`src/ui/sewGame.js`, kéo kim theo đường may, `window.__sew` cho bot — bot phải phát
   PointerEvent TRONG trang) thay `needle` trong việc nhờ của Bà Tư (`FAVORS.ba_tu` id `sew`). Nhân vật: `buildCharacter` thêm chi tiết + `compact()` gộp khối
   cùng màu trong từng bộ phận chuyển động (đầu/tay/chân/thân; `hand` giữ riêng). Đồ trang trí: `DETAILS[id]` thêm chi tiết + `mergeStill` gộp phần đứng yên
@@ -185,12 +187,12 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   Hiệu năng: `GRAPHICS.dynamicRes` (độ nét tự co giãn trong vòng vẽ ở main.js, `stage.nudgeResolution`), `shadowEvery` (shadowMap.autoUpdate = false),
   mức `low` 60 khung + mức `battery` 30 khung, màn hình 120 Hz cũng giới hạn 60. Chạm: `QUICK_TAP_*`, kéo không hụt 12px đầu, trôi khi vuốt (`controls.vel`);
   `PLAYER.walkSpeed/runFar/actionSeconds/actionHit`.
-- **Bản 0.30** (bản thử): hình SVG trong `src/ui/art.js` — `fishArt(id, {shiny})` (bảng `FISH_ART`: shape fish|slim|tall|flat|eel|puffer|lantern|squid|shrimp|crab|
+- **Bản 0.28 — phần SVG** (từng là bản thử 0.30): hình SVG trong `src/ui/art.js` — `fishArt(id, {shiny})` (bảng `FISH_ART`: shape fish|slim|tall|flat|eel|puffer|lantern|squid|shrimp|crab|
   lobster|shell|jelly|seahorse|dragon|whale + màu/họa tiết), `seedArt(vkey)` (gói hạt dùng `flowerSVG` đã export từ bouquetPreview), `itemArt(kind, id)` (supply/bait/junk/
   pearl/chest; không có hình ⇒ null, dùng emoji). SVG có xmlns ⇒ vẽ lên canvas được (`artImage` trong fishingGame: cá nhảy khỏi mặt nước). CSS `.art` = 1em.
   Cây trồng: `buildPlant(..., { bare })` (bare = không ụ đất, dùng cho giỏ treo), gộp khối bằng `compactInto` (`src/models/mergeParts.js`; cây Vận May không gộp).
   Rừng: hình gộp `cluster()` có màu đỉnh (vertexColors) trong forest.js.
-- **Bản 0.31 – chiều sâu** (bản thử, gói A+B+C): mọi save mới đều lazy (`save.tales`, `save.garden`, `save.econ`, `plot.ph`, `tile.age/strain/qBonus/gMult/hardy`), KHÔNG tăng SAVE_VERSION.
+- **Bản 0.28 – chiều sâu** (từng là bản thử 0.31; A = nghề trồng hoa, B = khách tâm sự, C = kinh tế — KHÔNG ghi chữ "gói" trong game/video): mọi save mới đều lazy (`save.tales`, `save.garden`, `save.econ`, `plot.ph`, `tile.age/strain/qBonus/gMult/hardy`), KHÔNG tăng SAVE_VERSION.
   **B** `data/tales.js` (TALES: steps `{ask,tone,min,max,paths:[{m,go}],fallback,react,next}` → `end:<kết>`; STYLES/STYLE_RULES), `src/systems/tales.js`
   (`spawnTale` do `shopTick({tale})` gọi, khách có `c.tale` — không trừ uy tín, nhân viên không phục vụ; `resolve` chọn nhánh theo ý nghĩa nhiều cành nhất; thư kết cục
   `takeLetters` → `game.taleLetters` (trong checkGoals) → hud `tale-letter`; `req.allow` để ý nghĩa xấu của truyện không bị trừ điểm trong `scoreBouquet`).
@@ -202,11 +204,15 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   **C** `data/economy.js` (PRICE, RUMORS, SUPPLY_RULES, ISLANDS), `src/systems/economy.js` (giá & tin đồn tính từ số ngày bằng hash — không lưu; `priceIndex`,
   `wholesaleNow` → `game.wholesaleEach` dùng cho mọi chỗ bán sỉ; `ensureCycles/deliver/islandLevel/perkMult` — ưu đãi spawn/salt/fish/craft/snack).
   UI `src/ui/econPanel.js` (`data-ec`, nút 📈). Hàm hash phải có bước trộn bit (FNV trơn cho giá trị gần nhau với chuỗi gần nhau).
-- **Bản 0.32 – gói D** (bản thử): `data/life.js` (LIFE_RULES, BOND_STEPS/ROMANCE_STEPS, PAIRS, LIFE_EVENTS, DILEMMAS a/b `{effects, result, memory}`, APPRENTICE),
+- **Bản 0.28 – đời sống làng** (từng là bản thử 0.32): `data/life.js` (LIFE_RULES, BOND_STEPS/ROMANCE_STEPS, PAIRS, LIFE_EVENTS, DILEMMAS a/b `{effects, result, memory}`, APPRENTICE),
   `src/systems/life.js` (`save.life` lazy: pairs aff −100..100, news, acted, dil, mods, app; `dailyTick` gọi từ `game.lifeTick` trong checkGoals khi đổi ngày;
   `act` làm mai/hòa giải bằng 1 bông hoa (ý nghĩa hợp/xấu ảnh hưởng tỉ lệ); `decide` (vĩnh viễn) + `perkMult(key: wholesale|spawn|tips)` nhân vào wholesaleEach /
   spawnMult / tiền bo; `memoryOf` hiện trong bảng dân làng (`.vg-memo`); học trò `takeApprentice/lesson/partnerGift/challenge`). UI `src/ui/lifePanel.js` (`data-lf`, nút 👪;
   buổi học chạy `runMiniGame(subjects[x].game)` rồi `game.lifeLesson`). Không ai rời làng (tránh vỡ cảnh cốt truyện) — hệ quả là tình cảm, cặp quan hệ, kinh tế.
+- **Video quảng cáo bản mới** (0.28): `data/promo.js` (id, video/poster trong `public/promo/`, delaySeconds, newPlayers), `src/ui/promo.js`
+  (`maybePromo(hud)` gọi trong sự kiện `refresh`, hiện 1 lần cho mỗi `id` — lưu `localStorage` khóa `thgm:promo`; đợi game rảnh: không có cảnh truyện/bảng/mini game;
+  `openPromo({music})` tạm dừng nhạc nền qua `music.hold`). Nút "🎬 Xem video giới thiệu bản mới" trong ⚙️ Cài đặt (`data-act="promo"`).
+  Video mới: nén 960×540 (`-crf 27 -b:a 96k -movflags +faststart`, ~5 MB) rồi đổi `id`. Nguồn dựng video gameplay: quay bằng đồng hồ ảo (xem lịch sử phiên).
 - **Câu cá làm lại** (0.28): `src/ui/fishingGame.js` vẽ cảnh bằng canvas (`startScene/draw`, pha power → throwBob → wait → reel → result;
   thẻ kết quả `.fs-overlay` nổi trên cảnh, nút "Câu tiếp" `data-fs="quick"`). Luật/số liệu không đổi. Bot thử phải chạy TRONG trang (setInterval đọc
   `window.__fishing`) vì swiftshader chậm, gọi từ ngoài sẽ lỡ cửa sổ cắn câu.

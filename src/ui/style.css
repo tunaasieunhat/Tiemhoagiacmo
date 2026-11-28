@@ -1688,7 +1688,7 @@ body.cine-sepia #game canvas { filter: sepia(.85) saturate(.75) contrast(.95) br
 .fs-bait > span .art { width: 1.3em; height: 1.3em; }
 .seed .seed-art .art { width: 1.5em; height: 1.5em; }
 
-/* (0.31) gói A/B/C: Vườn ươm · Chợ & Quần đảo · khách tâm sự */
+/* Vườn ươm · Chợ & Quần đảo · khách tâm sự */
 .cust.tale { border-color: #f6a6b9; background: linear-gradient(135deg, #fff7fa, #fff); }
 .tale-letter .letter-paper { background: #fffaf0; border: 1px dashed #e8c9a0; border-radius: 14px; padding: 10px 14px; box-shadow: 0 4px 14px rgba(150, 110, 70, .15); }
 .tale-letter h3 { margin: 4px 0; color: #b0647a; }
@@ -1736,3 +1736,14 @@ body.cine-sepia #game canvas { filter: sepia(.85) saturate(.75) contrast(.95) br
 .lf-choice { padding: 6px 12px; border-radius: 999px; border: 2px solid #f0e2d6; background: #fff; font: inherit; cursor: pointer; }
 .lf-choice.on { border-color: #f6a6b9; background: #fff0f5; font-weight: 700; }
 .lf-body > h3, .lf-body > p, .lf-body > .row-btns, .lf-body > .note { grid-column: 1 / -1; }
+
+/* 🎬 Khung quảng cáo bản mới (video giới thiệu) */
+#promo { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: max(10px, var(--safe-top, 0px)) max(10px, var(--safe-right, 0px)) max(10px, var(--safe-bottom, 0px)) max(10px, var(--safe-left, 0px)); background: rgba(60, 30, 40, .6); animation: pr-in .25s ease-out; }
+#promo .pr-card { position: relative; width: min(880px, 100%, calc((100dvh - 90px) * 16 / 9)); background: #fff8f3; border-radius: 20px; padding: 10px 10px 12px; box-shadow: 0 18px 50px rgba(60, 20, 30, .45); border: 3px solid #f6a6b9; }
+#promo .pr-head { display: flex; flex-direction: column; padding: 2px 44px 8px 6px; }
+#promo .pr-head b { font-family: 'Baloo 2', sans-serif; font-size: 20px; color: #7a3d4f; line-height: 1.15; }
+#promo .pr-head small { color: #8a6a5a; font-size: 13px; }
+#promo .pr-video { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; background: #f3d6de; }
+#promo .pr-x { position: absolute; top: -12px; right: -12px; width: 42px; height: 42px; border-radius: 50%; border: 3px solid #fff; background: #e8849f; color: #fff; font-size: 20px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 0, 0, .25); }
+@media (max-height: 480px) { #promo .pr-head b { font-size: 16px; } #promo .pr-head small { display: none; } #promo .pr-x { top: -6px; right: -6px; width: 38px; height: 38px; } }
+@keyframes pr-in { from { opacity: 0; transform: scale(.96); } }

@@ -1,4 +1,4 @@
-// 👪 Đời sống làng (0.32 · gói D): chuyện làng & làm mai / hòa giải · quyết định làng · học trò. Nút điều khiển: data-lf
+// 👪 Đời sống làng: chuyện làng & làm mai / hòa giải · quyết định làng · học trò. Nút điều khiển: data-lf
 import { FLOWERS } from '../../data/flowers.js';
 import { MEANINGS } from '../../data/variants.js';
 import { LIFE_RULES, PAIRS, DILEMMAS, APPRENTICE } from '../../data/life.js';

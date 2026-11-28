@@ -1,4 +1,4 @@
-// 📈 Nền kinh tế quần đảo sống (0.31 · gói C) — LOGIC THUẦN. Số liệu: data/economy.js
+// 📈 Nền kinh tế quần đảo sống — LOGIC THUẦN. Số liệu: data/economy.js
 // Giá & tin đồn tính được từ số ngày (không cần lưu). save.econ = { supply: { [đảo]: { pts, cycle, reqs: [{...yêu cầu, done}], got } } }
 import { PRICE, RUMOR_RULES, RUMORS, SUPPLY_RULES, ISLANDS } from '../../data/economy.js';
 import { FLOWERS, NORMAL_FLOWER_IDS } from '../../data/flowers.js';

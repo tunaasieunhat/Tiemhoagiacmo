@@ -1,4 +1,4 @@
-// 👪 Con người & hệ quả (0.32 · gói D) — LOGIC THUẦN. Số liệu: data/life.js
+// 👪 Con người & hệ quả — LOGIC THUẦN. Số liệu: data/life.js
 // save.life = { pairs: { [cặp]: { aff, since, married, baby } }, news: [{ day, icon, text }], last, acted: { [cặp]: ngày },
 //   dil: { [mã]: 'a'|'b' }, mods: { wholesale: { mult, until } }, app: { id, skill, bond, lessons, lastDay, done, outcome, wins, lastChallenge, lastGift } }
 import { LIFE_RULES, BOND_STEPS, ROMANCE_STEPS, PAIRS, MATCH_MEANINGS, LIFE_EVENTS, DILEMMAS, APPRENTICE } from '../../data/life.js';

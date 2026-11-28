@@ -1,4 +1,4 @@
-// 🌿 Vườn ươm (0.31 · gói A): dòng giống · lai dòng · đất (pH) · sinh thái. Nút điều khiển: data-gd
+// 🌿 Vườn ươm: dòng giống · lai dòng · đất (pH) · sinh thái. Nút điều khiển: data-gd
 import { FLOWERS } from '../../data/flowers.js';
 import { GENES, STRAIN_RULES, SOIL_PH, FLOWER_PH, AMENDMENTS } from '../../data/garden.js';
 import { MACHINES } from '../../data/automation.js';

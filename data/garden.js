@@ -1,5 +1,5 @@
 // =============================================================
-//  🌿 NGHỀ TRỒNG HOA THẬT SỰ (0.31 · gói A)
+//  🌿 NGHỀ TRỒNG HOA THẬT SỰ
 //  1) Dòng giống có GEN · 2) Đất có ĐỘ CHUA (pH) · 3) Cây lâu năm (xem `perennial` trong data/flowers.js) · 4) Côn trùng có ích
 // =============================================================
 

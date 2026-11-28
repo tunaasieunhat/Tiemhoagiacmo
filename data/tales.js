@@ -1,5 +1,5 @@
 // =============================================================
-//  💌 KHÁCH TÂM SỰ & PHONG CÁCH TIỆM (0.31 · gói B)
+//  💌 KHÁCH TÂM SỰ & PHONG CÁCH TIỆM
 //  Khách kể một câu chuyện → bạn chọn hoa theo Ý NGHĨA (Sổ tay › Ngôn ngữ hoa) → câu chuyện rẽ nhánh theo bó hoa bạn gói.
 //  Vài ngày sau khách quay lại kể tiếp, cuối cùng gửi thư báo kết cục. Không có đáp án duy nhất.
 //
