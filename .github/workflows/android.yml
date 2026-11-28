@@ -1,0 +1,152 @@
+# Đóng gói ứng dụng Android "Tiệm Hoa Giấc Mơ" thành file APK (giống cách làm của Ôn Luyện Nha Khoa).
+# Chạy khi: đẩy code game lên nhánh main / nhánh đang deploy Netlify, hoặc bấm "Run workflow" trong tab Actions.
+#  - Có secret ANDROID_KEYSTORE_B64 ⇒ ký bằng khóa riêng và TỰ ĐĂNG lên trang Releases.
+#    Link tải luôn đúng bản mới nhất:
+#    https://github.com/<chủ-repo>/Tiemhoagiacmo/releases/latest/download/TiemHoaGiacMo.apk
+#  - Chưa có khóa ⇒ chỉ build thử (ký tạm), tải ở mục "Artifacts" của lượt chạy.
+name: Đóng gói APK Android
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, ccr-845954e0-2hh7a1]
+    paths:
+      - 'src/**'
+      - 'data/**'
+      - 'public/**'
+      - 'assets/**'
+      - 'index.html'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'capacitor.config.json'
+      - 'scripts/android-setup.mjs'
+      - 'scripts/release-notes.mjs'
+      - '.github/workflows/android.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: false
+
+env:
+  # Mật khẩu cố định của khóa ký (giống Ôn Luyện Nha Khoa). Phần bí mật là nội dung khóa trong secret
+  # ANDROID_KEYSTORE_B64 — không có file khóa thì biết mật khẩu cũng không ký được.
+  KS_PASS: tiemhoagiacmo
+  KS_ALIAS: tiemhoa
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Không bắt buộc. Điền trong Settings → Secrets and variables → Actions → tab "Variables".
+      VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+      VITE_SITE_URL: ${{ vars.SITE_URL }}
+      VITE_APK_URL: ${{ vars.APK_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Khóa ký
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: |
+          if [ -z "$KS" ]; then
+            echo "::warning title=Chưa có khóa ký::Thêm secret ANDROID_KEYSTORE_B64 để phát hành APK (xem docs/HUONG_DAN_APK.md). Bản này chỉ ký tạm nên không đăng lên Releases."
+            exit 0
+          fi
+          # Chỉ giữ ký tự base64 (bỏ dấu cách, xuống dòng, ký tự lạ khi copy trên điện thoại)
+          clean=$(printf '%s' "$KS" | tr -cd 'A-Za-z0-9+/=')
+          raw=${#KS}; len=${#clean}
+          if printf '%s' "$clean" | base64 -d > "$RUNNER_TEMP/release.p12" 2>/dev/null \
+             && keytool -list -keystore "$RUNNER_TEMP/release.p12" -storetype PKCS12 -storepass "$KS_PASS" > "$RUNNER_TEMP/ks.txt" 2>&1; then
+            fp=$(grep -o 'SHA-256): .*' "$RUNNER_TEMP/ks.txt" | head -1)
+            echo "::notice title=Khóa ký hợp lệ::$fp"
+            echo "KEYSTORE_FILE=$RUNNER_TEMP/release.p12" >> "$GITHUB_ENV"
+            echo "SIGNED=1" >> "$GITHUB_ENV"
+          else
+            echo "::error title=Secret ANDROID_KEYSTORE_B64 chưa đúng::Secret dài $raw ký tự, còn $len ký tự base64 (số đúng ghi trong file HUONG_DAN.txt). Hãy xóa secret rồi dán lại TOÀN BỘ nội dung file ANDROID_KEYSTORE_B64.txt."
+            exit 1
+          fi
+
+      - name: Cài thư viện
+        run: npm ci
+
+      - name: Build game
+        run: npm run build
+
+      - name: Tạo dự án Android
+        run: |
+          npx cap add android
+          npx --yes @capacitor/assets@4.0.0 generate --android --iconBackgroundColor '#ffe3ea' --iconBackgroundColorDark '#ffe3ea' --splashBackgroundColor '#ffe3ea' --splashBackgroundColorDark '#ffe3ea'
+          node scripts/android-setup.mjs
+          npx cap sync android
+
+      - name: Build APK
+        working-directory: android
+        run: |
+          set -o pipefail
+          chmod +x gradlew
+          if [ "$SIGNED" = "1" ]; then
+            ./gradlew assembleRelease --no-daemon --stacktrace \
+              -Pandroid.injected.signing.store.file="$KEYSTORE_FILE" \
+              -Pandroid.injected.signing.store.password="$KS_PASS" \
+              -Pandroid.injected.signing.key.alias="$KS_ALIAS" \
+              -Pandroid.injected.signing.key.password="$KS_PASS" 2>&1 | tee "$GITHUB_WORKSPACE/build.log"
+            cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/TiemHoaGiacMo.apk"
+          else
+            ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee "$GITHUB_WORKSPACE/build.log"
+            cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/TiemHoaGiacMo.apk"
+          fi
+
+      - name: Báo lỗi build
+        if: failure()
+        run: |
+          if [ -f build.log ]; then
+            msg=$(grep -E "^e: |error:|What went wrong|^> |Could not|FAILURE|Exception" build.log | head -60 | sed 's/%/%25/g; s/\r//g' | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error title=Gradle::${msg}"
+          fi
+
+      - name: Thông tin APK
+        run: |
+          V=$(node -p "require('./package.json').version")
+          echo "VERSION_NAME=$V" >> "$GITHUB_ENV"
+          ls -la TiemHoaGiacMo.apk
+          echo "::notice title=APK::TiemHoaGiacMo.apk $(stat -c %s TiemHoaGiacMo.apk) bytes, phiên bản $V (lượt ${GITHUB_RUN_NUMBER}), đã ký=${SIGNED:-0}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TiemHoaGiacMo-apk
+          path: TiemHoaGiacMo.apk
+          retention-days: 14
+
+      - name: Phát hành lên Releases
+        if: env.SIGNED == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          node scripts/release-notes.mjs > RELEASE_NOTES.md
+          TAG="apk-${VERSION_NAME}-${GITHUB_RUN_NUMBER}"
+          TITLE="Tiệm Hoa Giấc Mơ ${VERSION_NAME} (bản ${GITHUB_RUN_NUMBER})"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            # GitHub không cho token tự động tạo tag trên commit có file quy trình (.github/workflows) khác nhánh
+            # mặc định ⇒ khi đó gắn tag vào nhánh mặc định. File APK đăng lên vẫn là bản vừa build.
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "$TITLE" --notes-file RELEASE_NOTES.md --latest \
+              || gh release create "$TAG" --target "${DEFAULT_BRANCH:-main}" --title "$TITLE" --notes-file RELEASE_NOTES.md --latest
+          fi
+          gh release upload "$TAG" TiemHoaGiacMo.apk --clobber
+          echo "::notice title=Đã phát hành::https://github.com/${GH_REPO}/releases/latest/download/TiemHoaGiacMo.apk"
