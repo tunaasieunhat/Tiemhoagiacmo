@@ -4,6 +4,15 @@
 // =============================================================
 export const CHANGELOG = [
   {
+    version: '0.32.0',
+    notes: [
+      '👪 Đời sống làng (nút 👪): dân làng có cuộc sống riêng — quen nhau, thân nhau, yêu nhau, cưới nhau, có em bé… hoặc giận nhau. Mỗi ngày có tin làng mới',
+      '💐 Làm mai & hòa giải: tặng hoa "thay lời" cho cặp đang thích nhau, hoặc mang hoa tới làm lành cho cặp đang giận — chọn đúng ý nghĩa hoa thì thành, chọn sai (ghen tuông, chia ly…) thì hỏng chuyện',
+      '⚖️ Quyết định làng: 3 chuyện khó (bãi đất sau trường, hàng hoa giấy trước quán, lời mời của xưởng mộc thành phố). Chọn rồi không đổi được — được cái này mất cái kia, dân làng nhớ và nhắc lại khi gặp bạn',
+      '🎓 Học trò: nhận Bé Su, Nhum hoặc Sen làm học trò, mỗi ngày dạy 1 buổi (Trồng hoa / Cắm hoa / Buôn bán) theo cách dịu dàng hay nghiêm khắc. Ra nghề, trò mở tiệm: thân với bạn thì thành ĐỐI TÁC (gửi quà mỗi ngày), không thân thì thành ĐỐI THỦ (giành khách — thắng 3 cuộc thi cắm hoa để làm lành)',
+    ],
+  },
+  {
     version: '0.31.0',
     notes: [
       '💌 Khách tâm sự: 4 người kể chuyện riêng (xin lỗi mẹ, tỏ tình, tiễn bạn, mở tiệm bánh). Chọn hoa theo Ý NGHĨA — câu chuyện rẽ nhánh theo bó hoa bạn gói, vài ngày sau khách quay lại kể tiếp, cuối cùng gửi thư báo kết cục. Mỗi truyện nhiều kết, kể lại được để tìm kết khác',

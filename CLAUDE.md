@@ -202,6 +202,11 @@ docs/            KIEN_TRUC.md (kiến trúc + bảng dữ liệu), HUONG_DAN_SUP
   **C** `data/economy.js` (PRICE, RUMORS, SUPPLY_RULES, ISLANDS), `src/systems/economy.js` (giá & tin đồn tính từ số ngày bằng hash — không lưu; `priceIndex`,
   `wholesaleNow` → `game.wholesaleEach` dùng cho mọi chỗ bán sỉ; `ensureCycles/deliver/islandLevel/perkMult` — ưu đãi spawn/salt/fish/craft/snack).
   UI `src/ui/econPanel.js` (`data-ec`, nút 📈). Hàm hash phải có bước trộn bit (FNV trơn cho giá trị gần nhau với chuỗi gần nhau).
+- **Bản 0.32 – gói D** (bản thử): `data/life.js` (LIFE_RULES, BOND_STEPS/ROMANCE_STEPS, PAIRS, LIFE_EVENTS, DILEMMAS a/b `{effects, result, memory}`, APPRENTICE),
+  `src/systems/life.js` (`save.life` lazy: pairs aff −100..100, news, acted, dil, mods, app; `dailyTick` gọi từ `game.lifeTick` trong checkGoals khi đổi ngày;
+  `act` làm mai/hòa giải bằng 1 bông hoa (ý nghĩa hợp/xấu ảnh hưởng tỉ lệ); `decide` (vĩnh viễn) + `perkMult(key: wholesale|spawn|tips)` nhân vào wholesaleEach /
+  spawnMult / tiền bo; `memoryOf` hiện trong bảng dân làng (`.vg-memo`); học trò `takeApprentice/lesson/partnerGift/challenge`). UI `src/ui/lifePanel.js` (`data-lf`, nút 👪;
+  buổi học chạy `runMiniGame(subjects[x].game)` rồi `game.lifeLesson`). Không ai rời làng (tránh vỡ cảnh cốt truyện) — hệ quả là tình cảm, cặp quan hệ, kinh tế.
 - **Câu cá làm lại** (0.28): `src/ui/fishingGame.js` vẽ cảnh bằng canvas (`startScene/draw`, pha power → throwBob → wait → reel → result;
   thẻ kết quả `.fs-overlay` nổi trên cảnh, nút "Câu tiếp" `data-fs="quick"`). Luật/số liệu không đổi. Bot thử phải chạy TRONG trang (setInterval đọc
   `window.__fishing`) vì swiftshader chậm, gọi từ ngoài sẽ lỡ cửa sổ cắn câu.

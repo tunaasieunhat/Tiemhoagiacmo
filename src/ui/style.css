@@ -1716,3 +1716,23 @@ body.cine-sepia #game canvas { filter: sepia(.85) saturate(.75) contrast(.95) br
 .ec-row .mk-info { flex: 1; min-width: 0; }
 .ec-isle .mk-info { flex: 1; min-width: 0; }
 .ec-isle .ec-reqs { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+
+/* (0.32) 👪 Đời sống làng */
+.vg-memo { margin: -2px 0 8px; padding: 6px 10px; border-radius: 10px; background: #f4efff; color: #6b5a8f; font-size: 13px; }
+.lf-body .mk-item.lf-pair { grid-column: 1 / -1; }
+.lf-avs { display: flex; flex: none; } .lf-avs svg + svg { margin-left: -10px; }
+.lf-feed { display: flex; flex-direction: column; gap: 6px; grid-column: 1 / -1; }
+.lf-news { display: flex; gap: 8px; align-items: flex-start; background: #fff; border-radius: 12px; padding: 6px 10px; border: 1px solid #f0e2d6; }
+.lf-news > span { font-size: 20px; } .lf-news p { margin: 0; font-size: 13px; } .lf-news small { color: #b9a395; }
+.lf-flowers { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; grid-column: 1 / -1; }
+.lf-flower { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px; border-radius: 12px; border: 2px solid #f0e2d6; background: #fff; font: inherit; cursor: pointer; text-align: left; }
+.lf-flower > span { font-size: 26px; } .lf-flower:hover { border-color: #f6a6b9; }
+.lf-dil { grid-column: 1 / -1; background: #fffaf3; border: 2px solid #f2d9b8; border-radius: 14px; padding: 10px 14px; }
+.lf-dil h3 { margin: 0 0 4px; } .lf-dil p { margin: 4px 0; font-size: 14px; }
+.lf-opt { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px dashed #ecd9c4; }
+.lf-app { display: flex; gap: 12px; align-items: center; grid-column: 1 / -1; }
+.lf-app > div { flex: 1; } .lf-app h3 { margin: 0 0 4px; }
+.lf-choices { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; grid-column: 1 / -1; }
+.lf-choice { padding: 6px 12px; border-radius: 999px; border: 2px solid #f0e2d6; background: #fff; font: inherit; cursor: pointer; }
+.lf-choice.on { border-color: #f6a6b9; background: #fff0f5; font-weight: 700; }
+.lf-body > h3, .lf-body > p, .lf-body > .row-btns, .lf-body > .note { grid-column: 1 / -1; }

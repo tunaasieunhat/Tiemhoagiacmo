@@ -23,6 +23,8 @@ import * as regulars from './systems/regulars.js';
 import * as talesSys from './systems/tales.js';
 import * as gardenSys from './systems/garden.js';
 import * as econ from './systems/economy.js';
+import * as lifeSys from './systems/life.js';
+import { LIFE_RULES, DILEMMAS, APPRENTICE } from '../data/life.js';
 import { ISLANDS, SUPPLY_RULES } from '../data/economy.js';
 import { STRAIN_RULES, GENES } from '../data/garden.js';
 import { TALES, TALE_RULES, STYLES } from '../data/tales.js';
@@ -318,7 +320,7 @@ export class Game {
       const shopEv = shop.shopTick(s, {
         offline, hourFloat: this.clock.hourFloat, flowerIds: this.unlockedFlowers(),
         festival: calendar.festivalOn(day), seasonal: calendar.seasonFlowers(day), day,
-        spawnMult: (WEATHER[s.weather?.today?.type]?.spawnMult ?? 1) / planSys.effect(day, 'spawn') / econ.perkMult(s, 'spawn'), // (0.31) Làng Hoa phát triển: đông khách // Chủ Nhật đông khách (hệ số này nhân vào khoảng cách giữa 2 khách)
+        spawnMult: (WEATHER[s.weather?.today?.type]?.spawnMult ?? 1) / planSys.effect(day, 'spawn') / econ.perkMult(s, 'spawn') / lifeSys.perkMult(s, 'spawn'), // (0.31) Làng Hoa phát triển: đông khách · (0.32) quyết định làng / tiệm đối thủ // Chủ Nhật đông khách (hệ số này nhân vào khoảng cách giữa 2 khách)
         preorder: (npcId, flower) => orders.makePreorder(s, to, Math.random, npcId, flower),
         // (0.31) khách tâm sự & phong cách tiệm
         tale: () => {
@@ -698,8 +700,61 @@ export class Game {
 
   setSeed(id) { this.seed = id; this.emitter.emit('tool', this.tool); }
 
+  /** (0.32) 👪 Đời sống làng: sang ngày mới thì chuyện làng xảy ra, quyết định mới, quà học trò */
+  lifeTick() {
+    const s = this.save;
+    if (this.visit || this.cine || s.player.level < LIFE_RULES.minLevel) return;
+    const day = dayOf(this.now);
+    if (this.lifeDay === day) return;
+    this.lifeDay = day;
+    const has = (f) => story.has(s, f);
+    const evs = lifeSys.dailyTick(s, day, has);
+    evs.slice(-2).forEach((e, i) => setTimeout(() => this.toast(`${e.icon} Chuyện làng: ${e.text}`, e.kind === 'wedding' || e.kind === 'baby' ? 'good' : 'info'), 2500 + i * 3000));
+    for (const e of evs) if (e.kind === 'wedding') { talesSys.addStyle(s, 'wedding', 20); this.grantReward({ coins: 500 }, '💍 Tiệm được đặt hoa cưới'); }
+    const pend = lifeSys.pendingDilemmas(s, day);
+    if (pend.length && this.dilNote !== pend[0]) { this.dilNote = pend[0]; setTimeout(() => this.toast(`⚖️ Làng cần bạn quyết định: “${DILEMMAS[pend[0]].title}”. Mở 👪 › Quyết định`, 'info'), 6000); }
+    const gift = lifeSys.partnerGift(s, day);
+    if (gift) {
+      if (gift.seed) this.grantReward({ seeds: 2 });
+      setTimeout(() => this.toast(`🎓 Tiệm của ${lifeSys.nameOf(lifeSys.L(s).app.id)} gửi biếu thầy +${gift.coins} 💰${gift.seed ? ' và ít hạt giống' : ''}`, 'good'), 4000);
+    }
+    if (lifeSys.canChallenge(s, day)) setTimeout(() => this.toast(`😤 ${lifeSys.nameOf(lifeSys.L(s).app.id)} thách bạn thi cắm hoa hôm nay! Mở 👪 › Học trò`, 'warn'), 8000);
+    this.saveMgr.markDirty();
+  }
+  lifeAct(pair, kind, key) {
+    const r = lifeSys.act(this.save, pair, kind, key, dayOf(this.now));
+    this.toast(r.msg, !r.ok ? 'warn' : r.success ? 'good' : 'bad');
+    if (r.ok) { this.saveMgr.markDirty(); this.emitter.emit('inventory'); if (r.success) this.gainXp(8); }
+    return r;
+  }
+  lifeDecide(id, opt) {
+    const r = lifeSys.decide(this.save, id, opt, dayOf(this.now), { seeds: (n) => this.grantReward({ seeds: n }) });
+    this.toast(r.ok ? `${DILEMMAS[id].icon} ${r.msg}` : r.msg, r.ok ? 'info' : 'warn');
+    if (r.ok) { this.saveMgr.markDirty(); this.emitter.emit('inventory'); this.gainXp(15); }
+    return r;
+  }
+  lifeTake(id) {
+    const r = lifeSys.takeApprentice(this.save, id, (f) => story.has(this.save, f));
+    this.toast(r.msg, r.ok ? 'good' : 'warn');
+    if (r.ok) this.saveMgr.markDirty();
+    return r;
+  }
+  lifeLesson(subject, style, stars) {
+    const r = lifeSys.lesson(this.save, subject, style, stars, dayOf(this.now));
+    this.toast(r.msg, r.ok ? 'good' : 'warn');
+    if (r.graduated) setTimeout(() => this.toast(r.outcome === 'partner' ? `🎓 ${lifeSys.nameOf(lifeSys.L(this.save).app.id)} ra nghề và thành ĐỐI TÁC của tiệm: mỗi ngày gửi quà, khách bo nhiều hơn!` : `🎓 ${lifeSys.nameOf(lifeSys.L(this.save).app.id)} ra nghề… và thành ĐỐI THỦ! Tiệm bạn bớt khách. Thắng ${APPRENTICE.rival.winsToMakeUp} cuộc thi cắm hoa để làm lành.`, r.outcome === 'partner' ? 'good' : 'warn'), 1200);
+    if (r.ok) { this.saveMgr.markDirty(); this.gainXp(6); }
+    return r;
+  }
+  lifeChallenge(stars) {
+    const r = lifeSys.challenge(this.save, stars, dayOf(this.now));
+    this.toast(r.msg, r.ok && r.win ? 'good' : 'warn');
+    if (r.ok) this.saveMgr.markDirty();
+    return r;
+  }
+
   /** (0.31) 📈 Giá bán sỉ 1 cành hôm nay (giá chợ dao động × chợ phiên Thứ Hai) */
-  wholesaleEach(key) { return Math.max(1, Math.round(econ.wholesaleNow(this.save, key, dayOf(this.now)) * planSys.effect(dayOf(this.now), 'wholesale'))); }
+  wholesaleEach(key) { const d = dayOf(this.now); return Math.max(1, Math.round(econ.wholesaleNow(this.save, key, d) * planSys.effect(d, 'wholesale') * lifeSys.perkMult(this.save, 'wholesale', d))); }
 
   /** (0.31) Giao hàng cho đảo */
   econDeliver(id, i) {
@@ -853,7 +908,7 @@ export class Game {
     const styleId = bouquet ? talesSys.styleOfBouquet(ev) : null;
     if (styleId) ev.price = Math.round(ev.price * talesSys.stylePriceMult(s, styleId));
     const tier = shop.tierOf(s.player.reputation);
-    const tip = ev.sub ? 0 : Math.round(shop.tipAmount(Math.random, tier, ev) * planSys.effect(dayOf(this.now), 'tips') * talesSys.styleTipMult(s, styleId)); // Thứ Bảy chợ đêm · hoa thay thế: không bo
+    const tip = ev.sub ? 0 : Math.round(shop.tipAmount(Math.random, tier, ev) * planSys.effect(dayOf(this.now), 'tips') * talesSys.styleTipMult(s, styleId) * lifeSys.perkMult(s, 'tips')); // Thứ Bảy chợ đêm · hoa thay thế: không bo
     s.player.coins += ev.price + tip;
     const oldTier = tier;
     const vipHappy = c.vip && (ev.mood === 'perfect' || ev.mood === 'good');
@@ -2845,6 +2900,7 @@ export class Game {
     const s = this.save;
     this.manageTick(); // (GĐ25) kế hoạch hôm nay, hợp đồng tiệc mới
     this.taleLetters(); // (0.31) thư kết cục của khách tâm sự
+    this.lifeTick(); // (0.32) đời sống làng
     // (0.31) chuỗi cung ứng: đảo sang chu kỳ mới
     for (const c of econ.ensureCycles(this.save, dayOf(this.now), (f) => story.has(this.save, f))) {
       if (c.decayed && !this.visit) this.toast(`${ISLANDS[c.id].icon} ${ISLANDS[c.id].name} vắng dần vì lâu không nhận hàng (−${c.decayed} phát triển). Xem 📈 › Quần đảo`, 'warn');

@@ -1,4 +1,6 @@
 // Giao diện HTML phủ lên trên 3D: thanh trên, thanh công cụ, bảng ô đất, kho đồ, cài đặt, thông báo.
+import * as lifeSys from '../systems/life.js';
+import { LifePanel } from './lifePanel.js';
 import * as gardenSys from '../systems/garden.js';
 import { GENES, FLOWER_PH } from '../../data/garden.js';
 import { TALES, STYLES } from '../../data/tales.js';
@@ -172,6 +174,7 @@ export class Hud {
     this.style = new StylePanel(this); // GĐ26: 🎀 Phong cách
     this.garden = new GardenPanel(this); // 0.31: 🌿 Vườn ươm
     this.econ = new EconPanel(this); // 0.31: 📈 Chợ & Quần đảo
+    this.life = new LifePanel(this); // 0.32: 👪 Đời sống làng
     this.fun = new FunPanel(this); // GĐ26: 🎡 Khu Vui Chơi
     this.lab = new LabPanel(this);
     this.notebook = new NotebookPanel(this);
@@ -222,6 +225,7 @@ export class Hud {
         <button class="round" data-act="style" aria-label="Phong cách: tủ đồ, thú cưng, trứng">🎀</button>
         <button class="round" data-act="garden" aria-label="Vườn ươm: dòng giống, đất, sinh thái">🌿</button>
         <button class="round" data-act="econ" aria-label="Chợ & Quần đảo: giá chợ, tin đồn, giao hàng các đảo">📈</button>
+        <button class="round" data-act="life" aria-label="Đời sống làng: chuyện làng, quyết định, học trò">👪</button>
         <button class="round" data-act="go-fun" aria-label="Khu Vui Chơi">🎡</button>
         <button class="round" data-act="rank" aria-label="Xếp hạng và cuộc thi">🏆</button>
         <button class="round" data-act="decor-mode" aria-label="Trang trí">🎨</button>
@@ -290,6 +294,8 @@ export class Hud {
     if (lb) { this.lab.onAction(lb.dataset.lab, lb); return; }
     const nb = e.target.closest('[data-nb]');
     if (nb) { this.notebook.onAction(nb.dataset.nb, nb); return; }
+    const lf = e.target.closest('[data-lf]');
+    if (lf) { this.life.onAction(lf.dataset.lf, lf); return; }
     const ec = e.target.closest('[data-ec]');
     if (ec) { this.econ.onAction(ec.dataset.ec, ec); return; }
     const gd = e.target.closest('[data-gd]');
@@ -356,6 +362,7 @@ export class Hud {
       case 'style': this.style.open(b.dataset.tab || null); break;
       case 'garden': this.garden.open(b.dataset.tab || null); break;
       case 'econ': this.econ.open(b.dataset.tab || null); break;
+      case 'life': this.life.open(b.dataset.tab || null); break;
       case 'go-fun': this.closeModal(); g.goFun(); if (g.funOpen()) setTimeout(() => this.fun.open(), 500); else g.tapFun({ kind: 'fungate', nav: true }); break;
       case 'forecast': this.openForecast(); break;
       case 'quality': g.setQuality(b.dataset.level); this.openSettings(); break;
@@ -906,6 +913,7 @@ export class Hud {
     this.openModal('villager', `
       <div class="vg-head">${avatarSVG(info.look, 64)}<div><h2>${esc(info.name)}${bday ? ' 🎂' : ''}</h2><small class="muted">${esc(info.role)}${info.home ? ` · ${esc(HOUSES[info.home].name)}` : ''}</small>${this.heartBar(id)}</div></div>
       <p class="vg-say">“${esc(hello)}”</p>
+      ${(() => { const m = g.save.player.level >= 5 ? lifeSys.memoryOf(g.save, id) : null; return m ? `<p class="vg-memo">💭 ${esc(m)}</p>` : ''; })()}
       ${storyBtn}
       ${id === 'nhum' && storySys.has(g.save, 'co_fish') ? '<button class="btn wide" data-act="fish-stall">🐟 Mở quầy cá</button>' : ''}
       ${['sen', 'ba_nhai'].includes(id) && storySys.has(g.save, 'hg_shop') ? '<button class="btn wide" data-act="hg-shop">🌸 Vào Tiệm Hương Nhài</button>' : ''}
